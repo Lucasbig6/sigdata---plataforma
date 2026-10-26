@@ -1,75 +1,102 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { Rnd } from "react-rnd";
 import {
-  AlertTriangle,
   BarChart3,
   BookmarkPlus,
   Check,
   ChevronRight,
+  Copy,
   Database,
-  Loader2,
   Minus,
   Plus,
+  Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Skeleton } from "@/components/ui/skeleton";
-import { cn } from "@/lib/utils";
-import {
-  DEMO_NOTICE,
-  DEMO_SOURCE,
-  KPIS,
-  MUNICIPIOS,
-  RESUMOS,
-  SERIE_TEMPORAL,
-} from "@/lib/demo-data";
+import { DEMO_NOTICE, DEMO_SOURCE, MUNICIPIOS, SERIE_TEMPORAL } from "@/lib/demo-data";
 import { saveAnalysis } from "@/lib/dashboards/analyses";
-import { useSigdata, type PanelView } from "@/lib/sigdata-store";
-import { BarChart, ChartFrame, DataTable, KpiGrid, LineChart } from "./visualizations";
+import { useDashboardsStore } from "@/lib/dashboards/store";
+import { findLibraryItem } from "@/lib/dashboards/presets";
+import { usePanelStore, WIDGET_MIN_SIZE, type PanelWidget, type WidgetKind } from "@/lib/panel/store";
+import { useNotebooksStore } from "@/lib/notebooks/store";
+import { useSigdata } from "@/lib/sigdata-store";
+import { cn } from "@/lib/utils";
+import { BarChart, DataTable, KpiGrid, LineChart } from "./visualizations";
 
-const PROJECT_NAME = "Análise de indicadores municipais";
+type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
-const VIEWS: { id: PanelView; label: string }[] = [
+const TABS: { id: TabId; label: string }[] = [
+  { id: "todos", label: "Todos" },
   { id: "grafico", label: "Gráficos" },
   { id: "tabela", label: "Tabela" },
   { id: "indicadores", label: "Indicadores" },
 ];
 
-const StatusChip = ({ status }: { status: "loading" | "ready" | "error" }) => {
-  const config = {
-    loading: {
-      icon: Loader2,
-      label: "Carregando",
-      className: "text-muted-foreground",
-      animate: true,
-    },
-    ready: {
-      icon: BarChart3,
-      label: DEMO_NOTICE,
-      className: "text-primary",
-      animate: false,
-    },
-    error: {
-      icon: AlertTriangle,
-      label: "Indisponível",
-      className: "text-destructive",
-      animate: false,
-    },
-  }[status];
+const EMPTY_WIDGETS: PanelWidget[] = [];
 
-  const Icon = config.icon;
-  return (
-    <span
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium",
-        config.className,
-      )}
-    >
-      <Icon className={cn("size-3", config.animate && "animate-spin")} aria-hidden />
-      {config.label}
-    </span>
-  );
+const matchesTab = (kind: WidgetKind, tab: TabId): boolean => {
+  switch (tab) {
+    case "todos":
+      return true;
+    case "grafico":
+      return kind === "linha" || kind === "barras";
+    case "tabela":
+      return kind === "tabela";
+    case "indicadores":
+      return kind === "kpi";
+  }
 };
+
+const WidgetBody = ({ widget }: { widget: PanelWidget }) => {
+  if (widget.kind === "linha") {
+    return <LineChart data={widget.series ?? SERIE_TEMPORAL} />;
+  }
+  if (widget.kind === "barras") {
+    return <BarChart data={widget.series ?? SERIE_TEMPORAL} />;
+  }
+  if (widget.kind === "kpi") {
+    return <KpiGrid items={widget.kpis ?? []} />;
+  }
+  return <DataTable rows={widget.rows ?? MUNICIPIOS} />;
+};
+
+const WidgetCard = ({
+  widget,
+  onRemove,
+  onFocus,
+}: {
+  widget: PanelWidget;
+  onRemove: () => void;
+  onFocus: () => void;
+}) => (
+  <article
+    onPointerDown={onFocus}
+    className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
+  >
+    <header className="widget-handle flex cursor-grab items-center gap-2 border-b border-border/70 bg-muted/30 px-3 py-1.5 active:cursor-grabbing">
+      <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-foreground" title={widget.title}>
+        {widget.title}
+      </h3>
+      <button
+        type="button"
+        aria-label={`Remover ${widget.title}`}
+        title="Remover"
+        onClick={(event) => {
+          event.stopPropagation();
+          onRemove();
+        }}
+        className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+      >
+        <Trash2 className="size-3.5" aria-hidden />
+      </button>
+    </header>
+    <div className="min-h-0 flex-1 overflow-auto p-2">
+      <WidgetBody widget={widget} />
+    </div>
+  </article>
+);
 
 const EmptyState = () => (
   <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
@@ -77,106 +104,47 @@ const EmptyState = () => (
       <Database className="size-5" aria-hidden />
     </span>
     <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-      Gráficos, tabelas e análises poderão aparecer nesta área conforme você conversa com o
-      assistente.
+      Peça um gráfico, indicador ou tabela ao assistente e use &quot;Adicionar ao painel&quot; para
+      fixar a visualização aqui.
     </p>
-    <p className="text-xs text-muted-foreground/70">
-      Nesta etapa, o painel mostra visualizações de demonstração.
-    </p>
-  </div>
-);
-
-const LoadingState = () => (
-  <div className="flex flex-col gap-4 p-4">
-    <div className="grid grid-cols-2 gap-3">
-      <Skeleton className="h-24" />
-      <Skeleton className="h-24" />
-    </div>
-    <Skeleton className="h-56" />
-    <Skeleton className="h-40" />
-  </div>
-);
-
-const ErrorState = ({ onRetry }: { onRetry: () => void }) => (
-  <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
-    <span className="flex size-11 items-center justify-center rounded-xl border border-destructive/40 bg-destructive/10 text-destructive">
-      <AlertTriangle className="size-5" aria-hidden />
-    </span>
-    <p className="max-w-xs text-sm text-muted-foreground">
-      Não foi possível carregar as visualizações de demonstração.
-    </p>
-    <Button size="sm" variant="outline" onClick={onRetry}>
-      Tentar novamente
-    </Button>
-  </div>
-);
-
-const SummaryList = () => (
-  <div className="@container w-full">
-    <div className="flex flex-col gap-2 @sm:grid @sm:grid-cols-2 @sm:items-start">
-      {RESUMOS.map((item) => (
-        <div key={item.titulo} className="rounded-lg border border-border bg-card px-3.5 py-3">
-          <p className="text-xs font-medium text-foreground">{item.titulo}</p>
-          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{item.texto}</p>
-        </div>
-      ))}
-    </div>
-  </div>
-);
-
-const ReadyContent = ({ view }: { view: PanelView }) => (
-  <div className="flex flex-col gap-3">
-    <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground/80">
-      <span>{DEMO_SOURCE}</span>
-      <span className="inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5">
-        <Check className="size-3 text-primary" aria-hidden />
-        demonstração
-      </span>
-    </div>
-
-    {view === "grafico" && (
-      <>
-        <ChartFrame title="Série mensal do índice" caption="2024">
-          <LineChart data={SERIE_TEMPORAL} />
-        </ChartFrame>
-        <ChartFrame title="Comparativo por período" caption="base 0–100">
-          <BarChart data={SERIE_TEMPORAL} />
-        </ChartFrame>
-        <SummaryList />
-      </>
-    )}
-
-    {view === "tabela" && <DataTable rows={MUNICIPIOS} />}
-
-    {view === "indicadores" && (
-      <>
-        <KpiGrid items={KPIS} />
-        <SummaryList />
-      </>
-    )}
+    <p className="text-xs text-muted-foreground/70">Os widgets podem ser arrastados e redimensionados.</p>
   </div>
 );
 
 export const WorkPanel = ({ className }: { className?: string }) => {
+  const notebookId = useSearchParams().get("notebook");
   const {
-    demoStatus,
     panelView,
     panelCollapsed,
     panelMobileOpen,
-    savedAt,
     setPanelView,
     togglePanelCollapsed,
     setPanelMobileOpen,
-    loadDemo,
     savePreferences,
   } = useSigdata();
+
+  const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
+  const widgets =
+    (notebookId ? widgetsByNotebook[notebookId] : undefined) ?? EMPTY_WIDGETS;
+  const hydratePanel = usePanelStore((state) => state.hydrate);
+  const updateGeometry = usePanelStore((state) => state.updateGeometry);
+  const removeWidget = usePanelStore((state) => state.removeWidget);
+  const bringToFront = usePanelStore((state) => state.bringToFront);
+  const notebooks = useNotebooksStore((state) => state.notebooks);
+  const openDashboard = useDashboardsStore((state) => state.openDashboard);
+  const createDashboard = useDashboardsStore((state) => state.createDashboard);
+  const beginTransaction = useDashboardsStore((state) => state.beginTransaction);
+  const addElement = useDashboardsStore((state) => state.addElement);
+  const updateProps = useDashboardsStore((state) => state.updateProps);
+  const endTransaction = useDashboardsStore((state) => state.endTransaction);
+  const saveDashboard = useDashboardsStore((state) => state.save);
 
   const [note, setNote] = useState<string | null>(null);
   const panelVisible = !panelCollapsed || panelMobileOpen;
 
   useEffect(() => {
-    if (panelVisible && demoStatus === "idle") loadDemo();
-  }, [panelVisible, demoStatus, loadDemo]);
+    hydratePanel();
+  }, [hydratePanel]);
 
   useEffect(() => {
     if (!note) return;
@@ -184,19 +152,114 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     return () => clearTimeout(timeout);
   }, [note]);
 
-  const handleSaveAnalysis = () => {
-    const viewLabel = VIEWS.find((item) => item.id === panelView)?.label ?? "Painel";
-    saveAnalysis(
-      {
-        kpis: KPIS,
-        serie: SERIE_TEMPORAL,
-        municipios: MUNICIPIOS,
-        resumos: RESUMOS,
-      },
-      `${PROJECT_NAME} · ${viewLabel}`,
-    );
+  const filtered = useMemo(
+    () => widgets.filter((widget) => matchesTab(widget.kind, panelView)),
+    [widgets, panelView],
+  );
+
+  const maxZ = widgets.reduce((max, widget) => Math.max(max, widget.z), 0);
+  const containerHeight = Math.max(
+    320,
+    ...widgets.map((widget) => widget.y + widget.h + 24),
+  );
+
+  const handleDragStop = useCallback(
+    (id: string, x: number, y: number) => {
+      if (!notebookId) return;
+      updateGeometry(notebookId, id, { x, y });
+    },
+    [notebookId, updateGeometry],
+  );
+
+  const handleResizeStop = useCallback(
+    (id: string, w: number, h: number, x: number, y: number) => {
+      if (!notebookId) return;
+      updateGeometry(notebookId, id, { w, h, x, y });
+    },
+    [notebookId, updateGeometry],
+  );
+
+  const handleRemove = useCallback(
+    (id: string) => {
+      if (!notebookId) return;
+      removeWidget(notebookId, id);
+    },
+    [notebookId, removeWidget],
+  );
+
+  const handleFocus = useCallback(
+    (id: string) => {
+      if (!notebookId) return;
+      bringToFront(notebookId, id);
+    },
+    [notebookId, bringToFront],
+  );
+
+  const handleSaveAsDashboard = () => {
+    if (!notebookId || widgets.length === 0) {
+      setNote("Adicione visualizações ao painel antes de salvar.");
+      return;
+    }
+    const notebook = notebooks.find((entry) => entry.id === notebookId);
+    const title = notebook?.title?.trim() || "Dashboard do projeto";
+
+    if (widgets.some((widget) => widget.series && widget.series.length > 0)) {
+      const firstChart = widgets.find((widget) => widget.series && widget.series.length > 0);
+      saveAnalysis(
+        {
+          kpis: widgets.find((widget) => widget.kpis)?.kpis ?? [],
+          serie: firstChart?.series ?? SERIE_TEMPORAL,
+          municipios: widgets.find((widget) => widget.rows)?.rows ?? MUNICIPIOS,
+          resumos: [],
+        },
+        `${title} · análise`,
+      );
+    }
+
+    const id = createDashboard();
+    openDashboard(id);
+    beginTransaction("panel-import");
+
+    const keyByKind: Record<WidgetKind, string> = {
+      linha: "line",
+      barras: "bar",
+      kpi: "kpi",
+      tabela: "table",
+    };
+
+    for (const widget of widgets) {
+      const item = findLibraryItem(keyByKind[widget.kind]);
+      if (!item) continue;
+      const elementId = addElement(item, { x: widget.x, y: widget.y });
+      if (!elementId) continue;
+      const patch: Record<string, unknown> = { title: widget.title, showTitle: true };
+      if (widget.kind === "linha") patch.chartType = "line";
+      if (widget.kind === "barras") patch.chartType = "bar";
+      if (widget.kind === "kpi" && widget.kpis?.[0]) {
+        patch.title = widget.kpis[0].label;
+        patch.value = widget.kpis[0].value;
+      }
+      updateProps(elementId, patch);
+    }
+
+    endTransaction();
+    saveDashboard();
     savePreferences();
-    setNote('Análise salva — aparece em "Análises salvas" no editor de dashboards.');
+    setNote(`Dashboard "${title}" salvo — abra em Dashboards.`);
+  };
+
+  const handleShare = async () => {
+    if (!notebookId) {
+      setNote("Abra um projeto para compartilhar.");
+      return;
+    }
+    const url = `${window.location.origin}/workspace?notebook=${notebookId}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      setNote("Link do projeto copiado.");
+    } catch {
+      setNote(url);
+    }
   };
 
   return (
@@ -209,14 +272,21 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       )}
       aria-label="Área de trabalho"
     >
-      <header className="flex flex-col gap-2 border-b border-border px-4 py-3">
+      <header className="flex flex-col gap-2 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-sm font-medium text-foreground">{PROJECT_NAME}</p>
+            <p className="truncate text-1xl font-medium text-foreground pb-3">
+              {notebooks.find((entry) => entry.id === notebookId)?.title ?? "Painel analítico"}
+            </p>
             <div className="mt-1 flex items-center gap-2">
-              <StatusChip status={demoStatus === "idle" ? "loading" : demoStatus} />
-              {savedAt ? (
-                <span className="text-[11px] text-muted-foreground">salvo localmente</span>
+              <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-primary">
+                <BarChart3 className="size-3" aria-hidden />
+                {DEMO_NOTICE}
+              </span>
+              {widgets.length > 0 ? (
+                <span className="text-[11px] text-muted-foreground">
+                  {widgets.length} widget(s)
+                </span>
               ) : null}
             </div>
           </div>
@@ -225,8 +295,8 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             variant="ghost"
             size="icon-sm"
             onClick={togglePanelCollapsed}
-            aria-label={panelCollapsed ? "Expandir painel" : "Recolher painel"}
-            title={panelCollapsed ? "Expandir painel" : "Recolher painel"}
+            aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
+            title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
           >
             {panelCollapsed ? (
               <Plus className="size-4" aria-hidden />
@@ -240,23 +310,25 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             size="icon-sm"
             className="lg:hidden"
             onClick={() => setPanelMobileOpen(false)}
-            aria-label="Fechar painel"
-            title="Fechar painel"
+            aria-label="Fechar visualizações"
+            title="Fechar visualizações"
           >
             <ChevronRight className="size-4" aria-hidden />
           </Button>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button size="xs" variant="outline" onClick={handleSaveAnalysis}>
-            <BookmarkPlus className="size-3.5" aria-hidden />
-            Salvar análise
-          </Button>
           <Button
             size="xs"
             variant="outline"
-            onClick={() => setNote("Compartilhamento indisponível nesta demonstração.")}
+            onClick={handleSaveAsDashboard}
+            disabled={widgets.length === 0}
           >
+            <BookmarkPlus className="size-3.5" aria-hidden />
+            Salvar como dashboard
+          </Button>
+          <Button size="xs" variant="outline" onClick={handleShare}>
+            <Copy className="size-3.5" aria-hidden />
             Compartilhar
           </Button>
           {note ? <span className="text-[11px] text-muted-foreground">{note}</span> : null}
@@ -264,43 +336,95 @@ export const WorkPanel = ({ className }: { className?: string }) => {
 
         <div
           role="tablist"
-          aria-label="Visualização do painel"
+          aria-label="Filtrar widgets do painel"
           className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
         >
-          {VIEWS.map((item) => (
+          {TABS.map((tab) => (
             <button
-              key={item.id}
+              key={tab.id}
               type="button"
               role="tab"
-              aria-selected={panelView === item.id}
-              onClick={() => setPanelView(item.id)}
+              aria-selected={panelView === tab.id}
+              onClick={() => {
+                setPanelView(tab.id);
+                savePreferences();
+              }}
               className={cn(
                 "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none",
                 "focus-visible:ring-2 focus-visible:ring-ring/50",
-                panelView === item.id
+                panelView === tab.id
                   ? "bg-background text-foreground shadow-sm"
                   : "text-muted-foreground hover:text-foreground",
               )}
             >
-              {item.label}
+              {tab.label}
             </button>
           ))}
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {demoStatus === "loading" ? (
-          <LoadingState />
-        ) : demoStatus === "idle" ? (
+      <div className="relative min-h-0 flex-1 overflow-auto">
+        {!panelVisible ? null : widgets.length === 0 ? (
           <EmptyState />
-        ) : demoStatus === "error" ? (
-          <ErrorState onRetry={loadDemo} />
-        ) : demoStatus === "ready" ? (
-          <div className="p-4">
-            <ReadyContent view={panelView} />
+        ) : filtered.length === 0 ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <p className="text-sm text-muted-foreground">Nenhum widget nesta categoria.</p>
+            <Button size="xs" variant="outline" onClick={() => setPanelView("todos")}>
+              Ver todos
+            </Button>
           </div>
-        ) : null}
+        ) : (
+          <div className="relative w-full" style={{ height: containerHeight, minHeight: "100%" }}>
+            {filtered.map((widget) => {
+              const min = WIDGET_MIN_SIZE[widget.kind];
+              return (
+                <Rnd
+                  key={widget.id}
+                  default={{ x: widget.x, y: widget.y, width: widget.w, height: widget.h }}
+                  position={{ x: widget.x, y: widget.y }}
+                  size={{ width: widget.w, height: widget.h }}
+                  bounds="parent"
+                  minWidth={min.w}
+                  minHeight={min.h}
+                  dragHandleClassName="widget-handle"
+                  cancel=".no-drag"
+                  disableDragging={!panelVisible}
+                  onDragStart={() => handleFocus(widget.id)}
+                  onDragStop={(_e, d) => handleDragStop(widget.id, d.x, d.y)}
+                  onResizeStart={() => handleFocus(widget.id)}
+                  onResizeStop={(_e, _direction, ref, _delta, position) =>
+                    handleResizeStop(
+                      widget.id,
+                      ref.offsetWidth,
+                      ref.offsetHeight,
+                      position.x,
+                      position.y,
+                    )
+                  }
+                  style={{ zIndex: 1 + widget.z }}
+                >
+                  <WidgetCard
+                    widget={widget}
+                    onRemove={() => handleRemove(widget.id)}
+                    onFocus={() => handleFocus(widget.id)}
+                  />
+                </Rnd>
+              );
+            })}
+            <span className="sr-only" aria-live="polite">
+              z-index máximo {maxZ}
+            </span>
+          </div>
+        )}
       </div>
+
+      <p className="border-t border-border/60 px-4 py-2 text-[10px] text-muted-foreground/80">
+        {DEMO_SOURCE}
+        <span className="ms-1.5 inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 align-middle">
+          <Check className="size-3 text-primary" aria-hidden />
+          demonstração
+        </span>
+      </p>
     </section>
   );
 };

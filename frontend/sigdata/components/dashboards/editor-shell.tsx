@@ -14,10 +14,10 @@ const ZOOM_MAX = 2;
 
 const EditorSkeleton = () => (
   <div className="flex h-dvh flex-col overflow-hidden bg-background">
-    <div className="flex h-12 shrink-0 items-center gap-3 border-b border-border/60 bg-card/60 px-3">
-      <div className="size-7 animate-pulse rounded-md bg-muted" />
-      <div className="h-6 w-48 animate-pulse rounded-md bg-muted" />
-      <div className="ml-auto h-7 w-24 animate-pulse rounded-md bg-muted" />
+    <div className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-15 backdrop-blur sm:gap-7">
+      <div className="size-10 animate-pulse rounded-md bg-muted" />
+      <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
+      <div className="ml-auto h-9 w-24 animate-pulse rounded-md bg-muted" />
     </div>
     <div className="flex min-h-0 flex-1">
       <div className="hidden w-60 shrink-0 border-r border-border/60 bg-card/40 lg:block" />

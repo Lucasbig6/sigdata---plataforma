@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Database, FolderKanban } from "lucide-react";
+import { ArrowLeft, FolderKanban } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { SigdataSection } from "@/lib/sigdata-store";
 
@@ -9,14 +9,9 @@ const CONTENT: Record<
   {
     title: string;
     description: string;
-    icon: typeof Database;
+    icon: typeof FolderKanban;
   }
 > = {
-  fontes: {
-    title: "Fontes de dados",
-    description: "Conecte planilhas, documentos e bancos para usar como contexto nas análises.",
-    icon: Database,
-  },
   projetos: {
     title: "Projetos",
     description: "Organize conversas, painéis e fontes de dados por iniciativa.",

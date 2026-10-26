@@ -4,11 +4,11 @@
  */
 import { create } from "zustand";
 
-export type SigdataSection = "conversa" | "fontes" | "projetos";
+export type SigdataSection = "conversa" | "projetos";
 
 export type DemoStatus = "idle" | "loading" | "ready" | "error";
 
-export type PanelView = "grafico" | "tabela" | "indicadores";
+export type PanelView = "todos" | "grafico" | "tabela" | "indicadores";
 
 const STORAGE_KEY = "sigdata.workspace.v1";
 
@@ -37,7 +37,7 @@ const persist = (data: Persisted) => {
   }
 };
 
-const SECTIONS: SigdataSection[] = ["conversa", "fontes", "projetos"];
+const SECTIONS: SigdataSection[] = ["conversa", "projetos"];
 
 /** Valida a seção salva (entradas antigas, ex.: "paineis", caem em "conversa"). */
 const safeSection = (value: unknown): SigdataSection =>
@@ -76,7 +76,7 @@ export const useSigdata = create<SigdataStore>((set, get) => ({
   panelWidth: PANEL_WIDTH_DEFAULT,
   panelCollapsed: false,
   panelMobileOpen: false,
-  panelView: "grafico",
+  panelView: "todos",
   demoStatus: "idle",
   savedAt: null,
   hydrated: false,

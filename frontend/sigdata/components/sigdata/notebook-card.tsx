@@ -106,7 +106,7 @@ export const NotebookCard = ({
           setMenuOpen((open) => !open);
         }}
         className={cn(
-          "grid size-8 place-items-center rounded-xl transition-colors outline-none",
+          "grid size-7 place-items-center rounded-xl transition-colors outline-none",
           view === "grid"
             ? "bg-white/10 text-white/90 ring-1 ring-white/20 backdrop-blur-md hover:bg-white/20 focus-visible:ring-2 focus-visible:ring-white/60"
             : "text-muted-foreground hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50",
@@ -227,7 +227,7 @@ export const NotebookCard = ({
         <Link
           href={`/workspace?notebook=${notebook.id}`}
           className={cn(
-            "relative block aspect-[5/4] overflow-hidden rounded-2xl outline-none",
+            "relative block aspect-[3/2] overflow-hidden rounded-2xl outline-none",
             "ring-1 ring-inset ring-white/10",
             "transition-all duration-200 ease-out",
             "hover:scale-[1.015] hover:shadow-lg hover:shadow-black/20",
@@ -241,14 +241,14 @@ export const NotebookCard = ({
           />
           <CoverArt index={notebook.coverIndex} />
           <div
-            className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent"
+            className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent"
             aria-hidden
           />
           <span className="absolute top-3 left-3 grid size-9 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-md transition-colors group-hover:bg-white/20">
             <BookOpen className="size-4 text-white" aria-hidden />
           </span>
-          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-4 pr-12">
-            <h2 className="line-clamp-2 text-base leading-snug font-medium tracking-tight text-white drop-shadow-sm">
+          <div className="absolute inset-x-0 bottom-0 flex flex-col gap-1.5 p-5 pr-12">
+            <h2 className="line-clamp-2 text-2xl leading-snug font-medium tracking-tight text-white drop-shadow-sm">
               {notebook.title}
             </h2>
             <p className="flex items-center gap-1.5 text-[12px] text-white/75">

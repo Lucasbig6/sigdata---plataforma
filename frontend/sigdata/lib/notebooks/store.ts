@@ -3,6 +3,8 @@
  * Persiste apenas metadados em localStorage; as mensagens vivem no runtime do chat.
  */
 import { create } from "zustand";
+import { useChatStore } from "@/lib/chat/store";
+import { usePanelStore } from "@/lib/panel/store";
 
 export type Notebook = {
   id: string;
@@ -65,7 +67,7 @@ type NotebooksStore = {
   notebooks: Notebook[];
 
   hydrate: () => void;
-  createNotebook: () => string;
+  createNotebook: (title?: string) => string;
   renameNotebook: (id: string, title: string) => void;
   touchNotebook: (id: string, patch?: { title?: string; sourceCount?: number }) => void;
   deleteNotebook: (id: string) => void;
@@ -80,11 +82,11 @@ export const useNotebooksStore = create<NotebooksStore>((set, get) => ({
     set({ hydrated: true, notebooks: readPersisted() });
   },
 
-  createNotebook: () => {
+  createNotebook: (title) => {
     const now = Date.now();
     const notebook: Notebook = {
       id: uid(),
-      title: DEFAULT_NOTEBOOK_TITLE,
+      title: title?.trim() || DEFAULT_NOTEBOOK_TITLE,
       createdAt: now,
       updatedAt: now,
       coverIndex: Math.floor(Math.random() * COVER_COUNT),
@@ -118,5 +120,7 @@ export const useNotebooksStore = create<NotebooksStore>((set, get) => ({
     const notebooks = get().notebooks.filter((notebook) => notebook.id !== id);
     set({ notebooks });
     persist(notebooks);
+    useChatStore.getState().clearNotebook(id);
+    usePanelStore.getState().clearNotebook(id);
   },
 }));

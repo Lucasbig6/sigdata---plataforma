@@ -26,6 +26,27 @@
 
 @custom-variant dark (&:is(.dark *));
 
+@layer base {
+  button:not(:disabled),
+  [role="button"]:not(:disabled),
+  [role="tab"]:not(:disabled),
+  [role="switch"]:not(:disabled),
+  [role="menuitem"]:not(:disabled),
+  [role="menuitemcheckbox"]:not(:disabled),
+  [role="menuitemradio"]:not(:disabled),
+  summary:not(:disabled) {
+    cursor: pointer;
+  }
+
+  button:disabled,
+  [role="button"]:disabled,
+  [role="tab"]:disabled,
+  [role="switch"]:disabled,
+  [aria-disabled="true"]:not(input):not(textarea):not(select) {
+    cursor: not-allowed;
+  }
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

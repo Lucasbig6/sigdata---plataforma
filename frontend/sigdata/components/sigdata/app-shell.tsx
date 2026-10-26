@@ -15,7 +15,6 @@ const PANEL_BREAKPOINT = "(min-width: 1024px)";
 
 const SECTION_TITLES: Record<SigdataSection, string> = {
   conversa: "Conversa",
-  fontes: "Fontes de dados",
   projetos: "Projetos",
 };
 
@@ -41,7 +40,7 @@ const PanelDivider = ({
   <div
     role="separator"
     aria-orientation="vertical"
-    aria-label="Redimensionar painel"
+    aria-label="Redimensionar visualizações"
     onPointerDown={onPointerDown}
     className={cn(
       "group relative z-10 hidden w-2 shrink-0 cursor-col-resize touch-none bg-transparent lg:block",
@@ -127,7 +126,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             onClick={() => (wide ? togglePanelCollapsed() : setPanelMobileOpen(true))}
           >
             <PanelRight className="size-4" aria-hidden />
-            Painel
+            Visualizações
           </Button>
           <ThemeToggle />
         </header>
@@ -160,8 +159,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
                 variant="ghost"
                 size="icon-sm"
                 onClick={togglePanelCollapsed}
-                aria-label="Expandir painel"
-                title="Expandir painel"
+                aria-label="Expandir visualizações"
+                title="Expandir visualizações"
               >
                 <PanelRightOpen className="size-4" aria-hidden />
               </Button>

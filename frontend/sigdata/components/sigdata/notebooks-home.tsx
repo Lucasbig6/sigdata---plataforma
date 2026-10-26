@@ -1,16 +1,22 @@
 "use client";
 
 import { BookOpen, Plus } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { cn } from "@/lib/utils";
 import { NotebookCard } from "./notebook-card";
 import { NotebooksHeader } from "./notebooks-header";
 
 export const NotebooksHome = () => {
-  const router = useRouter();
   const hydrated = useNotebooksStore((state) => state.hydrated);
   const hydrate = useNotebooksStore((state) => state.hydrate);
   const notebooks = useNotebooksStore((state) => state.notebooks);
@@ -20,6 +26,8 @@ export const NotebooksHome = () => {
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
+  const [createOpen, setCreateOpen] = useState(false);
+  const [draftTitle, setDraftTitle] = useState("");
 
   useEffect(() => {
     hydrate();
@@ -32,21 +40,26 @@ export const NotebooksHome = () => {
       .sort((a, b) => b.updatedAt - a.updatedAt);
   }, [notebooks, query]);
 
-  const handleCreate = () => {
-    const id = createNotebook();
-    router.push(`/workspace?notebook=${id}`);
+  const openCreate = () => {
+    setDraftTitle("");
+    setCreateOpen(true);
+  };
+
+  const submitCreate = () => {
+    createNotebook(draftTitle);
+    setCreateOpen(false);
   };
 
   return (
     <div className="min-h-dvh bg-background">
       <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
 
-      <main className="mx-auto max-w-7xl px-4 py-6">
-        <div className="flex items-center justify-between gap-3 pb-5">
-          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+      <main className="mx-auto px-30 py-6">
+        <div className="flex items-center justify-between gap-5 pb-10">
+          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Projetos recentes
           </h1>
-          <Button onClick={handleCreate}>
+          <Button onClick={openCreate} className="flex items-center gap-1.5 cursor-pointer">
             <Plus aria-hidden />
             Novo projeto
           </Button>
@@ -84,7 +97,7 @@ export const NotebooksHome = () => {
                 : "Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."}
             </p>
             {!query.trim() && (
-              <Button onClick={handleCreate} className="mt-1">
+              <Button onClick={openCreate} className="mt-1 cursor-pointer">
                 <Plus aria-hidden />
                 Novo projeto
               </Button>
@@ -118,6 +131,31 @@ export const NotebooksHome = () => {
           </div>
         )}
       </main>
+
+      <Dialog open={createOpen} onOpenChange={setCreateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Novo projeto</DialogTitle>
+          </DialogHeader>
+          <Input
+            value={draftTitle}
+            onChange={(event) => setDraftTitle(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") submitCreate();
+            }}
+            placeholder="Nome do projeto"
+            autoFocus
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreateOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={submitCreate} disabled={!draftTitle.trim()}>
+              Criar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -22,7 +22,7 @@ type Props = {
 };
 
 const iconBtn =
-  "grid size-7 place-items-center rounded-md border border-border/70 bg-background text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40";
+  "grid size-9 place-items-center rounded-md border border-border/70 bg-background text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40";
 
 export const TopBar = ({
   name,
@@ -58,28 +58,28 @@ export const TopBar = ({
   );
 
   return (
-    <header className="flex h-12 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-3 backdrop-blur">
+    <header className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-15 backdrop-blur sm:gap-7">
       <Link
         href="/dashboards"
         aria-label="Voltar para a lista de dashboards"
-        className={`grid size-7 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60`}
+        className={`grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60`}
       >
         <ArrowLeft className="size-4" aria-hidden />
       </Link>
 
-      <LogoMark className="size-6 shrink-0" />
+      <LogoMark className="h-11 w-auto shrink-0" />
 
       <input
         value={name}
         onChange={(event) => onRename(event.target.value)}
         placeholder="Nome do painel"
         aria-label="Nome do painel"
-        className="w-44 min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-foreground transition-colors hover:border-border/70 focus:border-primary/60 focus:outline-none sm:w-60"
+        className="w-44 min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-base font-medium text-foreground transition-colors hover:border-border/70 focus:border-primary/60 focus:outline-none sm:w-60"
       />
 
       <span className="hidden sm:inline">{status}</span>
 
-      <div className="ml-auto flex items-center gap-1.5">
+      <div className="ml-auto flex items-center gap-2">
         <button
           type="button"
           className={iconBtn}
@@ -88,7 +88,7 @@ export const TopBar = ({
           aria-label="Desfazer (Ctrl+Z)"
           title="Desfazer (Ctrl+Z)"
         >
-          <Undo2 className="size-3.5" aria-hidden />
+          <Undo2 className="size-4" aria-hidden />
         </button>
         <button
           type="button"
@@ -98,7 +98,7 @@ export const TopBar = ({
           aria-label="Refazer (Ctrl+Shift+Z)"
           title="Refazer (Ctrl+Shift+Z)"
         >
-          <Redo2 className="size-3.5" aria-hidden />
+          <Redo2 className="size-4" aria-hidden />
         </button>
 
         <span className="mx-1 hidden h-5 w-px bg-border/70 sm:block" />
@@ -128,12 +128,12 @@ export const TopBar = ({
         <button
           type="button"
           onClick={onTogglePreview}
-          className="flex h-7 items-center gap-1.5 rounded-md border border-border/70 bg-background px-2.5 text-xs text-foreground transition-colors hover:bg-muted/60"
+          className="flex h-9 items-center gap-1.5 rounded-md border border-border/70 bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/60"
         >
           {preview ? (
-            <EyeOff className="size-3.5" aria-hidden />
+            <EyeOff className="size-4" aria-hidden />
           ) : (
-            <Eye className="size-3.5" aria-hidden />
+            <Eye className="size-4" aria-hidden />
           )}
           <span className="hidden sm:inline">
             {preview ? "Sair da pré-visualização" : "Pré-visualizar"}
@@ -144,9 +144,9 @@ export const TopBar = ({
           type="button"
           onClick={onSave}
           disabled={!dirty}
-          className="flex h-7 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+          className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
-          <Save className="size-3.5" aria-hidden />
+          <Save className="size-4" aria-hidden />
           Salvar
         </button>
 

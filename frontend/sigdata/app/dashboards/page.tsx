@@ -44,19 +44,19 @@ export default function DashboardsPage() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-10 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="mx-auto flex h-14 max-w-5xl items-center gap-3 px-4">
+      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
+        <div className="flex h-20 items-center gap-2 sm:gap-7 px-15">
           <Link
             href="/"
             aria-label="Voltar ao início"
-            className="grid size-8 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
+            className="grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
           >
             <ArrowLeft className="size-4" aria-hidden />
           </Link>
-          <LogoMark className="size-8 shrink-0" />
+          <LogoMark className="h-11 w-auto shrink-0" />
           <div className="min-w-0">
-            <h1 className="text-sm font-semibold text-foreground">Dashboards</h1>
-            <p className="truncate text-[11px] text-muted-foreground">
+            <h1 className="text-xl  font-semibold text-foreground pb-1">Dashboards</h1>
+            <p className="truncate text-xs text-muted-foreground">
               Painéis salvos neste navegador · dados de demonstração
             </p>
           </div>
@@ -65,7 +65,7 @@ export default function DashboardsPage() {
             <button
               type="button"
               onClick={handleCreate}
-              className="flex h-8 items-center gap-1.5 rounded-md bg-primary px-3 text-xs font-medium text-primary-foreground transition-opacity hover:opacity-90"
+              className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
             >
               <Plus className="size-4" aria-hidden />
               Novo dashboard
@@ -74,9 +74,9 @@ export default function DashboardsPage() {
         </div>
       </header>
 
-      <main className="mx-auto max-w-5xl px-4 py-6">
+      <main className="mx-auto px-30 py-6">
         {!hydrated ? (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {Array.from({ length: 3 }).map((_, index) => (
               <div
                 key={index}
@@ -100,7 +100,7 @@ export default function DashboardsPage() {
             </button>
           </div>
         ) : (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((dashboard) => (
               <article
                 key={dashboard.id}
