@@ -12,6 +12,7 @@ import { api, background } from "@/lib/api/client";
 import { useAnalysesStore, type SavedAnalysis } from "./analyses";
 import { createElement, type LibraryItem } from "./presets";
 import {
+  CANVAS_LIMITS,
   ELEMENT_MIN,
   clamp,
   clampPosition,
@@ -58,6 +59,13 @@ type SigdataDashboardsStore = {
   shareTokens: Record<string, string | null>;
   saving: boolean;
   saveError: string | null;
+  /** Última versão salva do documento aberto (para "Descartar"). */
+  baseline: Dashboard | null;
+  /** Preferências do editor (não vão para o documento). */
+  snapToGrid: boolean;
+  showGrid: boolean;
+  setSnapToGrid: (value: boolean) => void;
+  setShowGrid: (value: boolean) => void;
 
   currentId: string | null;
   selectedId: string | null;
@@ -89,7 +97,14 @@ type SigdataDashboardsStore = {
   /** Abre um dashboard recebido por link público (somente leitura). */
   loadPublic: (dashboard: Dashboard, analyses: SavedAnalysis[]) => void;
 
-  addElement: (item: LibraryItem, placement?: { x?: number; y?: number }) => string | null;
+  addElement: (
+    item: LibraryItem,
+    placement?: { x?: number; y?: number },
+    props?: Record<string, unknown>,
+  ) => string | null;
+  /** Muda o tamanho da página; elementos são reposicionados para caber. */
+  setCanvasSize: (size: { width: number; height: number }) => void;
+  discardChanges: () => void;
   updateProps: (id: string, patch: Record<string, unknown>, field?: string) => void;
   patchElement: (
     id: string,
@@ -106,6 +121,28 @@ type SigdataDashboardsStore = {
 };
 
 let hydrating: Promise<void> | null = null;
+
+const PREF_KEY = "sigdata.editor.prefs.v1";
+
+const readPref = (key: string, fallback: boolean): boolean => {
+  if (typeof window === "undefined") return fallback;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(PREF_KEY) ?? "{}") as Record<string, unknown>;
+    return typeof raw[key] === "boolean" ? (raw[key] as boolean) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const writePref = (key: string, value: boolean) => {
+  if (typeof window === "undefined") return;
+  try {
+    const raw = JSON.parse(window.localStorage.getItem(PREF_KEY) ?? "{}") as Record<string, unknown>;
+    window.localStorage.setItem(PREF_KEY, JSON.stringify({ ...raw, [key]: value }));
+  } catch {
+    /* preferências são opcionais */
+  }
+};
 
 export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
   const mutateCurrent = (transform: (doc: Dashboard) => Dashboard | null, dirty = true) => {
@@ -146,6 +183,17 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
     shareTokens: {},
     saving: false,
     saveError: null,
+    baseline: null,
+    snapToGrid: readPref("snap", true),
+    showGrid: readPref("grid", true),
+    setSnapToGrid: (value) => {
+      writePref("snap", value);
+      set({ snapToGrid: value });
+    },
+    setShowGrid: (value) => {
+      writePref("grid", value);
+      set({ showGrid: value });
+    },
 
     currentId: null,
     selectedId: null,
@@ -197,6 +245,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
 
     openDashboard: (id) =>
       set({
+        baseline: id && get().dashboards[id] ? clone(get().dashboards[id]) : null,
         currentId: id,
         selectedId: null,
         preview: false,
@@ -229,6 +278,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
         order: next.order,
         dashboards: next.dashboards,
         currentId: dashboard.id,
+        baseline: clone(dashboard),
         selectedId: null,
         preview: false,
         dirty: false,
@@ -318,6 +368,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
         set({
           saving: false,
           savedAt: Date.now(),
+          baseline: clone(updated),
           ...(stillSame && { dirty: false, past: [], future: [], historyKey: null }),
         });
       } catch (error) {
@@ -351,7 +402,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
       });
     },
 
-    addElement: (item, placement) => {
+    addElement: (item, placement, props) => {
       const doc = get().current();
       if (!doc) return null;
       pushSnapshot(`add:${item.key}`);
@@ -360,6 +411,8 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
         y: placement?.y,
         z: topLevelZ(doc.elements),
         existing: doc.elements,
+        canvas: doc.canvas,
+        props,
       });
       mutateCurrent((current) => ({
         ...current,
@@ -368,6 +421,39 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
       }));
       set({ selectedId: element.id, historyKey: null });
       return element.id;
+    },
+
+    setCanvasSize: (size) => {
+      const doc = get().current();
+      if (!doc) return;
+      const width = clamp(size.width, CANVAS_LIMITS.min.w, CANVAS_LIMITS.max.w);
+      const height = clamp(size.height, CANVAS_LIMITS.min.h, CANVAS_LIMITS.max.h);
+      if (width === doc.canvas.width && height === doc.canvas.height) return;
+      pushSnapshot("canvas-size");
+      const canvas = { ...doc.canvas, width, height };
+      mutateCurrent((current) => ({
+        ...current,
+        canvas,
+        elements: current.elements.map((el) => {
+          const min = ELEMENT_MIN[el.type];
+          const w = clamp(el.w, min.w, Math.max(min.w, width));
+          const h = clamp(el.h, min.h, Math.max(min.h, height));
+          return { ...el, w, h, ...clampPosition({ ...el, w, h }, canvas) } as DashboardElement;
+        }),
+        updatedAt: Date.now(),
+      }));
+      set({ historyKey: null });
+    },
+
+    discardChanges: () => {
+      const { currentId } = get();
+      if (!currentId) return;
+      // volta à última versão salva
+      const { baseline } = get();
+      if (baseline && baseline.id === currentId) {
+        set({ dashboards: { ...get().dashboards, [currentId]: clone(baseline) } });
+      }
+      set({ dirty: false, past: [], future: [], historyKey: null, selectedId: null, saveError: null });
     },
 
     updateProps: (id, patch, field = "props") => {

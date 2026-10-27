@@ -15,8 +15,6 @@ import { useEffect, useState, type ReactNode } from "react";
 import { listAnalyses } from "@/lib/dashboards/analyses";
 import {
   CATEGORY_LABELS,
-  FILTER_KIND_LABELS,
-  FILTER_OPTIONS,
   VALUE_LABELS,
   datasetSourceOptions,
   valueOptionsFor,
@@ -29,9 +27,11 @@ import {
   type ChartType,
   type DatasetRef,
   type DashboardElement,
-  type FilterKind,
 } from "@/lib/dashboards/types";
+import type { DataBinding, FilterBinding, NumberFormat } from "@/lib/dashboards/types";
+import { BindingEditor, FilterBindingEditor } from "./binding-editor";
 import { ELEMENT_LABELS } from "./element-renderers";
+import { PageSettings } from "./page-settings";
 import { useChartTheme } from "./charts";
 
 const inputCls =
@@ -307,7 +307,7 @@ const DatasetFields = ({
   analyses: { id: string; title: string }[];
 }) => (
   <>
-    <Field label="Fonte de dados">
+    <Field label="Dados de exemplo / análises salvas">
       <SelectField
         value={datasetValue(dataset)}
         options={datasetSourceOptions(analyses)}
@@ -356,7 +356,7 @@ const DatasetFields = ({
     <p className="text-[10px] leading-snug text-muted-foreground">
       {dataset.source === "demo"
         ? "Conjunto fictício de demonstração — nenhuma fonte real conectada."
-        : "Snapshot de análise salva na conversa (dados de demonstração)."}
+        : "Dados congelados de uma análise salva na conversa."}
     </p>
   </>
 );
@@ -364,11 +364,9 @@ const DatasetFields = ({
 const TypeFields = ({
   element,
   updateProps,
-  analyses,
 }: {
   element: DashboardElement;
   updateProps: (id: string, patch: Record<string, unknown>, field?: string) => void;
-  analyses: { id: string; title: string }[];
 }) => {
   const set = (patch: Record<string, unknown>, field: string) =>
     updateProps(element.id, patch, field);
@@ -439,11 +437,6 @@ const TypeFields = ({
               onChange={(value) => set({ showGrid: value }, "showGrid")}
             />
           )}
-          <DatasetFields
-            dataset={props.dataset as DatasetRef}
-            onChange={(dataset) => set({ dataset }, "dataset")}
-            analyses={analyses}
-          />
         </Section>
       );
 
@@ -472,11 +465,6 @@ const TypeFields = ({
               onChange={(value) => set({ density: value }, "density")}
             />
           </Field>
-          <DatasetFields
-            dataset={props.dataset as DatasetRef}
-            onChange={(dataset) => set({ dataset }, "dataset")}
-            analyses={analyses}
-          />
         </Section>
       );
 
@@ -492,14 +480,40 @@ const TypeFields = ({
               onChange={(event) => set({ title: event.target.value }, "title")}
             />
           </Field>
+          {props.binding ? (
+            <Grid2>
+              <Field label="Formato">
+                <SelectField
+                  value={String(props.format ?? "numero")}
+                  options={[
+                    { value: "numero", label: "Número" },
+                    { value: "moeda", label: "Moeda (R$)" },
+                    { value: "percentual", label: "Percentual" },
+                    { value: "compacto", label: "Compacto (1,2 mi)" },
+                  ]}
+                  onChange={(value) => set({ format: value as NumberFormat }, "format")}
+                />
+              </Field>
+              <Field label="Casas decimais">
+                <NumberField
+                  value={Number(props.decimals ?? 1)}
+                  min={0}
+                  max={4}
+                  onCommit={(next) => set({ decimals: next }, "decimals")}
+                />
+              </Field>
+            </Grid2>
+          ) : null}
           <Grid2>
-            <Field label="Valor">
-              <input
-                className={inputCls}
-                value={String(props.value ?? "")}
-                onChange={(event) => set({ value: event.target.value }, "value")}
-              />
-            </Field>
+            {!props.binding ? (
+              <Field label="Valor">
+                <input
+                  className={inputCls}
+                  value={String(props.value ?? "")}
+                  onChange={(event) => set({ value: event.target.value }, "value")}
+                />
+              </Field>
+            ) : null}
             <Field label="Unidade">
               <input
                 className={inputCls}
@@ -522,7 +536,7 @@ const TypeFields = ({
             onChange={(value) => set({ showDelta: value }, "showDelta")}
           />
           {props.showDelta ? (
-            <Field label="Variação (%)">
+            <Field label="Variação (%) — informada manualmente">
               <NumberField
                 value={Number(props.delta ?? 0)}
                 min={-100}
@@ -583,6 +597,14 @@ const TypeFields = ({
     case "image":
       return (
         <Section title="Conteúdo">
+          <Field label="Endereço da imagem (https://…)">
+            <input
+              className={inputCls}
+              placeholder="Vazio = ilustração gerada"
+              value={String(props.src ?? "")}
+              onChange={(event) => set({ src: event.target.value.trim() }, "src")}
+            />
+          </Field>
           <Field label="Texto alternativo">
             <input
               className={inputCls}
@@ -631,7 +653,7 @@ const TypeFields = ({
             </div>
           </Field>
           <p className="text-[10px] text-muted-foreground">
-            Ilustração gerada localmente — não representa um arquivo real.
+            Estilo e cor valem para a ilustração (quando não há endereço de imagem).
           </p>
         </Section>
       );
@@ -720,7 +742,7 @@ const TypeFields = ({
 
     case "filter":
       return (
-        <Section title="Filtro demonstrativo">
+        <Section title="Conteúdo">
           <Field label="Rótulo">
             <input
               className={inputCls}
@@ -728,35 +750,12 @@ const TypeFields = ({
               onChange={(event) => set({ label: event.target.value }, "label")}
             />
           </Field>
-          <Field label="Tipo">
-            <Segmented
-              value={String(props.kind ?? "periodo")}
-              options={[
-                { value: "periodo", label: FILTER_KIND_LABELS.periodo },
-                { value: "categoria", label: FILTER_KIND_LABELS.categoria },
-                { value: "municipio", label: FILTER_KIND_LABELS.municipio },
-              ]}
-              onChange={(value) => {
-                const kind = value as FilterKind;
-                const options = FILTER_OPTIONS[kind];
-                set({ kind, options, value: options[0] }, "kind");
-              }}
-            />
-          </Field>
-          <Field label="Opção selecionada">
-            <SelectField
-              value={String(props.value ?? "")}
-              options={((props.options as string[] | undefined) ?? []).map((option) => ({
-                value: option,
-                label: option,
-              }))}
-              onChange={(value) => set({ value }, "value")}
-            />
-          </Field>
-          <p className="text-[10px] leading-snug text-muted-foreground">
-            O seletor muda apenas a própria opção exibida: nenhum filtro é aplicado aos gráficos
-            (demonstração).
-          </p>
+          {!props.binding ? (
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              Filtro sem coluna ligada: escolha a fonte e a coluna na aba Dados para que ele filtre o
+              painel.
+            </p>
+          ) : null}
         </Section>
       );
 
@@ -871,74 +870,148 @@ export const PropertiesPanel = () => {
 
   const element = doc ? (doc.elements.find((entry) => entry.id === selectedId) ?? null) : null;
   const analyses = listAnalyses();
+  const [tab, setTab] = useState<PanelTab>("dados");
 
   if (!doc) return null;
 
   if (!element) {
     return (
-      <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border/60 bg-card/40 xl:flex">
+      <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-border/60 bg-card/40 xl:flex">
         <div className="border-b border-border/60 px-3 py-2.5">
-          <p className="text-xs font-semibold text-foreground">Propriedades</p>
+          <p className="text-xs font-semibold text-foreground">Página</p>
           <p className="text-[10px] text-muted-foreground">Nenhum elemento selecionado</p>
         </div>
+        <Section title="Tamanho da página">
+          <PageSettings />
+        </Section>
         <Section title="Painel">
           <p className="text-xs font-medium text-foreground">{doc.name}</p>
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            {doc.description || "Sem descrição."}
-          </p>
           <div className="mt-1 flex flex-wrap gap-1.5">
             <span className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
               {doc.elements.length} elementos
             </span>
             <span className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-              {doc.canvas.width}×{doc.canvas.height}
-            </span>
-            <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] text-primary">
-              {doc.origin === "demo" ? "Demonstração" : "Criado por você"}
+              {doc.elements.filter((el) => (el.props as { binding?: unknown }).binding).length} com dados ao vivo
             </span>
           </div>
         </Section>
-        <Section title="Como usar">
+        <Section title="Atalhos">
           <ul className="flex list-disc flex-col gap-1.5 pl-4 text-[11px] leading-relaxed text-muted-foreground">
-            <li>Clique em um elemento da biblioteca para inserir.</li>
-            <li>Arraste elementos no canvas para posicionar.</li>
-            <li>Puxe as bordas para redimensionar.</li>
-            <li>Clique em um elemento para editar propriedades.</li>
-            <li>Use Ctrl/Cmd+Z para desfazer e Ctrl/Cmd+S para salvar.</li>
+            <li>Clique ou arraste itens da biblioteca para a página.</li>
+            <li>Setas movem o elemento (Shift = 10 px); Delete exclui.</li>
+            <li>Ctrl+D duplica · Ctrl+Z desfaz · Ctrl+S salva.</li>
           </ul>
         </Section>
       </aside>
     );
   }
 
+  const hasData = DATA_TYPES.has(element.type);
+  const activeTab: PanelTab = !hasData && tab === "dados" ? "estilo" : tab;
+  const props = element.props as Record<string, unknown>;
+
   return (
-    <aside className="hidden w-72 shrink-0 flex-col overflow-y-auto border-l border-border/60 bg-card/40 xl:flex">
-      <div className="sticky top-0 z-10 flex items-center justify-between gap-2 border-b border-border/60 bg-card/80 px-3 py-2.5 backdrop-blur">
-        <div className="min-w-0">
-          <p className="truncate text-xs font-semibold text-foreground">
-            {ELEMENT_LABELS[element.type]}
-          </p>
-          <p className="truncate text-[10px] text-muted-foreground">{element.id}</p>
+    <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-border/60 bg-card/40 xl:flex">
+      <div className="sticky top-0 z-10 border-b border-border/60 bg-card/90 backdrop-blur">
+        <div className="flex items-center justify-between gap-2 px-3 py-2.5">
+          <div className="min-w-0">
+            <p className="truncate text-xs font-semibold text-foreground">
+              {ELEMENT_LABELS[element.type]}
+            </p>
+            <p className="truncate text-[10px] text-muted-foreground">
+              {String(props.title ?? props.label ?? element.id)}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => select(null)}
+            className="rounded-md border border-border/70 px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
+          >
+            Fechar
+          </button>
         </div>
-        <button
-          type="button"
-          onClick={() => select(null)}
-          className="rounded-md border border-border/70 px-2 py-1 text-[10px] text-muted-foreground transition-colors hover:text-foreground"
-        >
-          Limpar
-        </button>
+        <div role="tablist" className="flex gap-1 px-3 pb-2">
+          {PANEL_TABS.filter((t) => hasData || t.id !== "dados").map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeTab === t.id}
+              onClick={() => setTab(t.id)}
+              className={`flex-1 rounded-md px-2 py-1 text-[11px] font-medium transition-colors ${
+                activeTab === t.id
+                  ? "bg-primary/10 text-primary"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <GeometryFields element={element} canvas={doc.canvas} patchElement={patchElement} />
-      <TypeFields element={element} updateProps={updateProps} analyses={analyses} />
-      <LayerActions
-        element={element}
-        setHidden={setHidden}
-        moveLayer={moveLayer}
-        duplicateElement={duplicateElement}
-        removeElement={removeElement}
-        select={select}
-      />
+      {activeTab === "dados" ? (
+        <Section title="Dados">
+          {element.type === "filter" ? (
+            <FilterBindingEditor
+              binding={props.binding as FilterBinding | undefined}
+              value={String(props.value ?? "")}
+              onChange={(patch) => updateProps(element.id, patch, "binding")}
+            />
+          ) : (
+            <>
+              <BindingEditor
+                elementId={element.id}
+                type={element.type}
+                binding={props.binding as DataBinding | undefined}
+                onChange={(binding) => updateProps(element.id, { binding }, "binding")}
+              />
+              {!props.binding && (element.type === "chart" || element.type === "table") ? (
+                <DatasetFields
+                  dataset={props.dataset as DatasetRef}
+                  onChange={(dataset) => updateProps(element.id, { dataset }, "dataset")}
+                  analyses={analyses}
+                />
+              ) : null}
+            </>
+          )}
+        </Section>
+      ) : null}
+
+      {activeTab === "estilo" ? (
+        <TypeFields element={element} updateProps={updateProps} />
+      ) : null}
+
+      {activeTab === "layout" ? (
+        <>
+          <GeometryFields element={element} canvas={doc.canvas} patchElement={patchElement} />
+          <LayerActions
+            element={element}
+            setHidden={setHidden}
+            moveLayer={moveLayer}
+            duplicateElement={duplicateElement}
+            removeElement={removeElement}
+            select={select}
+          />
+        </>
+      ) : null}
     </aside>
   );
 };
+
+type PanelTab = "dados" | "estilo" | "layout";
+
+const PANEL_TABS: { id: PanelTab; label: string }[] = [
+  { id: "dados", label: "Dados" },
+  { id: "estilo", label: "Estilo" },
+  { id: "layout", label: "Layout" },
+];
+
+const DATA_TYPES = new Set<DashboardElement["type"]>([
+  "chart",
+  "table",
+  "kpi",
+  "percent",
+  "comparison",
+  "filter",
+]);

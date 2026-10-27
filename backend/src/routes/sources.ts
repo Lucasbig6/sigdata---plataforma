@@ -8,6 +8,7 @@ import {
   createPostgres,
   deleteSource,
   getResult,
+  listRecentResults,
   getSourceRow,
   listSources,
   previewTable,
@@ -109,6 +110,12 @@ sourcesRoutes.post(
 );
 
 export const resultsRoutes = new Hono();
+
+/** Consultas recentes (sem as linhas) — para reaproveitar no editor de dashboards. */
+resultsRoutes.get(
+  "/",
+  handle(async ({ user }) => listRecentResults(user.id)),
+);
 
 resultsRoutes.get(
   "/:id",

@@ -7,7 +7,7 @@ import { createDemoSource } from "./sources/service";
 /** Conteúdo inicial de cada conta nova. */
 export const seedNewUser = async (userId: string) => {
   await createDemoSource(userId);
-  // gerado a partir de frontend/lib/dashboards/demo-dashboards.ts
+  // fixture estática dos exemplos (elementos no formato de shared/dashboards/types)
   const demos = demoDashboards as unknown as (DashboardDoc & { name: string; description: string })[];
   if (demos.length === 0) return;
   await db.insert(schema.dashboards).values(

@@ -5,13 +5,11 @@
 import {
   AreaChart as AreaChartIcon,
   BarChart3,
-  CalendarRange,
   Hash,
   Heading,
   Image as ImageIcon,
   LineChart as LineChartIcon,
   ListFilter,
-  MapPin,
   Minus,
   Percent,
   PieChart as PieChartIcon,
@@ -93,7 +91,7 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
       {
         key: "table",
         label: "Tabela",
-        description: "Linhas e colunas de demonstração.",
+        description: "Linhas e colunas de uma tabela.",
         icon: TableIcon,
         type: "table",
         defaultProps: () => ({
@@ -234,42 +232,16 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
     label: "Filtros",
     items: [
       {
-        key: "filter-periodo",
-        label: "Filtro de período",
-        description: "Seletor demonstrativo de período.",
-        icon: CalendarRange,
-        type: "filter",
-        defaultProps: () => ({
-          label: "Período",
-          kind: "periodo",
-          options: FILTER_OPTIONS.periodo,
-          value: FILTER_OPTIONS.periodo[0],
-        }),
-      },
-      {
         key: "filter-categoria",
-        label: "Filtro categórico",
-        description: "Seletor demonstrativo de categoria.",
+        label: "Filtro por coluna",
+        description: "Filtra os elementos da mesma tabela pelo valor escolhido.",
         icon: ListFilter,
         type: "filter",
         defaultProps: () => ({
-          label: "Categoria",
+          label: "Filtro",
           kind: "categoria",
           options: FILTER_OPTIONS.categoria,
           value: FILTER_OPTIONS.categoria[0],
-        }),
-      },
-      {
-        key: "filter-municipio",
-        label: "Seletor de município",
-        description: "Seletor demonstrativo de município.",
-        icon: MapPin,
-        type: "filter",
-        defaultProps: () => ({
-          label: "Município",
-          kind: "municipio",
-          options: FILTER_OPTIONS.municipio,
-          value: FILTER_OPTIONS.municipio[0],
         }),
       },
     ],
@@ -289,10 +261,11 @@ export const findPlacement = (
   size: { w: number; h: number },
   existing: DashboardElement[],
   origin = { x: 80, y: 80 },
+  canvas: { width: number; height: number } = CANVAS,
 ): { x: number; y: number } => {
   const step = 36;
-  const limitX = Math.max(0, CANVAS.width - size.w - 16);
-  const limitY = Math.max(0, CANVAS.height - size.h - 16);
+  const limitX = Math.max(0, canvas.width - size.w - 16);
+  const limitY = Math.max(0, canvas.height - size.h - 16);
   const overlaps = (px: number, py: number) =>
     existing.some(
       (el) =>
@@ -326,15 +299,17 @@ export const createElement = (
     size?: { w: number; h: number };
     props?: Record<string, unknown>;
     existing?: DashboardElement[];
+    canvas?: { width: number; height: number };
   } = {},
 ): DashboardElement => {
+  const canvas = placement.canvas ?? CANVAS;
   const size = placement.size ?? item.size ?? ELEMENT_SIZES[item.type];
   const origin =
     placement.x !== undefined && placement.y !== undefined
       ? { x: placement.x, y: placement.y }
-      : findPlacement(size, placement.existing ?? []);
+      : findPlacement(size, placement.existing ?? [], undefined, canvas);
 
-  const position = clampPosition({ ...origin, w: size.w, h: size.h });
+  const position = clampPosition({ ...origin, w: size.w, h: size.h }, canvas);
 
   return {
     id: uid(item.type),

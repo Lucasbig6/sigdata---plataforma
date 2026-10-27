@@ -5,6 +5,7 @@ import { ELEMENT_MIME, findLibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { ELEMENT_SIZES } from "@/lib/dashboards/types";
 import { CanvasElement } from "./canvas-element";
+import { useAddLibraryItem } from "./element-library";
 
 type Props = {
   zoom: number;
@@ -17,7 +18,9 @@ export const DashboardCanvas = ({ zoom, preview }: Props) => {
   );
   const selectedId = useDashboardsStore((state) => state.selectedId);
   const select = useDashboardsStore((state) => state.select);
-  const addElement = useDashboardsStore((state) => state.addElement);
+  const addItem = useAddLibraryItem();
+  const showGrid = useDashboardsStore((state) => state.showGrid);
+  const snapToGrid = useDashboardsStore((state) => state.snapToGrid);
 
   const viewportRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLDivElement>(null);
@@ -44,9 +47,10 @@ export const DashboardCanvas = ({ zoom, preview }: Props) => {
 
     const rect = canvasRef.current.getBoundingClientRect();
     const size = item.size ?? ELEMENT_SIZES[item.type];
-    addElement(item, {
-      x: (event.clientX - rect.left) / zoom - size.w / 2,
-      y: (event.clientY - rect.top) / zoom - size.h / 2,
+    const grid = snapToGrid ? 8 : 1;
+    addItem(item, {
+      x: Math.round(((event.clientX - rect.left) / zoom - size.w / 2) / grid) * grid,
+      y: Math.round(((event.clientY - rect.top) / zoom - size.h / 2) / grid) * grid,
     });
   };
 
@@ -72,7 +76,7 @@ export const DashboardCanvas = ({ zoom, preview }: Props) => {
       >
         <div
           ref={canvasRef}
-          className="sd-canvas"
+          className={`sd-canvas${showGrid && !preview ? "" : " sd-canvas--plain"}`}
           style={{
             width: doc.canvas.width,
             height: doc.canvas.height,
@@ -89,15 +93,18 @@ export const DashboardCanvas = ({ zoom, preview }: Props) => {
                 zoom={zoom}
                 selected={!preview && element.id === selectedId}
                 preview={preview}
+                snap={snapToGrid}
               />
             );
           })}
 
           {doc.elements.length === 0 ? (
             <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-1 text-center">
-              <p className="text-sm font-medium text-foreground/80">Canvas vazio</p>
+              <p className="text-sm font-medium text-foreground/80">Página vazia</p>
               <p className="text-xs text-muted-foreground">
-                Arraste elementos da biblioteca ou clique em um item para adicionar.
+                {preview
+                  ? "Este painel ainda não tem elementos."
+                  : "Arraste elementos da biblioteca ou clique em um item para adicionar."}
               </p>
             </div>
           ) : null}

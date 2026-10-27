@@ -265,6 +265,10 @@
   box-shadow: 0 20px 56px var(--canvas-shadow);
 }
 
+.sd-canvas.sd-canvas--plain {
+  background-image: none;
+}
+
 .sd-canvas .sd-rnd {
   cursor: move;
 }

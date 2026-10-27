@@ -1,8 +1,10 @@
 "use client";
 
-import { Minus, Plus, Scan } from "lucide-react";
+import { Maximize, Minus, Plus, Scan } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { DashboardDataProvider } from "@/lib/dashboards/live-data";
+import { useDatasetsStore } from "@/lib/datasets/store";
 import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { DashboardCanvas } from "./canvas";
@@ -10,7 +12,9 @@ import { ElementLibrary } from "./element-library";
 import { PropertiesPanel } from "./properties-panel";
 import { TopBar } from "./top-bar";
 
-const ZOOM_MIN = 0.4;
+const ZOOM_MIN = 0.25;
+
+const PRIVATE_MODE = { kind: "private" } as const;
 const ZOOM_MAX = 2;
 
 const EditorSkeleton = () => (
@@ -72,12 +76,46 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   const select = useDashboardsStore((state) => state.select);
   const nudge = useDashboardsStore((state) => state.nudge);
   const removeElement = useDashboardsStore((state) => state.removeElement);
+  const duplicateElement = useDashboardsStore((state) => state.duplicateElement);
+  const discardChanges = useDashboardsStore((state) => state.discardChanges);
+  const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
 
   const [zoom, setZoom] = useState(1);
+  const stageRef = useRef<HTMLDivElement>(null);
+  const fittedFor = useRef<string | null>(null);
 
   useEffect(() => {
     hydrate();
-  }, [hydrate]);
+    hydrateDatasets();
+  }, [hydrate, hydrateDatasets]);
+
+  /** Zoom que faz a página inteira caber na área visível. */
+  const fitToScreen = useCallback(() => {
+    const stage = stageRef.current;
+    if (!stage || !doc) return;
+    const fit = Math.min(
+      (stage.clientWidth - 96) / doc.canvas.width,
+      (stage.clientHeight - 96) / doc.canvas.height,
+    );
+    setZoom(Math.min(1, Math.max(ZOOM_MIN, Math.floor(fit * 20) / 20)));
+  }, [doc]);
+
+  // ao abrir um painel, começa ajustado à tela
+  useEffect(() => {
+    if (!doc || fittedFor.current === doc.id) return;
+    fittedFor.current = doc.id;
+    requestAnimationFrame(fitToScreen);
+  }, [doc, fitToScreen]);
+
+  // aviso do navegador ao sair com alterações não salvas
+  useEffect(() => {
+    if (!dirty) return;
+    const onBeforeUnload = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
 
   useEffect(() => {
     if (hydrated) openDashboard(dashboardId);
@@ -121,10 +159,16 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
       }
       if (mod && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        save();
+        void save();
         return;
       }
       if (typing) return;
+
+      if (mod && event.key.toLowerCase() === "d" && selectedId && !preview) {
+        event.preventDefault();
+        duplicateElement(selectedId);
+        return;
+      }
 
       if (event.key === "Escape") {
         if (preview) togglePreview();
@@ -158,6 +202,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   if (!doc || doc.id !== dashboardId) return <NotFound />;
 
   return (
+    <DashboardDataProvider mode={PRIVATE_MODE} elements={doc.elements}>
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <TopBar
         dashboardId={doc.id}
@@ -168,20 +213,21 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
         savedAt={savedAt}
         canUndo={pastLength > 0}
         canRedo={futureLength > 0}
-        zoom={zoom}
         preview={preview}
         onRename={rename}
         onUndo={undo}
         onRedo={redo}
-        onSave={save}
-        onZoom={(value) => setZoom(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value)))}
+        onSave={() => void save()}
+        onDiscard={() => {
+          if (window.confirm("Descartar as alterações e voltar à última versão salva?")) discardChanges();
+        }}
         onTogglePreview={togglePreview}
       />
 
       <div className="flex min-h-0 flex-1">
         {!preview ? <ElementLibrary /> : null}
 
-        <div className="relative min-w-0 flex-1 overflow-hidden">
+        <div ref={stageRef} className="relative min-w-0 flex-1 overflow-hidden">
           <DashboardCanvas zoom={zoom} preview={preview} />
 
           {preview ? (
@@ -216,6 +262,15 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
               <span className="mx-0.5 h-4 w-px bg-border/70" />
               <button
                 type="button"
+                aria-label="Ajustar a página à tela"
+                title="Ajustar à tela"
+                onClick={fitToScreen}
+                className="grid size-6 place-items-center rounded text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+              >
+                <Maximize className="size-3.5" aria-hidden />
+              </button>
+              <button
+                type="button"
                 aria-label="Voltar o zoom a 100%"
                 title="100%"
                 onClick={() => setZoom(1)}
@@ -223,6 +278,10 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
               >
                 <Scan className="size-3.5" aria-hidden />
               </button>
+              <span className="mx-0.5 h-4 w-px bg-border/70" />
+              <span className="px-1 text-[10px] tabular-nums text-muted-foreground">
+                {doc.canvas.width} × {doc.canvas.height}
+              </span>
             </div>
           )}
         </div>
@@ -230,5 +289,6 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
         {!preview ? <PropertiesPanel /> : null}
       </div>
     </div>
+    </DashboardDataProvider>
   );
 };

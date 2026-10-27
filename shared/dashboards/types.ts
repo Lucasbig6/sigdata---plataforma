@@ -21,6 +21,19 @@ export const DASHBOARD_SCHEMA_VERSION = 1;
 
 export const CANVAS = { width: 1600, height: 1000 } as const;
 
+export const CANVAS_LIMITS = { min: { w: 480, h: 320 }, max: { w: 4000, h: 6000 } } as const;
+
+/** Tamanhos de página prontos (px lógicos; A4/Carta a 96 dpi). */
+export const PAGE_PRESETS = [
+  { id: "padrao", label: "Painel (1600 × 1000)", width: 1600, height: 1000 },
+  { id: "widescreen", label: "Widescreen 16:9 (1600 × 900)", width: 1600, height: 900 },
+  { id: "fullhd", label: "Full HD (1920 × 1080)", width: 1920, height: 1080 },
+  { id: "a4-paisagem", label: "A4 paisagem (1123 × 794)", width: 1123, height: 794 },
+  { id: "a4-retrato", label: "A4 retrato (794 × 1123)", width: 794, height: 1123 },
+  { id: "carta-paisagem", label: "Carta paisagem (1056 × 816)", width: 1056, height: 816 },
+  { id: "longo", label: "Rolagem longa (1440 × 2400)", width: 1440, height: 2400 },
+] as const;
+
 /** Tamanho inicial dos elementos ao serem inseridos. */
 export const ELEMENT_SIZES = {
   chart: { w: 520, h: 320 },
@@ -80,12 +93,55 @@ export type DatasetRef = {
   valueField: "valor" | "indice" | "receita" | "variacao" | "delta";
 };
 
+/* ------------------------------------------------------- dados ao vivo */
+
+export type Aggregation = "sum" | "avg" | "count" | "min" | "max";
+
+export type BindingSort = "valor_desc" | "valor_asc" | "label_asc" | "label_desc";
+
+/**
+ * Ligação de um elemento a uma fonte de dados real, consultada no backend a
+ * cada exibição. No modo "builder" o backend monta o SQL (e aplica filtros);
+ * no modo "sql" executa a consulta escrita pelo autor.
+ *
+ * Resultado do builder: colunas `label` (dimensão) e `valor` (medida); sem
+ * dimensão, uma única linha com `valor`. Tabela sem dimensão: colunas brutas.
+ */
+export type DataBinding = {
+  sourceId: string;
+  mode: "builder" | "sql";
+  table?: string;
+  dimension?: string;
+  measure?: string;
+  agg?: Aggregation;
+  sort?: BindingSort;
+  limit?: number;
+  /** Colunas exibidas em tabela sem agrupamento (vazio = todas). */
+  columns?: string[];
+  sql?: string;
+  /** Mapeamento no modo SQL. */
+  x?: string;
+  y?: string;
+};
+
+/** Coluna que um elemento de filtro controla. */
+export type FilterBinding = {
+  sourceId: string;
+  table: string;
+  column: string;
+};
+
+export type NumberFormat = "numero" | "moeda" | "percentual" | "compacto";
+
+export const BINDING_LIMIT_MAX = 500;
+
 export type ChartProps = {
   chartType: ChartType;
   title: string;
   showTitle: boolean;
   subtitle: string;
   dataset: DatasetRef;
+  binding?: DataBinding;
   color: ChartColor;
   showGrid: boolean;
   showLegend: boolean;
@@ -95,6 +151,7 @@ export type TableProps = {
   title: string;
   showTitle: boolean;
   dataset: DatasetRef;
+  binding?: DataBinding;
   density: "compacta" | "confortavel";
 };
 
@@ -105,6 +162,9 @@ export type IndicatorProps = {
   unit: string;
   delta: number;
   showDelta: boolean;
+  binding?: DataBinding;
+  format?: NumberFormat;
+  decimals?: number;
 };
 
 export type TextProps = {
@@ -120,6 +180,8 @@ export type ImageProps = {
   variant: "gradiente" | "malha" | "ondas";
   accent: ChartColor;
   fit: "cover" | "contain";
+  /** URL de uma imagem (https). Sem URL, mostra a ilustração gerada. */
+  src?: string;
 };
 
 export type DividerProps = {
@@ -142,7 +204,9 @@ export type FilterProps = {
   label: string;
   kind: FilterKind;
   options: string[];
+  /** Valor padrão ("" = todos). */
   value: string;
+  binding?: FilterBinding;
 };
 
 type ElementBase = {

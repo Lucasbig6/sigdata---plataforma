@@ -1,12 +1,13 @@
 "use client";
 
-import { Loader2, Minus, Plus } from "lucide-react";
+import { Loader2, Minus, Plus, RefreshCw } from "lucide-react";
 import { useParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DashboardCanvas } from "@/components/dashboards/canvas";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import type { SavedAnalysis } from "@/lib/dashboards/analyses";
+import { DashboardDataProvider, useDashboardData } from "@/lib/dashboards/live-data";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import type { Dashboard } from "@/lib/dashboards/types";
 
@@ -15,12 +16,28 @@ type State =
   | { status: "error"; message: string }
   | { status: "ready"; dashboard: Dashboard };
 
+const RefreshButton = () => {
+  const { refresh } = useDashboardData();
+  return (
+    <button
+      type="button"
+      onClick={refresh}
+      title="Atualizar dados"
+      aria-label="Atualizar dados"
+      className="grid size-8 place-items-center rounded-md border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
+    >
+      <RefreshCw className="size-3.5" aria-hidden />
+    </button>
+  );
+};
+
 /** Visualização pública (somente leitura) de um dashboard compartilhado por link. */
 export default function SharedDashboardPage() {
   const { token } = useParams<{ token: string }>();
   const loadPublic = useDashboardsStore((s) => s.loadPublic);
   const [state, setState] = useState<State>({ status: "loading" });
   const [zoom, setZoom] = useState(1);
+  const mode = useMemo(() => ({ kind: "public" as const, token }), [token]);
 
   useEffect(() => {
     let cancelled = false;
@@ -70,13 +87,14 @@ export default function SharedDashboardPage() {
   }
 
   return (
+    <DashboardDataProvider mode={mode} elements={state.dashboard.elements}>
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border/60 bg-card/60 px-6 backdrop-blur">
         <LogoMark className="h-9 w-auto shrink-0" />
         <div className="min-w-0">
           <h1 className="truncate text-sm font-semibold text-foreground">{state.dashboard.name}</h1>
           <p className="truncate text-[11px] text-muted-foreground">
-            Somente leitura · atualizado em{" "}
+            Somente leitura · dados ao vivo · versão de{" "}
             {new Date(state.dashboard.updatedAt).toLocaleString("pt-BR", {
               dateStyle: "short",
               timeStyle: "short",
@@ -84,6 +102,7 @@ export default function SharedDashboardPage() {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
+          <RefreshButton />
           <div className="flex items-center gap-1 rounded-md border border-border/70 bg-background px-1 py-0.5">
             <button
               type="button"
@@ -110,5 +129,6 @@ export default function SharedDashboardPage() {
         <DashboardCanvas zoom={zoom} preview />
       </div>
     </div>
+    </DashboardDataProvider>
   );
 }

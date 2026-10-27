@@ -182,13 +182,13 @@ const findTable = (row: SourceRow, table: string) => {
   return found;
 };
 
-const assertReady = (row: SourceRow) => {
+export const assertReady = (row: SourceRow) => {
   if (row.status !== "pronta") {
     throw new HttpError(409, row.status === "erro" ? `Fonte com erro: ${row.error}` : "Fonte ainda em processamento.");
   }
 };
 
-const execute = (row: SourceRow, sql: string, limit?: number) =>
+export const execute = (row: SourceRow, sql: string, limit?: number) =>
   row.kind === "postgresql" ? queryPg(connectionOf(row), sql, limit) : queryDuck(row.id, sql, limit);
 
 export const previewTable = async (userId: string, id: string, table: string): Promise<TablePreview> => {
@@ -249,6 +249,24 @@ export const runQuery = async (
     })
     .returning();
   return toAnalyticResult(saved);
+};
+
+export const listRecentResults = async (userId: string, limit = 40) => {
+  const rows = await db
+    .select({
+      id: schema.results.id,
+      title: schema.results.title,
+      sql: schema.results.sql,
+      sourceId: schema.results.sourceId,
+      columns: schema.results.columns,
+      rowCount: schema.results.rowCount,
+      createdAt: schema.results.createdAt,
+    })
+    .from(schema.results)
+    .where(eq(schema.results.userId, userId))
+    .orderBy(desc(schema.results.createdAt))
+    .limit(limit);
+  return rows.map((row) => ({ ...row, createdAt: row.createdAt.toISOString() }));
 };
 
 export const getResult = async (userId: string, id: string) => {

@@ -1,7 +1,17 @@
 "use client";
 
 import { isDemoDataset, resolveTable } from "@/lib/dashboards/datasets";
-import type { DashboardElement } from "@/lib/dashboards/types";
+import {
+  filterValueOf,
+  formatNumber,
+  isBindingReady,
+  toKpiValue,
+  useBindingData,
+  useDashboardData,
+  useFilterOptions,
+} from "@/lib/dashboards/live-data";
+import { DataError, DataSkeleton, RefreshingDot } from "./data-state";
+import type { ChartColor, DashboardElement } from "@/lib/dashboards/types";
 import { useTheme } from "next-themes";
 import { ChartView, useChartTheme } from "./charts";
 
@@ -68,49 +78,76 @@ const formatCell = (value: unknown) =>
   typeof value === "number" ? nf(value) : value == null ? "—" : String(value);
 
 const TableElement = ({ element }: { element: DashboardElement & { type: "table" } }) => {
-  const { title, showTitle, dataset, density } = element.props;
-  const { columns, rows } = resolveTable(dataset);
-  const demo = isDemoDataset(dataset);
+  const { title, showTitle, dataset, binding, density } = element.props;
+  const live = useBindingData(element.id, binding);
+  const isLive = isBindingReady(binding);
+  const liveData = live.status === "ready" || live.status === "loading" ? live.data : undefined;
+  const legacy = isLive ? null : resolveTable(dataset);
+  const columns = liveData ? liveData.columns.map((c) => c.name) : (legacy?.columns ?? []);
+  const rows = liveData ? liveData.rows : (legacy?.rows ?? []);
   const rowClass = density === "compacta" ? "px-4 py-1.5 text-[12px]" : "px-4 py-2.5 text-[13px]";
 
+  const footer = isLive
+    ? liveData
+      ? `${rows.length} linha(s)${liveData.truncated ? " (limitado)" : ""}`
+      : ""
+    : isDemoDataset(dataset)
+      ? "Dados de demonstração."
+      : `${rows.length} linha(s) da análise salva.`;
+
   return (
-    <Panel>
+    <Panel className="relative">
+      <RefreshingDot state={live} />
       <ElementHeader title={title} showTitle={showTitle} />
       <div className="min-h-0 flex-1 overflow-auto">
-        <table className="w-full border-collapse text-left">
-          <thead className="sticky top-0 z-10 bg-panel/95 backdrop-blur">
-            <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              {columns.map((column) => (
-                <th key={column} className="whitespace-nowrap px-4 py-2 font-medium">
-                  {column}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, index) => (
-              <tr
-                key={index}
-                className="border-t border-border/50 text-foreground/90 transition-colors hover:bg-muted/40"
-              >
-                {columns.map((column, colIndex) => (
-                  <td
-                    key={column}
-                    className={`${rowClass} ${colIndex === 0 ? "font-medium" : ""} ${
-                      typeof row[column] === "number" ? "tabular-nums" : ""
-                    }`}
-                  >
-                    {formatCell(row[column])}
-                  </td>
+        {isLive && !liveData ? (
+          live.status === "error" ? (
+            <DataError message={live.error} />
+          ) : (
+            <DataSkeleton />
+          )
+        ) : rows.length === 0 ? (
+          <p className="flex h-full items-center justify-center text-xs text-muted-foreground">
+            Nenhuma linha para este recorte.
+          </p>
+        ) : (
+          <table className="w-full border-collapse text-left">
+            <thead className="sticky top-0 z-10 bg-panel/95 backdrop-blur">
+              <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                {columns.map((column) => (
+                  <th key={column} className="whitespace-nowrap px-4 py-2 font-medium">
+                    {column}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, index) => (
+                <tr
+                  key={index}
+                  className="border-t border-border/50 text-foreground/90 transition-colors hover:bg-muted/40"
+                >
+                  {columns.map((column, colIndex) => (
+                    <td
+                      key={column}
+                      className={`${rowClass} ${colIndex === 0 ? "font-medium" : ""} ${
+                        typeof row[column] === "number" ? "tabular-nums" : ""
+                      }`}
+                    >
+                      {formatCell(row[column])}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
-      <p className="shrink-0 border-t border-border/50 px-4 py-1.5 text-[10px] text-muted-foreground">
-        {demo ? "Dados de demonstração — sem fonte real conectada." : `${rows.length} linha(s) da análise salva.`}
-      </p>
+      {footer ? (
+        <p className="shrink-0 border-t border-border/50 px-4 py-1.5 text-[10px] text-muted-foreground">
+          {footer}
+        </p>
+      ) : null}
     </Panel>
   );
 };
@@ -145,15 +182,32 @@ const IndicatorElement = ({
   };
 }) => {
   const props = element.props;
+  const live = useBindingData(element.id, props.binding);
+  const isLive = isBindingReady(props.binding);
+  const liveData = live.status === "ready" || live.status === "loading" ? live.data : undefined;
+  const value =
+    isLive && liveData && props.binding
+      ? formatNumber(toKpiValue(props.binding, liveData), props.format, props.decimals ?? 1)
+      : props.value;
+
   return (
-    <Panel className="justify-between p-4">
+    <Panel className="relative justify-between p-4">
+      <RefreshingDot state={live} />
       <p className="truncate text-xs text-muted-foreground">{props.title}</p>
-      <div className="flex items-baseline gap-1.5">
-        <span className="text-[30px] font-semibold leading-none tracking-tight text-foreground tabular-nums">
-          {props.value}
-        </span>
-        {props.unit ? <span className="text-sm text-muted-foreground">{props.unit}</span> : null}
-      </div>
+      {isLive && !liveData ? (
+        live.status === "error" ? (
+          <p className="line-clamp-2 text-[11px] text-destructive">{live.error}</p>
+        ) : (
+          <span className="h-8 w-24 animate-pulse rounded-md bg-muted" aria-label="Carregando" />
+        )
+      ) : (
+        <div className="flex items-baseline gap-1.5">
+          <span className="text-[30px] font-semibold leading-none tracking-tight text-foreground tabular-nums">
+            {value}
+          </span>
+          {props.unit ? <span className="text-sm text-muted-foreground">{props.unit}</span> : null}
+        </div>
+      )}
       <div className="flex items-center justify-between gap-2">
         <p className="min-w-0 truncate text-[11px] text-muted-foreground">{props.description}</p>
         {props.showDelta ? <DeltaBadge delta={props.delta} /> : null}
@@ -191,7 +245,33 @@ const TextElement = ({ element }: { element: DashboardElement & { type: "text" |
 };
 
 const ImageElement = ({ element }: { element: DashboardElement & { type: "image" } }) => {
-  const { alt, variant, accent, fit } = element.props;
+  const { alt, variant, accent, fit, src } = element.props;
+  if (src && /^https:\/\//i.test(src)) {
+    return (
+      // imagem externa definida pelo autor (next/image exigiria domínios fixos)
+      <img
+        src={src}
+        alt={alt}
+        draggable={false}
+        className="h-full w-full rounded-xl border border-border/70"
+        style={{ objectFit: fit }}
+      />
+    );
+  }
+  return <ImageIllustration alt={alt} variant={variant} accent={accent} fit={fit} />;
+};
+
+const ImageIllustration = ({
+  alt,
+  variant,
+  accent,
+  fit,
+}: {
+  alt: string;
+  variant: "gradiente" | "malha" | "ondas";
+  accent: ChartColor;
+  fit: "cover" | "contain";
+}) => {
   const chartTheme = useChartTheme();
   const base = chartTheme.colors[accent] ?? chartTheme.colors[2];
 
@@ -239,22 +319,31 @@ const ShapeElement = ({ element }: { element: DashboardElement & { type: "shape"
   );
 };
 
-const FilterElement = ({
-  element,
-  onChange,
-}: {
-  element: DashboardElement & { type: "filter" };
-  onChange: (value: string) => void;
-}) => {
-  const { label, options, value } = element.props;
+const FilterElement = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
+  const { label, options: staticOptions, binding } = element.props;
+  const ctx = useDashboardData();
+  const live = useFilterOptions(element);
+  const value = filterValueOf(ctx, element);
+  const options = binding ? (live.status === "ready" ? live.data.options : []) : staticOptions;
+
   return (
     <div className="no-drag flex h-full w-full flex-col justify-center gap-1 rounded-xl border border-border/70 bg-panel/60 px-3">
-      <label className="text-[11px] text-muted-foreground">{label}</label>
+      <label className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="truncate">{label}</span>
+        {binding && live.status === "loading" ? <span className="text-[10px]">carregando…</span> : null}
+        {binding && live.status === "error" ? (
+          <span className="truncate text-[10px] text-destructive" title={live.error}>
+            erro
+          </span>
+        ) : null}
+      </label>
       <select
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => ctx.setValue(element.id, event.target.value)}
         className="w-full cursor-pointer truncate rounded-md bg-transparent text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
       >
+        {binding ? <option value="">Todos</option> : null}
+        {binding && value && !options.includes(value) ? <option value={value}>{value}</option> : null}
         {options.map((option) => (
           <option key={option} value={option}>
             {option}
@@ -265,13 +354,7 @@ const FilterElement = ({
   );
 };
 
-export const ElementView = ({
-  element,
-  onFilterChange,
-}: {
-  element: DashboardElement;
-  onFilterChange?: (value: string) => void;
-}) => {
+export const ElementView = ({ element }: { element: DashboardElement }) => {
   switch (element.type) {
     case "chart":
       return <ChartView element={element} />;
@@ -291,7 +374,7 @@ export const ElementView = ({
     case "shape":
       return <ShapeElement element={element} />;
     case "filter":
-      return <FilterElement element={element} onChange={(value) => onFilterChange?.(value)} />;
+      return <FilterElement element={element} />;
     default:
       return null;
   }

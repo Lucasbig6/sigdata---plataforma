@@ -19,6 +19,8 @@ import {
 } from "recharts";
 import { useTheme } from "next-themes";
 import { resolveSeries } from "@/lib/dashboards/datasets";
+import { isBindingReady, toSeries, useBindingData } from "@/lib/dashboards/live-data";
+import { DataError, DataSkeleton, RefreshingDot } from "./data-state";
 import type { ChartColor, DashboardElement } from "@/lib/dashboards/types";
 
 /** Cores de série (espelham --chart-1..5 em globals.css) por tema. */
@@ -132,10 +134,28 @@ const ChartTitle = ({
   ) : null;
 
 export const ChartView = ({ element }: { element: DashboardElement & { type: "chart" } }) => {
-  const { chartType, title, showTitle, subtitle, dataset, color, showGrid, showLegend } =
+  const { chartType, title, showTitle, subtitle, dataset, binding, color, showGrid, showLegend } =
     element.props;
-  const data = resolveSeries(dataset) as { label: string; valor: number }[];
+  const live = useBindingData(element.id, binding);
   const chartTheme = useChartTheme();
+  const isLive = isBindingReady(binding);
+  const liveData = live.status === "ready" || live.status === "loading" ? live.data : undefined;
+  const data = isLive
+    ? liveData
+      ? toSeries(binding, liveData)
+      : []
+    : (resolveSeries(dataset) as { label: string; valor: number }[]);
+
+  if (isLive && !liveData) {
+    return (
+      <div className="flex h-full w-full flex-col">
+        <ChartTitle title={title} showTitle={showTitle} subtitle={subtitle} />
+        <div className="min-h-0 flex-1">
+          {live.status === "error" ? <DataError message={live.error} /> : <DataSkeleton />}
+        </div>
+      </div>
+    );
+  }
 
   if (data.length === 0) {
     return (
@@ -259,7 +279,8 @@ export const ChartView = ({ element }: { element: DashboardElement & { type: "ch
   })();
 
   return (
-    <div className="flex h-full w-full flex-col">
+    <div className="relative flex h-full w-full flex-col">
+      <RefreshingDot state={live} />
       <ChartTitle title={title} showTitle={showTitle} subtitle={subtitle} />
       <div className="min-h-0 w-full flex-1" style={{ minHeight: 0 }}>
         <ResponsiveContainer width="100%" height="100%">

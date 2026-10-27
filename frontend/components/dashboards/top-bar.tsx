@@ -1,10 +1,10 @@
 "use client";
 
-import { ArrowLeft, Eye, EyeOff, Minus, Plus, Redo2, Save, Undo2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Undo2 } from "lucide-react";
 import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
-import { ShareMenu } from "./share-menu";
+import { ShareDialog } from "./share-dialog";
 
 type Props = {
   dashboardId: string;
@@ -15,18 +15,52 @@ type Props = {
   savedAt: number | null;
   canUndo: boolean;
   canRedo: boolean;
-  zoom: number;
   preview: boolean;
   onRename: (name: string) => void;
   onUndo: () => void;
   onRedo: () => void;
   onSave: () => void;
-  onZoom: (zoom: number) => void;
+  onDiscard: () => void;
   onTogglePreview: () => void;
 };
 
 const iconBtn =
-  "grid size-9 place-items-center rounded-md border border-border/70 bg-background text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40";
+  "grid size-9 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-35";
+
+const SaveStatus = ({
+  saving,
+  saveError,
+  dirty,
+  savedAt,
+}: Pick<Props, "saving" | "saveError" | "dirty" | "savedAt">) => {
+  if (saving)
+    return (
+      <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+        <Loader2 className="size-3 animate-spin" aria-hidden />
+        Salvando…
+      </span>
+    );
+  if (saveError)
+    return (
+      <span title={saveError} className="text-[11px] font-medium text-destructive">
+        Erro ao salvar — tente de novo
+      </span>
+    );
+  if (dirty)
+    return (
+      <span className="inline-flex items-center gap-1.5 text-[11px] text-amber-600 dark:text-amber-300">
+        <span className="size-1.5 rounded-full bg-current" aria-hidden />
+        Alterações não salvas
+      </span>
+    );
+  return (
+    <span className="text-[11px] text-muted-foreground">
+      {savedAt
+        ? `Salvo às ${new Date(savedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+        : "Tudo salvo"}
+    </span>
+  );
+};
 
 export const TopBar = ({
   dashboardId,
@@ -37,141 +71,101 @@ export const TopBar = ({
   savedAt,
   canUndo,
   canRedo,
-  zoom,
   preview,
   onRename,
   onUndo,
   onRedo,
   onSave,
-  onZoom,
+  onDiscard,
   onTogglePreview,
-}: Props) => {
-  const status = saving ? (
-    <span className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-      Salvando…
-    </span>
-  ) : saveError ? (
-    <span
-      title={saveError}
-      className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive"
+}: Props) => (
+  <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-card/70 px-4 backdrop-blur sm:gap-4 sm:px-6">
+    <Link
+      href="/dashboards"
+      aria-label="Voltar para a lista de dashboards"
+      className="grid size-9 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
     >
-      Erro ao salvar
-    </span>
-  ) : dirty ? (
-    <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300">
-      Alterações não salvas
-    </span>
-  ) : savedAt ? (
-    <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
-      Salvo às{" "}
-      {new Date(savedAt).toLocaleTimeString("pt-BR", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}
-    </span>
-  ) : (
-    <span className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
-      Salvo
-    </span>
-  );
+      <ArrowLeft className="size-4" aria-hidden />
+    </Link>
 
-  return (
-    <header className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-15 backdrop-blur sm:gap-7">
-      <Link
-        href="/dashboards"
-        aria-label="Voltar para a lista de dashboards"
-        className={`grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60`}
-      >
-        <ArrowLeft className="size-4" aria-hidden />
-      </Link>
+    <LogoMark className="hidden h-9 w-auto shrink-0 md:block" />
+    <span className="hidden h-8 w-px bg-border/70 md:block" />
 
-      <LogoMark className="h-11 w-auto shrink-0" />
-
+    <div className="flex min-w-0 flex-col">
       <input
         value={name}
         onChange={(event) => onRename(event.target.value)}
         placeholder="Nome do painel"
         aria-label="Nome do painel"
-        className="w-44 min-w-0 rounded-md border border-transparent bg-transparent px-2 py-1.5 text-base font-medium text-foreground transition-colors hover:border-border/70 focus:border-primary/60 focus:outline-none sm:w-60"
+        disabled={preview}
+        className="w-48 min-w-0 rounded-md border border-transparent bg-transparent px-1.5 py-0.5 text-sm font-semibold text-foreground transition-colors hover:border-border/70 focus:border-primary/60 focus:outline-none disabled:hover:border-transparent sm:w-72"
       />
+      <span className="px-1.5">
+        <SaveStatus saving={saving} saveError={saveError} dirty={dirty} savedAt={savedAt} />
+      </span>
+    </div>
 
-      <span className="hidden sm:inline">{status}</span>
-
-      <div className="ml-auto flex items-center gap-2">
-        <button
-          type="button"
-          className={iconBtn}
-          disabled={!canUndo}
-          onClick={onUndo}
-          aria-label="Desfazer (Ctrl+Z)"
-          title="Desfazer (Ctrl+Z)"
-        >
-          <Undo2 className="size-4" aria-hidden />
-        </button>
-        <button
-          type="button"
-          className={iconBtn}
-          disabled={!canRedo}
-          onClick={onRedo}
-          aria-label="Refazer (Ctrl+Shift+Z)"
-          title="Refazer (Ctrl+Shift+Z)"
-        >
-          <Redo2 className="size-4" aria-hidden />
-        </button>
-
-        <span className="mx-1 hidden h-5 w-px bg-border/70 sm:block" />
-
-        <div className="hidden items-center gap-1 rounded-md border border-border/70 bg-background px-1 py-0.5 sm:flex">
+    <div className="ml-auto flex items-center gap-1.5">
+      {!preview ? (
+        <div className="hidden items-center sm:flex">
           <button
             type="button"
-            className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => onZoom(Math.max(0.4, Math.round((zoom - 0.1) * 10) / 10))}
-            aria-label="Diminuir zoom"
+            className={iconBtn}
+            disabled={!canUndo}
+            onClick={onUndo}
+            aria-label="Desfazer (Ctrl+Z)"
+            title="Desfazer (Ctrl+Z)"
           >
-            <Minus className="size-3" aria-hidden />
+            <Undo2 className="size-4" aria-hidden />
           </button>
-          <span className="w-10 text-center text-[11px] tabular-nums text-foreground">
-            {Math.round(zoom * 100)}%
-          </span>
           <button
             type="button"
-            className="grid size-5 place-items-center rounded text-muted-foreground transition-colors hover:text-foreground"
-            onClick={() => onZoom(Math.min(2, Math.round((zoom + 0.1) * 10) / 10))}
-            aria-label="Aumentar zoom"
+            className={iconBtn}
+            disabled={!canRedo}
+            onClick={onRedo}
+            aria-label="Refazer (Ctrl+Shift+Z)"
+            title="Refazer (Ctrl+Shift+Z)"
           >
-            <Plus className="size-3" aria-hidden />
+            <Redo2 className="size-4" aria-hidden />
           </button>
+          <span className="mx-1.5 h-5 w-px bg-border/70" />
         </div>
+      ) : null}
 
+      <button
+        type="button"
+        onClick={onTogglePreview}
+        className="flex h-9 items-center gap-1.5 rounded-md border border-border/70 bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/60"
+      >
+        {preview ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
+        <span className="hidden sm:inline">{preview ? "Editar" : "Visualizar"}</span>
+      </button>
+
+      <ShareDialog dashboardId={dashboardId} dirty={dirty} />
+
+      {dirty && !saving ? (
         <button
           type="button"
-          onClick={onTogglePreview}
-          className="flex h-9 items-center gap-1.5 rounded-md border border-border/70 bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/60"
+          onClick={onDiscard}
+          title="Voltar à última versão salva"
+          className="flex h-9 items-center gap-1.5 rounded-md px-2.5 text-sm text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
         >
-          {preview ? (
-            <EyeOff className="size-4" aria-hidden />
-          ) : (
-            <Eye className="size-4" aria-hidden />
-          )}
-          <span className="hidden sm:inline">
-            {preview ? "Sair da pré-visualização" : "Pré-visualizar"}
-          </span>
+          <RotateCcw className="size-4" aria-hidden />
+          <span className="hidden lg:inline">Descartar</span>
         </button>
+      ) : null}
 
-        <ShareMenu dashboardId={dashboardId} dirty={dirty} />
+      <button
+        type="button"
+        onClick={onSave}
+        disabled={(!dirty && !saveError) || saving}
+        className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
+      >
+        {saving ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Save className="size-4" aria-hidden />}
+        Salvar
+      </button>
 
-        <button
-          type="button"
-          onClick={onSave}
-          disabled={!dirty || saving}
-          className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
-        >
-          <Save className="size-4" aria-hidden />
-          Salvar
-        </button>
-
-        <ThemeToggle />
-      </div>
-    </header>
-  );
-};
+      <ThemeToggle />
+    </div>
+  </header>
+);

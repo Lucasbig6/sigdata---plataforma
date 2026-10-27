@@ -23,6 +23,7 @@ export default function DashboardsPage() {
   const dashboards = useDashboardsStore((state) => state.dashboards);
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
   const deleteDashboard = useDashboardsStore((state) => state.deleteDashboard);
+  const shareTokens = useDashboardsStore((state) => state.shareTokens);
 
   useEffect(() => {
     hydrate();
@@ -57,7 +58,7 @@ export default function DashboardsPage() {
           <div className="min-w-0">
             <h1 className="text-xl  font-semibold text-foreground pb-1">Dashboards</h1>
             <p className="truncate text-xs text-muted-foreground">
-              Painéis salvos neste navegador · dados de demonstração
+              Painéis da sua conta · dados ao vivo das suas fontes
             </p>
           </div>
           <div className="ml-auto flex items-center gap-2">
@@ -88,8 +89,7 @@ export default function DashboardsPage() {
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 px-6 py-16 text-center">
             <p className="text-sm font-medium text-foreground">Nenhum dashboard ainda</p>
             <p className="max-w-sm text-xs text-muted-foreground">
-              Crie um painel do zero ou abra um dos exemplos de demonstração enquanto não houver
-              nenhum salvo.
+              Crie um painel do zero ou salve as visualizações de um projeto como dashboard.
             </p>
             <button
               type="button"
@@ -117,8 +117,13 @@ export default function DashboardsPage() {
                         : "border-border/70 bg-muted/50 text-muted-foreground"
                     }`}
                   >
-                    {dashboard.origin === "demo" ? "Demonstração" : "Seu"}
+                    {dashboard.origin === "demo" ? "Exemplo" : "Seu"}
                   </span>
+                  {shareTokens[dashboard.id] ? (
+                    <span className="shrink-0 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2 py-0.5 text-[10px] text-emerald-700 dark:text-emerald-300">
+                      Público
+                    </span>
+                  ) : null}
                 </div>
 
                 <p className="line-clamp-2 min-h-8 text-xs leading-relaxed text-muted-foreground">
