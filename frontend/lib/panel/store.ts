@@ -19,6 +19,17 @@ export type { GenericTable, PanelWidget, WidgetData, WidgetKind } from "@shared/
 export const WIDGET_DEFAULT_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   linha: { w: 340, h: 220 },
   barras: { w: 340, h: 220 },
+  barras_h: { w: 340, h: 240 },
+  area: { w: 340, h: 240 },
+  combo: { w: 340, h: 240 },
+  pizza: { w: 340, h: 240 },
+  rosca: { w: 340, h: 240 },
+  dispersao: { w: 340, h: 240 },
+  radar: { w: 340, h: 240 },
+  funil: { w: 340, h: 240 },
+  medidor: { w: 340, h: 240 },
+  treemap: { w: 340, h: 240 },
+  calor: { w: 340, h: 240 },
   kpi: { w: 220, h: 120 },
   tabela: { w: 380, h: 240 },
 };
@@ -26,6 +37,17 @@ export const WIDGET_DEFAULT_SIZE: Record<WidgetKind, { w: number; h: number }> =
 export const WIDGET_MIN_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   linha: { w: 220, h: 160 },
   barras: { w: 220, h: 160 },
+  barras_h: { w: 220, h: 180 },
+  area: { w: 220, h: 180 },
+  combo: { w: 220, h: 180 },
+  pizza: { w: 220, h: 180 },
+  rosca: { w: 220, h: 180 },
+  dispersao: { w: 220, h: 180 },
+  radar: { w: 220, h: 180 },
+  funil: { w: 220, h: 180 },
+  medidor: { w: 220, h: 180 },
+  treemap: { w: 220, h: 180 },
+  calor: { w: 220, h: 180 },
   kpi: { w: 160, h: 96 },
   tabela: { w: 260, h: 140 },
 };
@@ -33,6 +55,17 @@ export const WIDGET_MIN_SIZE: Record<WidgetKind, { w: number; h: number }> = {
 export const WIDGET_KIND_LABELS: Record<WidgetKind, string> = {
   linha: "Linha",
   barras: "Barras",
+  barras_h: "Barras horizontais",
+  area: "Área",
+  combo: "Combinado",
+  pizza: "Pizza",
+  rosca: "Rosca",
+  dispersao: "Dispersão",
+  radar: "Radar",
+  funil: "Funil",
+  medidor: "Medidor",
+  treemap: "Treemap",
+  calor: "Mapa de calor",
   kpi: "Indicador",
   tabela: "Tabela",
 };
@@ -47,7 +80,10 @@ type PanelStore = {
   loaded: Record<string, boolean>;
   saveError: string | null;
 
-  load: (notebookId: string) => void;
+  /** Carrega o painel do projeto (uma vez); a promessa resolve quando os widgets estão disponíveis. */
+  load: (notebookId: string) => Promise<void>;
+  /** Troca campos de um widget (título, tipo, colunas, dados). */
+  updateWidget: (notebookId: string, id: string, patch: Partial<Omit<PanelWidget, "id">>) => void;
   getWidgets: (notebookId: string | null) => PanelWidget[];
   addWidget: (
     notebookId: string,
@@ -63,6 +99,7 @@ type PanelStore = {
   clearNotebook: (notebookId: string) => void;
 };
 
+const loading = new Map<string, Promise<void>>();
 const panelTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export const usePanelStore = create<PanelStore>((set, get) => {
@@ -92,10 +129,11 @@ export const usePanelStore = create<PanelStore>((set, get) => {
     saveError: null,
 
     load: (notebookId) => {
-      if (get().loaded[notebookId]) return;
+      const pending = loading.get(notebookId);
+      if (pending) return pending;
+      if (get().loaded[notebookId]) return Promise.resolve();
       set({ loaded: { ...get().loaded, [notebookId]: true } });
-      background(
-        api<{ widgets: PanelWidget[] }>(`/api/projects/${notebookId}/panel`)
+      const request = api<{ widgets: PanelWidget[] }>(`/api/projects/${notebookId}/panel`)
           .catch((error: unknown) => {
             // projeto recém-criado (POST ainda em andamento)
             if (error instanceof ApiError && error.status === 404) return { widgets: [] };
@@ -105,8 +143,18 @@ export const usePanelStore = create<PanelStore>((set, get) => {
             // não sobrescreve widgets adicionados enquanto a requisição estava em voo
             if (get().widgetsByNotebook[notebookId]?.length) return;
             set({ widgetsByNotebook: { ...get().widgetsByNotebook, [notebookId]: widgets } });
-          }),
-        "carregar painel",
+          });
+      loading.set(notebookId, request.catch(() => undefined).finally(() => loading.delete(notebookId)));
+      background(request, "carregar painel");
+      return loading.get(notebookId) ?? Promise.resolve();
+    },
+
+    updateWidget: (notebookId, id, patch) => {
+      const widgets = get().widgetsByNotebook[notebookId];
+      if (!widgets?.some((widget) => widget.id === id)) return;
+      setWidgets(
+        notebookId,
+        widgets.map((widget) => (widget.id === id ? { ...widget, ...patch } : widget)),
       );
     },
 
@@ -132,6 +180,8 @@ export const usePanelStore = create<PanelStore>((set, get) => {
         h: size.h,
         z: topLevel,
         ...(input.resultId && { resultId: input.resultId }),
+        ...(input.xCol && { xCol: input.xCol }),
+        ...(input.yCol && { yCol: input.yCol }),
         ...(input.series && { series: input.series }),
         ...(input.kpis && { kpis: input.kpis }),
         ...(input.rows && { rows: input.rows }),

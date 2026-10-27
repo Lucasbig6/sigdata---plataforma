@@ -5,7 +5,14 @@
 import {
   AreaChart as AreaChartIcon,
   BarChart3,
+  ChartNoAxesCombined,
+  ChartScatter,
+  Donut,
+  Funnel,
+  Gauge,
+  Grid3x3,
   Hash,
+  LayoutGrid,
   Heading,
   Image as ImageIcon,
   LineChart as LineChartIcon,
@@ -13,12 +20,14 @@ import {
   Minus,
   Percent,
   PieChart as PieChartIcon,
+  Radar,
   RectangleHorizontal,
   Table as TableIcon,
   TrendingUp,
   Type,
   type LucideIcon,
 } from "lucide-react";
+import type { ChartType } from "@shared/charts/types";
 import { FILTER_OPTIONS } from "./datasets";
 import {
   CANVAS,
@@ -58,7 +67,7 @@ const demoDataset = () => ({
 const chartItem = (
   key: string,
   label: string,
-  chartType: "bar" | "line" | "area" | "pie",
+  chartType: ChartType,
   description: string,
   icon: LucideIcon,
 ): LibraryItem => ({
@@ -75,7 +84,7 @@ const chartItem = (
     dataset: demoDataset(),
     color: 2,
     showGrid: true,
-    showLegend: chartType === "pie",
+    showLegend: chartType === "pie" || chartType === "donut" || chartType === "funnel",
   }),
 });
 
@@ -88,6 +97,15 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
       chartItem("line", "Gráfico de linhas", "line", "Evolução ao longo do tempo.", LineChartIcon),
       chartItem("pie", "Gráfico de pizza", "pie", "Composição percentual.", PieChartIcon),
       chartItem("area", "Gráfico de área", "area", "Volume acumulado no período.", AreaChartIcon),
+      chartItem("hbar", "Barras horizontais", "hbar", "Ranking com rótulos longos.", BarChart3),
+      chartItem("combo", "Combinado", "combo", "Barras e linhas no mesmo gráfico.", ChartNoAxesCombined),
+      chartItem("donut", "Gráfico de rosca", "donut", "Composição com destaque central.", Donut),
+      chartItem("scatter", "Dispersão", "scatter", "Relação entre duas medidas.", ChartScatter),
+      chartItem("radar", "Radar", "radar", "Perfil em várias dimensões.", Radar),
+      chartItem("funnel", "Funil", "funnel", "Etapas de um processo.", Funnel),
+      chartItem("gauge", "Medidor", "gauge", "Um valor contra uma meta.", Gauge),
+      chartItem("treemap", "Treemap", "treemap", "Proporção por área.", LayoutGrid),
+      chartItem("heatmap", "Mapa de calor", "heatmap", "Intensidade entre duas categorias.", Grid3x3),
       {
         key: "table",
         label: "Tabela",

@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ComponentProps } from "react";
+import { Fragment, useEffect, useState, type ComponentProps } from "react";
 import {
   Check,
   ChevronDown,
@@ -12,6 +12,7 @@ import {
   LogOut,
   MessageSquarePlus,
   Search,
+  Trash2,
   UserRound,
 } from "lucide-react";
 import {
@@ -102,7 +103,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
           aria-label="Ir para a página inicial"
           className="rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
         >
-          <Logo className="h-10 w-auto" />
+          <Logo className="h-14 block mx-auto w-auto " />
         </a>
       </SidebarHeader>
 
@@ -230,23 +231,37 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                     const isActive =
                       notebook.id === activeNotebookId && pathname?.startsWith("/workspace");
                     return (
-                      <li key={notebook.id}>
-                        <button
-                          type="button"
-                          onClick={() => router.push(`/workspace?notebook=${notebook.id}`)}
-                          className={cn(
-                            "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm transition-colors outline-none",
-                            "focus-visible:ring-2 focus-visible:ring-ring/50",
-                            isActive
-                              ? "bg-muted text-foreground"
-                              : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                          )}
-                          title={notebook.title}
-                        >
-                          <MessageSquarePlus className="size-3.5 shrink-0 opacity-50" aria-hidden />
-                          <span className="min-w-0 flex-1 truncate">{notebook.title}</span>
-                        </button>
-                      </li>
+                      <Fragment key={notebook.id}>
+                        <li>
+                          <button
+                            type="button"
+                            onClick={() => router.push(`/workspace?notebook=${notebook.id}`)}
+                            className={cn(
+                              "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm transition-colors outline-none",
+                              "focus-visible:ring-2 focus-visible:ring-ring/50",
+                              isActive
+                                ? "bg-muted text-foreground"
+                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
+                            )}
+                            title={notebook.title}
+                          >
+                            <MessageSquarePlus className="size-3.5 shrink-0 opacity-50" aria-hidden />
+                            <span className="min-w-0 flex-1 truncate">{notebook.title}</span>
+                          </button>
+                        </li>
+                        <li>
+                          <button
+                            type="button"
+                            onClick={() => useNotebooksStore.getState().deleteNotebook(notebook.id)}
+                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-destructive hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/50"
+                            title="Excluir projeto"
+                            aria-label={`Excluir projeto ${notebook.title}`}
+                          >
+                            <Trash2 className="size-3.5" aria-hidden />
+                            Excluir
+                          </button>
+                        </li>
+                      </Fragment>
                     );
                   })}
                 </ul>

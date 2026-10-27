@@ -24,229 +24,29 @@ import {
   ELEMENT_MIN,
   clamp,
   type ChartColor,
-  type ChartType,
+  type ChartProps,
   type DatasetRef,
   type DashboardElement,
 } from "@/lib/dashboards/types";
 import type { DataBinding, FilterBinding, NumberFormat } from "@/lib/dashboards/types";
+import { ChartFields } from "./chart-fields";
+import { LayersPanel } from "./layers-panel";
+import { MeasuresPanel } from "./measures-panel";
 import { BindingEditor, FilterBindingEditor } from "./binding-editor";
 import { ELEMENT_LABELS } from "./element-renderers";
 import { PageSettings } from "./page-settings";
+import {
+  ColorField,
+  Field,
+  Grid2,
+  NumberField,
+  Section,
+  SelectField,
+  Segmented,
+  SwitchRow,
+  inputCls,
+} from "./panel-ui";
 import { useChartTheme } from "./charts";
-
-const inputCls =
-  "w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring/50";
-
-const Section = ({ title, children }: { title: string; children: ReactNode }) => (
-  <section className="flex flex-col gap-2.5 border-b border-border/50 px-3 py-3.5">
-    <p className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-      {title}
-    </p>
-    {children}
-  </section>
-);
-
-const Field = ({ label, children }: { label: string; children: ReactNode }) => (
-  <label className="flex min-w-0 flex-col gap-1">
-    <span className="text-[11px] text-muted-foreground">{label}</span>
-    {children}
-  </label>
-);
-
-const Grid2 = ({ children }: { children: ReactNode }) => (
-  <div className="grid grid-cols-2 gap-2">{children}</div>
-);
-
-function Segmented<T extends string>({
-  value,
-  options,
-  onChange,
-}: {
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  return (
-    <div className="flex gap-0.5 rounded-md border border-border/70 bg-muted/40 p-0.5">
-      {options.map((option) => (
-        <button
-          key={option.value}
-          type="button"
-          onClick={() => onChange(option.value)}
-          className={`flex-1 rounded-[5px] px-1.5 py-1 text-[11px] transition-colors ${
-            value === option.value
-              ? "bg-background font-medium text-foreground shadow-sm"
-              : "text-muted-foreground hover:text-foreground"
-          }`}
-        >
-          {option.label}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-const SwitchRow = ({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (value: boolean) => void;
-}) => (
-  <div className="flex items-center justify-between gap-2">
-    <span className="text-xs text-foreground">{label}</span>
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label={label}
-      onClick={() => onChange(!checked)}
-      className={`relative h-5 w-9 shrink-0 rounded-full transition-colors ${
-        checked ? "bg-primary" : "bg-muted"
-      }`}
-    >
-      <span
-        className={`absolute top-0.5 size-4 rounded-full bg-background shadow transition-transform ${
-          checked ? "translate-x-4" : "translate-x-0.5"
-        }`}
-      />
-    </button>
-  </div>
-);
-
-const NumberField = ({
-  value,
-  min,
-  max,
-  onCommit,
-}: {
-  value: number;
-  min: number;
-  max: number;
-  onCommit: (value: number) => void;
-}) => {
-  const [text, setText] = useState(String(value));
-  useEffect(() => setText(String(value)), [value]);
-
-  const commit = () => {
-    const parsed = Number(text.replace(",", "."));
-    if (Number.isFinite(parsed)) {
-      const next = clamp(parsed, min, max);
-      setText(String(next));
-      if (next !== value) onCommit(next);
-    } else {
-      setText(String(value));
-    }
-  };
-
-  return (
-    <input
-      className={`${inputCls} tabular-nums`}
-      inputMode="numeric"
-      value={text}
-      onChange={(event) => setText(event.target.value)}
-      onBlur={commit}
-      onKeyDown={(event) => {
-        if (event.key === "Enter") event.currentTarget.blur();
-        if (event.key === "Escape") {
-          setText(String(value));
-          event.currentTarget.blur();
-        }
-      }}
-    />
-  );
-};
-
-const DARK_TEXT_COLORS = ["#E8ECEF", "#9FB0B4", "#80CEC4", "#F2D06B", "#FF8A7A"];
-const LIGHT_TEXT_COLORS = ["#16202E", "#5A6B78", "#0F766E", "#B45309", "#D95F4B"];
-
-const ColorField = ({ value, onChange }: { value: string; onChange: (value: string) => void }) => {
-  const { resolvedTheme } = useTheme();
-  const isDark = resolvedTheme === "dark";
-  const fallback = isDark ? "#E8ECEF" : "#16202E";
-  const swatches = isDark ? DARK_TEXT_COLORS : LIGHT_TEXT_COLORS;
-  const hex = /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
-  return (
-    <div className="flex items-center gap-1.5">
-      <input
-        type="color"
-        aria-label="Cor"
-        value={hex}
-        onChange={(event) => onChange(event.target.value)}
-        className="size-7 cursor-pointer rounded-md border border-border/70 bg-transparent p-0.5"
-      />
-      {swatches.map((color) => (
-        <button
-          key={color}
-          type="button"
-          aria-label={`Cor ${color}`}
-          onClick={() => onChange(color)}
-          className={`size-5 rounded-md border transition-transform hover:scale-110 ${
-            value.toLowerCase() === color.toLowerCase()
-              ? "border-primary ring-1 ring-primary/60"
-              : "border-border/70"
-          }`}
-          style={{ background: color }}
-        />
-      ))}
-    </div>
-  );
-};
-
-type SelectOption = { value: string; label: string; group?: string | null };
-
-const SelectField = ({
-  value,
-  options,
-  onChange,
-}: {
-  value: string;
-  options: SelectOption[];
-  onChange: (value: string) => void;
-}) => {
-  const groupNames = [
-    ...new Set(
-      options.map((option) => option.group).filter((group): group is string => Boolean(group)),
-    ),
-  ];
-  const grouped = groupNames.length > 0;
-
-  return (
-    <select
-      className={`${inputCls} cursor-pointer`}
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-    >
-      {options
-        .filter((option) => !grouped || !option.group)
-        .map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      {groupNames.map((group) => (
-        <optgroup key={group} label={group}>
-          {options
-            .filter((option) => option.group === group)
-            .map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-        </optgroup>
-      ))}
-    </select>
-  );
-};
-
-const CHART_OPTIONS: { value: ChartType; label: string }[] = [
-  { value: "bar", label: "Barras" },
-  { value: "line", label: "Linhas" },
-  { value: "area", label: "Área" },
-  { value: "pie", label: "Pizza" },
-];
 
 const COLOR_OPTIONS: { value: ChartColor; label: string }[] = [
   { value: 1, label: "Âmbar" },
@@ -377,68 +177,7 @@ const TypeFields = ({
 
   switch (element.type) {
     case "chart":
-      return (
-        <Section title="Conteúdo">
-          <Field label="Tipo de gráfico">
-            <Segmented
-              value={props.chartType as ChartType}
-              options={CHART_OPTIONS}
-              onChange={(value) => set({ chartType: value }, "chartType")}
-            />
-          </Field>
-          <Field label="Título">
-            <input
-              className={inputCls}
-              value={String(props.title ?? "")}
-              onChange={(event) => set({ title: event.target.value }, "title")}
-            />
-          </Field>
-          <Field label="Subtítulo">
-            <input
-              className={inputCls}
-              value={String(props.subtitle ?? "")}
-              onChange={(event) => set({ subtitle: event.target.value }, "subtitle")}
-            />
-          </Field>
-          <SwitchRow
-            label="Exibir título"
-            checked={Boolean(props.showTitle)}
-            onChange={(value) => set({ showTitle: value }, "showTitle")}
-          />
-          <Field label="Cor da série">
-            <div className="flex gap-1.5">
-              {COLOR_OPTIONS.map((color) => (
-                <button
-                  key={color.value}
-                  type="button"
-                  title={color.label}
-                  aria-label={color.label}
-                  onClick={() => set({ color: color.value }, "color")}
-                  className={`size-6 rounded-md border transition-transform hover:scale-110 ${
-                    props.color === color.value
-                      ? "border-primary ring-1 ring-primary/60"
-                      : "border-border/70"
-                  }`}
-                  style={{ background: chartTheme.colors[color.value] }}
-                />
-              ))}
-            </div>
-          </Field>
-          {String(props.chartType) === "pie" ? (
-            <SwitchRow
-              label="Mostrar legenda"
-              checked={Boolean(props.showLegend)}
-              onChange={(value) => set({ showLegend: value }, "showLegend")}
-            />
-          ) : (
-            <SwitchRow
-              label="Mostrar grade"
-              checked={Boolean(props.showGrid)}
-              onChange={(value) => set({ showGrid: value }, "showGrid")}
-            />
-          )}
-        </Section>
-      );
+      return <ChartFields props={element.props as ChartProps} set={set} />;
 
     case "table":
       return (
@@ -860,6 +599,12 @@ export const PropertiesPanel = () => {
     state.currentId ? (state.dashboards[state.currentId] ?? null) : null,
   );
   const selectedId = useDashboardsStore((state) => state.selectedId);
+  const selectedIds = useDashboardsStore((state) => state.selectedIds);
+  const duplicateSelected = useDashboardsStore((state) => state.duplicateSelected);
+  const groupSelected = useDashboardsStore((state) => state.groupSelected);
+  const ungroupSelected = useDashboardsStore((state) => state.ungroupSelected);
+  const setHiddenSelected = useDashboardsStore((state) => state.setHiddenSelected);
+  const removeSelected = useDashboardsStore((state) => state.removeSelected);
   const updateProps = useDashboardsStore((state) => state.updateProps);
   const patchElement = useDashboardsStore((state) => state.patchElement);
   const moveLayer = useDashboardsStore((state) => state.moveLayer);
@@ -873,6 +618,50 @@ export const PropertiesPanel = () => {
   const [tab, setTab] = useState<PanelTab>("dados");
 
   if (!doc) return null;
+
+  if (!element && selectedIds.length > 1) {
+    const actionCls =
+      "rounded-md border border-border/70 px-2 py-1.5 text-xs text-foreground transition-colors hover:bg-muted/60";
+    return (
+      <aside className="hidden w-80 shrink-0 flex-col overflow-y-auto border-l border-border/60 bg-card/40 xl:flex">
+        <div className="border-b border-border/60 px-3 py-2.5">
+          <p className="text-xs font-semibold text-foreground">{selectedIds.length} elementos selecionados</p>
+          <p className="text-[10px] text-muted-foreground">Arraste para mover todos juntos</p>
+        </div>
+        <Section title="Ações">
+          <div className="grid grid-cols-2 gap-1.5">
+            <button type="button" className={actionCls} onClick={duplicateSelected}>
+              Duplicar
+            </button>
+            <button type="button" className={actionCls} onClick={() => setHiddenSelected(true)}>
+              Ocultar
+            </button>
+            <button type="button" className={actionCls} onClick={groupSelected}>
+              Agrupar
+            </button>
+            <button type="button" className={actionCls} onClick={ungroupSelected}>
+              Desagrupar
+            </button>
+          </div>
+          <button
+            type="button"
+            onClick={removeSelected}
+            className="rounded-md border border-destructive/40 px-2 py-1.5 text-xs text-destructive transition-colors hover:bg-destructive/10"
+          >
+            Excluir seleção
+          </button>
+        </Section>
+        <Section title="Alinhar e distribuir">
+          <p className="text-[11px] leading-relaxed text-muted-foreground">
+            Use a barra no topo da página para alinhar, distribuir e igualar tamanhos.
+          </p>
+        </Section>
+        <Section title="Camadas">
+          <LayersPanel />
+        </Section>
+      </aside>
+    );
+  }
 
   if (!element) {
     return (
@@ -895,11 +684,20 @@ export const PropertiesPanel = () => {
             </span>
           </div>
         </Section>
+        <Section title="Medidas calculadas">
+          <MeasuresPanel />
+        </Section>
+        <Section title="Camadas">
+          <LayersPanel />
+        </Section>
         <Section title="Atalhos">
           <ul className="flex list-disc flex-col gap-1.5 pl-4 text-[11px] leading-relaxed text-muted-foreground">
-            <li>Clique ou arraste itens da biblioteca para a página.</li>
-            <li>Setas movem o elemento (Shift = 10 px); Delete exclui.</li>
-            <li>Ctrl+D duplica · Ctrl+Z desfaz · Ctrl+S salva.</li>
+            <li>Arraste um retângulo no fundo (ou Shift+clique) para selecionar vários.</li>
+            <li>Setas movem a seleção (Shift = 10 px); Delete exclui.</li>
+            <li>Ctrl+C / X / V copiam, recortam e colam, até entre painéis.</li>
+            <li>Ctrl+D duplica · Ctrl+G agrupa · Ctrl+A seleciona tudo.</li>
+            <li>Ctrl+Z desfaz · Ctrl+S salva · botão direito abre o menu.</li>
+            <li>Solte uma coluna da aba Dados sobre um gráfico para trocar os campos (Alt troca o eixo X).</li>
           </ul>
         </Section>
       </aside>
@@ -956,6 +754,8 @@ export const PropertiesPanel = () => {
             <FilterBindingEditor
               binding={props.binding as FilterBinding | undefined}
               value={String(props.value ?? "")}
+              mode={props.mode === "range" ? "range" : "list"}
+              global={props.global === true}
               onChange={(patch) => updateProps(element.id, patch, "binding")}
             />
           ) : (
@@ -966,6 +766,13 @@ export const PropertiesPanel = () => {
                 binding={props.binding as DataBinding | undefined}
                 onChange={(binding) => updateProps(element.id, { binding }, "binding")}
               />
+              {props.binding ? (
+                <SwitchRow
+                  label="Ignorar filtros do painel"
+                  checked={Boolean(props.ignoreFilters)}
+                  onChange={(value) => updateProps(element.id, { ignoreFilters: value || undefined }, "ignoreFilters")}
+                />
+              ) : null}
               {!props.binding && (element.type === "chart" || element.type === "table") ? (
                 <DatasetFields
                   dataset={props.dataset as DatasetRef}
@@ -993,6 +800,16 @@ export const PropertiesPanel = () => {
             removeElement={removeElement}
             select={select}
           />
+          <Section title="Celular">
+            <SwitchRow
+              label="Ocultar no layout para celular"
+              checked={Boolean(element.hideOnMobile)}
+              onChange={(value) => patchElement(element.id, { hideOnMobile: value || undefined })}
+            />
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              No celular os elementos viram uma coluna, na ordem de leitura. Use isto para tirar o que não cabe.
+            </p>
+          </Section>
         </>
       ) : null}
     </aside>

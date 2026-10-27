@@ -8,6 +8,13 @@
       "when": 1793111193029,
       "tag": "0000_inicial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793123376136,
+      "tag": "0001_historico_versoes",
+      "breakpoints": true
     }
   ]
 }

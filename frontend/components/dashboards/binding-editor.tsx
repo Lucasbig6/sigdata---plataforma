@@ -4,14 +4,18 @@ import { Loader2, MessageSquareText, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
+import { useDashboardsStore } from "@/lib/dashboards/store";
+import { MeasureDialog } from "./measure-dialog";
 import { AGG_LABELS, builderFor } from "@/lib/dashboards/auto-binding";
 import { axesOf, isBindingReady, useBindingData, useDashboardData } from "@/lib/dashboards/live-data";
-import type {
-  Aggregation,
-  BindingSort,
-  DataBinding,
-  ElementType,
-  FilterBinding,
+import {
+  PERIOD_UNIT_LABELS,
+  type Aggregation,
+  type BindingSort,
+  type DataBinding,
+  type ElementType,
+  type FilterBinding,
+  type PeriodUnit,
 } from "@/lib/dashboards/types";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import type { ResultColumn, SourceTable } from "@/lib/domain/sources";
@@ -140,14 +144,33 @@ const BuilderFields = ({
   const grouped = Boolean(binding.dimension);
   const aggs: Aggregation[] = binding.measure ? ["sum", "avg", "min", "max", "count"] : ["count"];
 
+  const measures = useDashboardsStore((state) =>
+    state.currentId ? state.dashboards[state.currentId]?.measures : undefined,
+  );
+  const forTable = (measures ?? []).filter((m) => m.sourceId === binding.sourceId && m.table === binding.table);
+  const [measureDialog, setMeasureDialog] = useState(false);
+  const calcId = binding.calc
+    ? (forTable.find((m) => m.name === binding.calc?.name && m.expr === binding.calc?.expr)?.id ?? "custom")
+    : "";
+
   const measureFields = (
     <>
       <Field label="Medida">
         <Select
-          value={binding.measure ?? ""}
-          onChange={(value) =>
-            onChange({ measure: value || undefined, agg: value ? (binding.agg === "count" ? "sum" : binding.agg ?? "sum") : "count" })
-          }
+          value={binding.calc ? `calc:${calcId}` : (binding.measure ?? "")}
+          onChange={(value) => {
+            if (value === "__new") return setMeasureDialog(true);
+            if (value.startsWith("calc:")) {
+              const picked = forTable.find((m) => m.id === value.slice(5));
+              if (picked) onChange({ calc: { name: picked.name, expr: picked.expr }, measure: undefined, agg: undefined });
+              return;
+            }
+            onChange({
+              calc: undefined,
+              measure: value || undefined,
+              agg: value ? (binding.agg === "count" || !binding.agg ? "sum" : binding.agg) : "count",
+            });
+          }}
         >
           <option value="">Contar linhas</option>
           {numeric.map((c) => (
@@ -155,9 +178,27 @@ const BuilderFields = ({
               {c.name}
             </option>
           ))}
+          {forTable.length > 0 || binding.calc ? (
+            <optgroup label="Medidas calculadas">
+              {binding.calc && calcId === "custom" ? (
+                <option value="calc:custom">{binding.calc.name}</option>
+              ) : null}
+              {forTable.map((m) => (
+                <option key={m.id} value={`calc:${m.id}`}>
+                  {m.name}
+                </option>
+              ))}
+            </optgroup>
+          ) : null}
+          <option value="__new">＋ Nova medida calculada…</option>
         </Select>
       </Field>
-      {binding.measure ? (
+      {binding.calc ? (
+        <p className="rounded-md bg-muted/40 px-2 py-1 font-mono text-[10px] leading-snug text-muted-foreground">
+          {binding.calc.expr}
+        </p>
+      ) : null}
+      {binding.measure && !binding.calc ? (
         <Field label="Cálculo">
           <Tabs
             value={binding.agg ?? "sum"}
@@ -166,10 +207,78 @@ const BuilderFields = ({
           />
         </Field>
       ) : null}
+      <MeasureDialog
+        open={measureDialog}
+        onOpenChange={setMeasureDialog}
+        sourceId={binding.sourceId}
+        table={binding.table}
+        onSaved={(m) => onChange({ calc: { name: m.name, expr: m.expr }, measure: undefined, agg: undefined })}
+      />
     </>
   );
 
-  if (isKpi) return measureFields;
+  const dateColumns = columns.filter((c) => c.kind === "data");
+  const compareFields = isKpi ? (
+    <div className="flex flex-col gap-2 rounded-md border border-border/60 p-2">
+      <label className="flex items-center justify-between gap-2 text-[11px] text-foreground">
+        Comparar com o período anterior
+        <input
+          type="checkbox"
+          checked={Boolean(binding.compare)}
+          disabled={dateColumns.length === 0}
+          onChange={(e) =>
+            onChange({
+              compare: e.target.checked ? { dateColumn: dateColumns[0].name, unit: "month" } : undefined,
+            })
+          }
+        />
+      </label>
+      {dateColumns.length === 0 ? (
+        <p className="text-[10px] leading-snug text-muted-foreground">Esta tabela não tem coluna de data.</p>
+      ) : null}
+      {binding.compare ? (
+        <div className="grid grid-cols-2 gap-2">
+          <Field label="Coluna de data">
+            <Select
+              value={binding.compare.dateColumn}
+              onChange={(dateColumn) => onChange({ compare: { ...binding.compare!, dateColumn } })}
+            >
+              {dateColumns.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="Período">
+            <Select
+              value={binding.compare.unit}
+              onChange={(unit) => onChange({ compare: { ...binding.compare!, unit: unit as PeriodUnit } })}
+            >
+              {(Object.keys(PERIOD_UNIT_LABELS) as PeriodUnit[]).map((unit) => (
+                <option key={unit} value={unit}>
+                  {PERIOD_UNIT_LABELS[unit]}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <p className="col-span-2 text-[10px] leading-snug text-muted-foreground">
+            Mostra o valor do último {PERIOD_UNIT_LABELS[binding.compare.unit]} dos dados e a variação em relação ao
+            anterior.
+          </p>
+        </div>
+      ) : null}
+    </div>
+  ) : null;
+
+  if (isKpi) {
+    return (
+      <>
+        {measureFields}
+        {compareFields}
+      </>
+    );
+  }
 
   if (isTable && !grouped) {
     const selected = binding.columns ?? [];
@@ -239,6 +348,23 @@ const BuilderFields = ({
           ))}
         </Select>
       </Field>
+      {type === "chart" ? (
+        <Field label="Dividir em séries por" hint="Uma série (cor) para cada valor desta coluna.">
+          <Select
+            value={binding.splitBy ?? ""}
+            onChange={(value) => onChange({ splitBy: value || undefined })}
+          >
+            <option value="">Sem divisão</option>
+            {columns
+              .filter((c) => c.name !== binding.dimension)
+              .map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} ({c.kind})
+                </option>
+              ))}
+          </Select>
+        </Field>
+      ) : null}
       {measureFields}
       <div className="grid grid-cols-[1fr_72px] gap-2">
         <Field label="Ordenar">
@@ -316,6 +442,7 @@ const SqlFields = ({
         />
       </Field>
       {needsAxes && columns.length > 0 ? (
+        <>
         <div className="grid grid-cols-2 gap-2">
           <Field label="Eixo X (categoria)">
             <Select value={axes?.x ?? ""} onChange={(x) => onChange({ x })}>
@@ -336,6 +463,45 @@ const SqlFields = ({
             </Select>
           </Field>
         </div>
+        <Field label="Dividir em séries por" hint="Uma série para cada valor desta coluna (usa o Valor Y).">
+          <Select value={binding.splitBy ?? ""} onChange={(value) => onChange({ splitBy: value || undefined })}>
+            <option value="">Sem divisão</option>
+            {columns
+              .filter((c) => c.name !== axes?.x && c.name !== axes?.y)
+              .map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name}
+                </option>
+              ))}
+          </Select>
+        </Field>
+        {!binding.splitBy ? (
+          <div className="flex flex-col gap-1">
+            <span className="text-[11px] text-muted-foreground">Séries extras (colunas numéricas)</span>
+            <div className="max-h-32 space-y-0.5 overflow-y-auto rounded-md border border-border/70 p-1.5">
+              {columns
+                .filter((c) => c.kind === "numero" && c.name !== axes?.y && c.name !== axes?.x)
+                .map((c) => {
+                  const extra = binding.ys ?? [];
+                  return (
+                    <label key={c.name} className="flex items-center gap-2 text-[11px] text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={extra.includes(c.name)}
+                        onChange={(e) =>
+                          onChange({
+                            ys: e.target.checked ? [...extra, c.name] : extra.filter((n) => n !== c.name),
+                          })
+                        }
+                      />
+                      <span className="truncate font-mono">{c.name}</span>
+                    </label>
+                  );
+                })}
+            </div>
+          </div>
+        ) : null}
+        </>
       ) : null}
     </>
   );
@@ -499,11 +665,21 @@ export const BindingEditor = ({
 export const FilterBindingEditor = ({
   binding,
   value,
+  mode = "list",
+  global = false,
   onChange,
 }: {
   binding: FilterBinding | undefined;
   value: string;
-  onChange: (patch: { binding?: FilterBinding; value?: string; label?: string }) => void;
+  mode?: "list" | "range";
+  global?: boolean;
+  onChange: (patch: {
+    binding?: FilterBinding;
+    value?: string;
+    label?: string;
+    mode?: "list" | "range";
+    global?: boolean;
+  }) => void;
 }) => {
   const sources = useReadySources();
   const source = sources.find((s) => s.id === binding?.sourceId);
@@ -511,7 +687,7 @@ export const FilterBindingEditor = ({
   const [options, setOptions] = useState<string[]>([]);
 
   useEffect(() => {
-    if (!binding?.column) return;
+    if (!binding?.column || mode === "range") return;
     let cancelled = false;
     api<{ options: string[] }>("/api/dashboards/filter-options", { method: "POST", json: { binding } })
       .then((out) => !cancelled && setOptions(out.options))
@@ -519,7 +695,7 @@ export const FilterBindingEditor = ({
     return () => {
       cancelled = true;
     };
-  }, [binding]);
+  }, [binding, mode]);
 
   const setSource = (sourceId: string) => {
     const next = sources.find((s) => s.id === sourceId);
@@ -572,19 +748,52 @@ export const FilterBindingEditor = ({
               ))}
             </Select>
           </Field>
-          <Field label="Valor inicial">
-            <Select value={value} onChange={(next) => onChange({ value: next })}>
-              <option value="">Todos</option>
-              {options.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </Select>
+          <Field label="Tipo de filtro">
+            <Tabs
+              value={mode}
+              options={[
+                { value: "list", label: "Lista de valores" },
+                { value: "range", label: "Período (datas)" },
+              ]}
+              onChange={(next) => onChange({ mode: next, value: "" })}
+            />
           </Field>
+          {mode === "list" ? (
+            <Field label="Valor inicial">
+              <Select value={value} onChange={(next) => onChange({ value: next })}>
+                <option value="">Todos</option>
+                {options.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          ) : (
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              O visitante escolhe data inicial e final (ou um atalho). A coluna filtrada deve conter datas.
+            </p>
+          )}
+          <label className="flex items-start justify-between gap-2 rounded-md border border-border/60 p-2 text-[11px] text-foreground">
+            <span>
+              Filtro global
+              <span className="block text-[10px] leading-snug text-muted-foreground">
+                Vale para todas as páginas e para qualquer tabela, de qualquer fonte, que tenha uma coluna com o
+                mesmo nome (<span className="font-mono">{binding.column}</span>).
+              </span>
+            </span>
+            <input type="checkbox" checked={global} onChange={(e) => onChange({ global: e.target.checked })} />
+          </label>
           <p className="text-[10px] leading-snug text-muted-foreground">
-            Filtra os gráficos, tabelas e indicadores da tabela <span className="font-mono">{binding.table}</span>{" "}
-            configurados no Construtor. Quem abre o link público também pode trocar o filtro.
+            {global ? (
+              "Filtra todos os elementos do Construtor com uma coluna de mesmo nome."
+            ) : (
+              <>
+                Filtra os gráficos, tabelas e indicadores da tabela <span className="font-mono">{binding.table}</span>{" "}
+                configurados no Construtor.
+              </>
+            )}{" "}
+            Quem abre o link público também pode trocar o filtro.
           </p>
         </>
       ) : null}

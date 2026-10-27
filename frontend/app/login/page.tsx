@@ -55,7 +55,15 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-border/70 bg-card/80 p-6 shadow-sm">
+    <div className="w-full max-w-sm rounded-2xl border border-border/70 bg-card/80 p-8 shadow-sm">
+      <div className="mb-5 flex items-center gap-3.5">
+        <Logo className="h-10 w-auto shrink-0" />
+        <span className="h-9 w-px shrink-0 bg-border" aria-hidden />
+        <p className="text-[12px] leading-snug text-muted-foreground">
+          Explore seus dados, encontre padrões e transforme perguntas em análises.
+        </p>
+      </div>
+
       <div
         role="tablist"
         aria-label="Acesso"
@@ -152,10 +160,6 @@ export default function LoginPage() {
       <div className="absolute top-4 right-4">
         <ThemeToggle />
       </div>
-      <Logo className="h-14 w-auto" />
-      <p className="max-w-sm text-center text-sm text-muted-foreground">
-        Explore seus dados, encontre padrões e transforme perguntas em análises.
-      </p>
       <Suspense>
         <LoginForm />
       </Suspense>

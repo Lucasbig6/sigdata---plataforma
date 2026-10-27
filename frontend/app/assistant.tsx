@@ -9,6 +9,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { AppShell } from "@/components/sigdata/app-shell";
 import { VisualizationTools } from "@/components/sigdata/create-visualization-tool";
+import { PanelTools } from "@/components/sigdata/panel-tools";
 import { WelcomeScreen } from "@/components/sigdata/welcome-screen";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/lib/chat/store";
@@ -66,6 +67,7 @@ const AssistantRuntimeInner = ({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <VisualizationTools />
+      <PanelTools />
       <NotebookTitleBinder notebookId={notebookId} />
       <AppShell>
         <Thread components={{ Welcome: WelcomeScreen }} />

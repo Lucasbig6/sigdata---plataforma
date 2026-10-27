@@ -1,18 +1,8 @@
 "use client";
 
-import {
-  BarChart3,
-  Check,
-  ChevronDown,
-  Database,
-  Hash,
-  LineChart,
-  Loader2,
-  Plus,
-  Table2,
-} from "lucide-react";
+import { BookmarkPlus, Check, ChevronDown, Database, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { JSONSchema7 } from "ai";
 import {
   useAssistantTool,
@@ -24,6 +14,9 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { Kpi, Municipio, SeriesPoint } from "@/lib/demo-data";
 import { WIDGET_KIND_LABELS, usePanelStore, type WidgetData, type WidgetKind } from "@/lib/panel/store";
+import { WIDGET_CHART_TYPE, WIDGET_KINDS, isChartKind } from "@shared/panel";
+import { WIDGET_ICON } from "./widget-icons";
+import { WidgetView } from "./widget-view";
 import { checkResultFor, fetchResult, widgetDataFromResult } from "@/lib/results/client";
 
 export type CreateVisualizationArgs = {
@@ -32,13 +25,17 @@ export type CreateVisualizationArgs = {
   resultId?: string;
   x?: string;
   y?: string;
+  ys?: string[];
+  splitBy?: string;
+  /** true = já fixa a visualização no painel (o usuário pediu para salvar). */
+  salvar?: boolean;
   serie?: SeriesPoint[];
   kpis?: { label: string; value: string; delta?: number; hint?: string }[];
   rows?: Municipio[];
 };
 
 export type CreateVisualizationResult =
-  | { ok: true; kind: WidgetKind; titulo: string }
+  | { ok: true; kind: WidgetKind; titulo: string; salva?: boolean; widgetId?: string }
   | { ok: false; error: string };
 
 export const createVisualizationParameters: JSONSchema7 = {
@@ -46,8 +43,9 @@ export const createVisualizationParameters: JSONSchema7 = {
   properties: {
     kind: {
       type: "string",
-      enum: ["linha", "barras", "kpi", "tabela"],
-      description: "Tipo de visualização a criar no painel lateral.",
+      enum: WIDGET_KINDS,
+      description:
+        "Tipo: linha, barras, barras_h (horizontais), area, combo (barras+linhas), pizza, rosca, dispersao, radar, funil, medidor (um valor), treemap, calor (mapa de calor: x × séries), kpi (indicador) ou tabela.",
     },
     titulo: {
       type: "string",
@@ -65,19 +63,26 @@ export const createVisualizationParameters: JSONSchema7 = {
       type: "string",
       description: "Coluna numérica do resultado usada como valor (gráficos e kpi).",
     },
+    ys: {
+      type: "array",
+      items: { type: "string" },
+      description: "Colunas numéricas extras para plotar várias séries no mesmo gráfico (além de y).",
+    },
+    splitBy: {
+      type: "string",
+      description: "Coluna cujos valores viram uma série cada (alternativa a ys; ex.: ano, região).",
+    },
+    salvar: {
+      type: "boolean",
+      description:
+        "true só quando o usuário pediu explicitamente para salvar/fixar no painel. Por padrão a visualização aparece no chat com o botão Salvar visualização.",
+    },
   },
   required: ["kind", "titulo"],
 };
 
-const KIND_ICON: Record<WidgetKind, typeof LineChart> = {
-  linha: LineChart,
-  barras: BarChart3,
-  kpi: Hash,
-  tabela: Table2,
-};
-
 const isWidgetKind = (value: unknown): value is WidgetKind =>
-  value === "linha" || value === "barras" || value === "kpi" || value === "tabela";
+  typeof value === "string" && (WIDGET_KINDS as string[]).includes(value);
 
 const isValidSeries = (value: unknown): value is SeriesPoint[] =>
   Array.isArray(value) &&
@@ -117,11 +122,12 @@ const resolveWidgetData = async (args: CreateVisualizationArgs): Promise<WidgetD
   const kind = args.kind;
   if (args.resultId) {
     const result = await fetchResult(args.resultId);
-    const problem = checkResultFor(result, kind, args.x, args.y);
+    const cols = { x: args.x, y: args.y, ys: args.ys, splitBy: args.splitBy };
+    const problem = checkResultFor(result, kind, cols);
     if (problem) throw new Error(problem);
-    return widgetDataFromResult(result, kind, args.x, args.y);
+    return widgetDataFromResult(result, kind, cols);
   }
-  if ((kind === "linha" || kind === "barras") && isValidSeries(args.serie)) return { series: args.serie };
+  if (isChartKind(kind) && isValidSeries(args.serie)) return { series: args.serie };
   if (kind === "kpi" && isValidKpis(args.kpis)) {
     return {
       kpis: args.kpis.map((kpi) => ({ ...kpi, delta: kpi.delta ?? 0, hint: kpi.hint ?? "" })) as Kpi[],
@@ -136,15 +142,24 @@ const executeCreateVisualization = async (
 ): Promise<CreateVisualizationResult> => {
   const titulo = (args?.titulo ?? "").trim();
   if (!isWidgetKind(args?.kind)) {
-    return { ok: false, error: "kind inválido. Use linha, barras, kpi ou tabela." };
+    return { ok: false, error: `kind inválido. Use: ${WIDGET_KINDS.join(", ")}.` };
   }
   if (!titulo) return { ok: false, error: "titulo é obrigatório." };
+  let data: WidgetData;
   try {
-    await resolveWidgetData(args);
+    data = await resolveWidgetData(args);
   } catch (error) {
     return { ok: false, error: (error as Error).message };
   }
-  return { ok: true, kind: args.kind, titulo };
+  if (!args.salvar) return { ok: true, kind: args.kind, titulo };
+
+  const notebookId = new URLSearchParams(window.location.search).get("notebook");
+  if (!notebookId) return { ok: false, error: "Nenhum projeto aberto para salvar a visualização." };
+  const panel = usePanelStore.getState();
+  await panel.load(notebookId);
+  const widget = panel.addWidget(notebookId, { kind: args.kind, title: titulo, ...data });
+  if (!widget) return { ok: false, error: "O painel atingiu o limite de visualizações salvas." };
+  return { ok: true, kind: args.kind, titulo, salva: true, widgetId: widget.id };
 };
 
 const kindSummary = (args: CreateVisualizationArgs): string => {
@@ -152,15 +167,9 @@ const kindSummary = (args: CreateVisualizationArgs): string => {
     const axes = [args.x, args.y].filter(Boolean).join(" × ");
     return axes ? `Resultado da consulta · ${axes}` : "Resultado da consulta";
   }
-  switch (args.kind) {
-    case "linha":
-    case "barras":
-      return `${args.serie?.length ?? 0} pontos de série`;
-    case "kpi":
-      return `${args.kpis?.length ?? 0} indicador(es)`;
-    case "tabela":
-      return `${args.rows?.length ?? 0} linha(s)`;
-  }
+  if (WIDGET_CHART_TYPE[args.kind]) return `${args.serie?.length ?? 0} pontos de série`;
+  if (args.kind === "kpi") return `${args.kpis?.length ?? 0} indicador(es)`;
+  return `${args.rows?.length ?? 0} linha(s)`;
 };
 
 const CreateVisualizationUI = (
@@ -169,29 +178,56 @@ const CreateVisualizationUI = (
   const { args, result, status, addResult } = props;
   const notebookId = useSearchParams().get("notebook");
   const addWidget = usePanelStore((state) => state.addWidget);
-  const [added, setAdded] = useState(false);
+  const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
+  const saved = notebookId ? (widgetsByNotebook[notebookId] ?? []) : [];
+  const [clicked, setClicked] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [data, setData] = useState<WidgetData | null>(null);
 
   const kind: WidgetKind = isWidgetKind(args?.kind) ? args.kind : "linha";
-  const Icon = KIND_ICON[kind];
+  const Icon = WIDGET_ICON[kind];
   const titulo = (args?.titulo ?? "").trim() || WIDGET_KIND_LABELS[kind];
   const running = status?.type === "running" || status?.type === "requires-action";
   const failed = status?.type === "incomplete" || (result != null && result.ok === false);
+  const ready = result?.ok === true;
 
-  const handleAdd = async () => {
+  // desenha a visualização assim que a ferramenta validou os dados
+  useEffect(() => {
+    if (!ready || !args) return;
+    let cancelled = false;
+    resolveWidgetData({ ...args, kind })
+      .then((next) => !cancelled && setData(next))
+      .catch((err: Error) => !cancelled && setError(err.message));
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, args, kind]);
+
+  const isSaved =
+    clicked ||
+    (result?.ok === true && result.salva === true) ||
+    saved.some(
+      (widget) =>
+        widget.kind === kind &&
+        widget.title === titulo &&
+        (args?.resultId ? widget.resultId === args.resultId : true),
+    );
+
+  const handleSave = async () => {
     if (!notebookId) {
-      setError("Abra um projeto antes de adicionar visualizações ao painel.");
+      setError("Abra um projeto antes de salvar visualizações.");
       return;
     }
+    if (!data) return;
     setBusy(true);
     try {
-      const data = await resolveWidgetData({ ...args, kind });
+      await usePanelStore.getState().load(notebookId);
       const widget = addWidget(notebookId, { kind, title: titulo, ...data });
-      if (!widget) throw new Error("O painel atingiu o limite de widgets.");
-      setAdded(true);
+      if (!widget) throw new Error("O painel atingiu o limite de visualizações salvas.");
+      setClicked(true);
       setError(null);
-      if (running) addResult({ ok: true, kind, titulo });
+      if (running) addResult({ ok: true, kind, titulo, salva: true, widgetId: widget.id });
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -200,7 +236,7 @@ const CreateVisualizationUI = (
   };
 
   return (
-    <div className="my-2 max-w-md rounded-xl border border-border bg-card/80 p-3.5 shadow-sm">
+    <div className="my-2 w-full max-w-xl rounded-xl border border-border bg-card/80 p-3.5 shadow-sm">
       <div className="flex items-start gap-2.5">
         <span className="mt-0.5 grid size-8 shrink-0 place-items-center rounded-lg border border-primary/30 bg-primary/10 text-primary">
           <Icon className="size-4" aria-hidden />
@@ -212,9 +248,7 @@ const CreateVisualizationUI = (
               {WIDGET_KIND_LABELS[kind]}
             </span>
           </div>
-          <p className="text-xs text-muted-foreground">
-            {args ? kindSummary(args) : "Aguardando dados…"}
-          </p>
+          <p className="text-xs text-muted-foreground">{args ? kindSummary(args) : "Aguardando dados…"}</p>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}
           {!error && failed && result && !result.ok ? (
             <p className="text-xs text-destructive">{result.error}</p>
@@ -226,10 +260,10 @@ const CreateVisualizationUI = (
               <Loader2 className="size-3 animate-spin" aria-hidden />
               Processando
             </span>
-          ) : added ? (
+          ) : isSaved ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-primary">
               <Check className="size-3" aria-hidden />
-              No painel
+              Salva
             </span>
           ) : failed ? (
             <span className="text-[11px] text-destructive">Falha</span>
@@ -237,16 +271,30 @@ const CreateVisualizationUI = (
             <Button
               type="button"
               size="xs"
-              onClick={handleAdd}
-              className={cn(busy && "pointer-events-none opacity-60")}
-              disabled={busy}
+              onClick={handleSave}
+              className={cn((busy || !data) && "pointer-events-none opacity-60")}
+              disabled={busy || !data}
             >
-              {busy ? <Loader2 className="size-3 animate-spin" aria-hidden /> : <Plus className="size-3" aria-hidden />}
-              Adicionar ao painel
+              {busy ? (
+                <Loader2 className="size-3 animate-spin" aria-hidden />
+              ) : (
+                <BookmarkPlus className="size-3" aria-hidden />
+              )}
+              Salvar visualização
             </Button>
           )}
         </div>
       </div>
+
+      {data ? (
+        <div className="mt-3 max-h-80 overflow-auto rounded-lg border border-border/70 bg-background/50 p-2">
+          <WidgetView kind={kind} data={data} />
+        </div>
+      ) : ready && !error ? (
+        <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
+          <Loader2 className="size-3 animate-spin" aria-hidden /> Montando visualização…
+        </p>
+      ) : null}
     </div>
   );
 };
@@ -257,7 +305,8 @@ const createVisualizationTool = {
   description:
     "Cria uma visualização (linha, barras, kpi ou tabela) a partir de um resultado de consultar_dados. " +
     "Passe resultId e as colunas x (categoria) e y (valor). " +
-    "O usuário clica em 'Adicionar ao painel' para fixar o widget.",
+    "A visualização aparece desenhada no chat com o botão Salvar visualização; " +
+    "o usuário salva no painel lateral (ou use salvar=true se ele pedir para salvar).",
   parameters: createVisualizationParameters,
   execute: executeCreateVisualization,
   render: CreateVisualizationUI,

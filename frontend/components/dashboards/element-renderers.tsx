@@ -79,7 +79,7 @@ const formatCell = (value: unknown) =>
 
 const TableElement = ({ element }: { element: DashboardElement & { type: "table" } }) => {
   const { title, showTitle, dataset, binding, density } = element.props;
-  const live = useBindingData(element.id, binding);
+  const live = useBindingData(element.id, binding, { ignoreFilters: element.props.ignoreFilters });
   const isLive = isBindingReady(binding);
   const liveData = live.status === "ready" || live.status === "loading" ? live.data : undefined;
   const legacy = isLive ? null : resolveTable(dataset);
@@ -182,13 +182,19 @@ const IndicatorElement = ({
   };
 }) => {
   const props = element.props;
-  const live = useBindingData(element.id, props.binding);
+  const live = useBindingData(element.id, props.binding, { ignoreFilters: props.ignoreFilters });
   const isLive = isBindingReady(props.binding);
   const liveData = live.status === "ready" || live.status === "loading" ? live.data : undefined;
+  const current = isLive && liveData && props.binding ? toKpiValue(props.binding, liveData) : null;
   const value =
-    isLive && liveData && props.binding
-      ? formatNumber(toKpiValue(props.binding, liveData), props.format, props.decimals ?? 1)
-      : props.value;
+    isLive && liveData && props.binding ? formatNumber(current, props.format, props.decimals ?? 1) : props.value;
+
+  // comparação com o período anterior (calculada pelo servidor)
+  const compare = liveData?.compare;
+  const compareDelta =
+    compare && current !== null && compare.previous !== null && compare.previous !== 0
+      ? ((current - compare.previous) / Math.abs(compare.previous)) * 100
+      : null;
 
   return (
     <Panel className="relative justify-between p-4">
@@ -209,8 +215,21 @@ const IndicatorElement = ({
         </div>
       )}
       <div className="flex items-center justify-between gap-2">
-        <p className="min-w-0 truncate text-[11px] text-muted-foreground">{props.description}</p>
-        {props.showDelta ? <DeltaBadge delta={props.delta} /> : null}
+        <p
+          className="min-w-0 truncate text-[11px] text-muted-foreground"
+          title={compare ? `${compare.currentLabel} em relação a ${compare.previousLabel}` : undefined}
+        >
+          {compare ? `${compare.currentLabel} vs ${compare.previousLabel}` : props.description}
+        </p>
+        {compare ? (
+          compareDelta !== null ? (
+            <DeltaBadge delta={Math.round(compareDelta * 10) / 10} />
+          ) : (
+            <span className="text-[11px] text-muted-foreground">sem base</span>
+          )
+        ) : props.showDelta ? (
+          <DeltaBadge delta={props.delta} />
+        ) : null}
       </div>
     </Panel>
   );
@@ -319,7 +338,71 @@ const ShapeElement = ({ element }: { element: DashboardElement & { type: "shape"
   );
 };
 
+const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
+
+const RANGE_PRESETS: { label: string; days: number | "ano" | "tudo" }[] = [
+  { label: "Últimos 7 dias", days: 7 },
+  { label: "Últimos 30 dias", days: 30 },
+  { label: "Últimos 90 dias", days: 90 },
+  { label: "Este ano", days: "ano" },
+  { label: "Tudo", days: "tudo" },
+];
+
+const presetRange = (days: number | "ano" | "tudo"): string => {
+  if (days === "tudo") return "";
+  const end = new Date();
+  const start = new Date();
+  if (days === "ano") start.setMonth(0, 1);
+  else start.setDate(start.getDate() - days + 1);
+  return `${toIsoDate(start)}..${toIsoDate(end)}`;
+};
+
+/** Filtro de período: data inicial, data final e atalhos. */
+const RangeFilter = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
+  const ctx = useDashboardData();
+  const value = filterValueOf(ctx, element);
+  const [from = "", to = ""] = value.split("..");
+  const set = (nextFrom: string, nextTo: string) =>
+    ctx.setValue(element.id, nextFrom || nextTo ? `${nextFrom}..${nextTo}` : "");
+  const inputCls =
+    "min-w-0 flex-1 rounded-md border border-border/70 bg-background px-1.5 py-1 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/60";
+
+  return (
+    <div className="no-drag flex h-full w-full flex-col justify-center gap-1.5 rounded-xl border border-border/70 bg-panel/60 px-3">
+      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
+        <span className="truncate">{element.props.label}</span>
+        <select
+          aria-label="Atalhos de período"
+          value=""
+          onChange={(event) => {
+            const preset = RANGE_PRESETS.find((entry) => entry.label === event.target.value);
+            if (preset) ctx.setValue(element.id, presetRange(preset.days));
+          }}
+          className="max-w-28 cursor-pointer bg-transparent text-[10px] text-primary outline-none"
+        >
+          <option value="">Atalhos…</option>
+          {RANGE_PRESETS.map((preset) => (
+            <option key={preset.label} value={preset.label}>
+              {preset.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <input type="date" aria-label="Data inicial" value={from} max={to || undefined} onChange={(event) => set(event.target.value, to)} className={inputCls} />
+        <span className="text-[10px] text-muted-foreground">até</span>
+        <input type="date" aria-label="Data final" value={to} min={from || undefined} onChange={(event) => set(from, event.target.value)} className={inputCls} />
+      </div>
+    </div>
+  );
+};
+
 const FilterElement = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
+  if (element.props.mode === "range") return <RangeFilter element={element} />;
+  return <ListFilter element={element} />;
+};
+
+const ListFilter = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
   const { label, options: staticOptions, binding } = element.props;
   const ctx = useDashboardData();
   const live = useFilterOptions(element);

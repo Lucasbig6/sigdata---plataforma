@@ -2,6 +2,7 @@
 
 import { RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import { PAGE_PALETTES } from "@/lib/dashboards/page-themes";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { CANVAS_LIMITS, PAGE_PRESETS, clamp } from "@/lib/dashboards/types";
 import { inputCls } from "./binding-editor";
@@ -61,10 +62,14 @@ const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean;
   </div>
 );
 
+const BACKGROUNDS = ["#ffffff", "#f3f5f7", "#1b2326", "#0b1114", "#102a43", "#f5efe6"];
+
 /** Tamanho da página (predefinições, personalizado, orientação) e grade do editor. */
 export const PageSettings = () => {
   const canvas = useDashboardsStore((s) => (s.currentId ? s.dashboards[s.currentId]?.canvas : undefined));
   const setCanvasSize = useDashboardsStore((s) => s.setCanvasSize);
+  const setCanvasBackground = useDashboardsStore((s) => s.setCanvasBackground);
+  const setCanvasPalette = useDashboardsStore((s) => s.setCanvasPalette);
   const showGrid = useDashboardsStore((s) => s.showGrid);
   const snapToGrid = useDashboardsStore((s) => s.snapToGrid);
   const setShowGrid = useDashboardsStore((s) => s.setShowGrid);
@@ -118,6 +123,76 @@ export const PageSettings = () => {
         >
           <RotateCw className="size-3.5" aria-hidden />
         </button>
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-[11px] text-muted-foreground">Cor de fundo</span>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {BACKGROUNDS.map((color) => (
+            <button
+              key={color}
+              type="button"
+              aria-label={`Fundo ${color}`}
+              aria-pressed={canvas.background === color}
+              onClick={() => setCanvasBackground(color)}
+              style={{ backgroundColor: color }}
+              className={`size-6 rounded-md border transition-shadow ${
+                canvas.background === color ? "border-primary ring-2 ring-primary/40" : "border-border/70"
+              }`}
+            />
+          ))}
+          <input
+            type="color"
+            aria-label="Cor de fundo personalizada"
+            value={canvas.background ?? "#1b2326"}
+            onChange={(e) => setCanvasBackground(e.target.value)}
+            className="h-6 w-8 cursor-pointer rounded-md border border-border/70 bg-transparent p-0"
+          />
+          <button
+            type="button"
+            disabled={!canvas.background}
+            onClick={() => setCanvasBackground(null)}
+            className="rounded-md border border-border/70 px-2 py-1 text-[10px] text-foreground transition-colors hover:bg-muted/60 disabled:opacity-40"
+          >
+            Padrão do tema
+          </button>
+        </div>
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-[11px] text-muted-foreground">Paleta dos gráficos</span>
+        <div className="flex flex-col gap-1">
+          {PAGE_PALETTES.map((palette) => {
+            const on = canvas.palette?.join() === palette.colors.join();
+            return (
+              <button
+                key={palette.id}
+                type="button"
+                aria-pressed={on}
+                onClick={() => setCanvasPalette(palette.colors)}
+                className={`flex items-center gap-2 rounded-md border px-2 py-1 text-left text-[11px] transition-colors hover:bg-muted/60 ${
+                  on ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-foreground"
+                }`}
+              >
+                <span className="flex shrink-0">
+                  {palette.colors.slice(0, 5).map((color) => (
+                    <span key={color} className="-ml-1 size-3.5 rounded-full border border-background first:ml-0" style={{ background: color }} />
+                  ))}
+                </span>
+                {palette.label}
+              </button>
+            );
+          })}
+          <button
+            type="button"
+            disabled={!canvas.palette}
+            onClick={() => setCanvasPalette(null)}
+            className="self-start rounded-md border border-border/70 px-2 py-1 text-[10px] text-foreground transition-colors hover:bg-muted/60 disabled:opacity-40"
+          >
+            Paleta padrão do tema
+          </button>
+        </div>
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          Vale para os gráficos que não têm cores próprias.
+        </p>
       </div>
       <p className="text-[10px] leading-snug text-muted-foreground">
         Ao reduzir a página, elementos são movidos e encolhidos para caber. Ctrl+Z desfaz.

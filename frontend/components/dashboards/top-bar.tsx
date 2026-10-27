@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Undo2 } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Undo2, Zap } from "lucide-react";
 import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { useDashboardsStore } from "@/lib/dashboards/store";
 import { ShareDialog } from "./share-dialog";
+import { VersionHistory } from "./version-history";
 
 type Props = {
   dashboardId: string;
@@ -59,6 +61,29 @@ const SaveStatus = ({
         ? `Salvo às ${new Date(savedAt).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
         : "Tudo salvo"}
     </span>
+  );
+};
+
+/** Liga/desliga o salvamento automático (2,5 s após a última alteração). */
+const AutosaveToggle = () => {
+  const autosave = useDashboardsStore((state) => state.autosave);
+  const setAutosave = useDashboardsStore((state) => state.setAutosave);
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={autosave}
+      onClick={() => setAutosave(!autosave)}
+      title={autosave ? "Salvamento automático ligado" : "Ligar salvamento automático"}
+      className={`flex h-9 items-center gap-1.5 rounded-md border px-2.5 text-xs transition-colors ${
+        autosave
+          ? "border-primary/50 bg-primary/10 text-primary"
+          : "border-border/70 bg-background text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+      }`}
+    >
+      <Zap className="size-3.5" aria-hidden />
+      <span className="hidden lg:inline">Auto</span>
+    </button>
   );
 };
 
@@ -140,6 +165,9 @@ export const TopBar = ({
         {preview ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}
         <span className="hidden sm:inline">{preview ? "Editar" : "Visualizar"}</span>
       </button>
+
+      {!preview ? <AutosaveToggle /> : null}
+      {!preview ? <VersionHistory dashboardId={dashboardId} dirty={dirty} /> : null}
 
       <ShareDialog dashboardId={dashboardId} dirty={dirty} />
 

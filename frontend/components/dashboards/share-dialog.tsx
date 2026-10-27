@@ -135,6 +135,33 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
             </div>
           ) : null}
 
+          {token ? (
+            <div className="space-y-1.5">
+              <p className="text-[11px] text-muted-foreground">Incorporar em outra página (sem cabeçalho)</p>
+              <div className="flex gap-2">
+                <input
+                  readOnly
+                  value={`<iframe src="${publicUrl(token)}?embed=1" width="100%" height="600" style="border:0" loading="lazy"></iframe>`}
+                  onFocus={(e) => e.currentTarget.select()}
+                  aria-label="Código para incorporar"
+                  className="h-8 min-w-0 flex-1 rounded-md border border-border bg-muted/40 px-2 font-mono text-[11px] text-foreground outline-none"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(`<iframe src="${publicUrl(token)}?embed=1" width="100%" height="600" style="border:0" loading="lazy"></iframe>`)
+                      .catch(() => undefined);
+                  }}
+                >
+                  <Copy aria-hidden />
+                  Copiar
+                </Button>
+              </div>
+            </div>
+          ) : null}
+
           {dirty ? (
             <div className="flex items-center justify-between gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2">
               <p className="text-[11px] text-amber-700 dark:text-amber-300">

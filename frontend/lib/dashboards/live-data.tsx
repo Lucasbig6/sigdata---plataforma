@@ -18,6 +18,8 @@ import {
   type ReactNode,
 } from "react";
 import { api } from "@/lib/api/client";
+import { buildChartData } from "@shared/charts/data";
+import type { ChartData } from "@shared/charts/types";
 import type { SeriesPoint } from "@/lib/demo-data";
 import type {
   ActiveFilter,
@@ -36,12 +38,22 @@ type Mode = { kind: "private" } | { kind: "public"; token: string };
 
 type FilterElement = DashboardElement & { type: "filter" };
 
+/** Gráfico que filtra os demais ao clicar numa categoria (filtro cruzado, como no Power BI). */
+type Selector = { id: string; binding: FilterBinding };
+
 type Ctx = {
   mode: Mode;
   /** Valor escolhido em cada elemento de filtro ("" = todos). */
   values: Record<string, string>;
   setValue: (elementId: string, value: string) => void;
   filterElements: FilterElement[];
+  /** Cliques em gráficos filtram os outros elementos (visualização e link público). */
+  interactive: boolean;
+  selectors: Selector[];
+  /** Clicar de novo na mesma categoria remove o filtro. */
+  toggleSelection: (elementId: string, value: string) => void;
+  hasActiveFilters: boolean;
+  clearAll: () => void;
   /** Incrementa para forçar nova busca de todos os elementos. */
   refreshKey: number;
   refresh: () => void;
@@ -52,10 +64,12 @@ const DashboardDataContext = createContext<Ctx | null>(null);
 export const DashboardDataProvider = ({
   mode,
   elements,
+  interactive = false,
   children,
 }: {
   mode: Mode;
   elements: DashboardElement[];
+  interactive?: boolean;
   children: ReactNode;
 }) => {
   const [values, setValues] = useState<Record<string, string>>({});
@@ -64,6 +78,42 @@ export const DashboardDataProvider = ({
   const filterElements = useMemo(
     () => elements.filter((el): el is FilterElement => el.type === "filter" && !el.hidden),
     [elements],
+  );
+
+  const selectors = useMemo<Selector[]>(
+    () =>
+      elements.flatMap((el) => {
+        if (el.type !== "chart" || el.hidden || el.props.crossFilter === false) return [];
+        const binding = el.props.binding;
+        if (binding?.mode !== "builder" || !binding.table || !binding.dimension) return [];
+        return [{ id: el.id, binding: { sourceId: binding.sourceId, table: binding.table, column: binding.dimension } }];
+      }),
+    [elements],
+  );
+
+  const toggleSelection = useCallback(
+    (elementId: string, value: string) =>
+      setValues((current) => ({ ...current, [elementId]: current[elementId] === value ? "" : value })),
+    [],
+  );
+
+  // ao sair da pré-visualização as seleções de gráficos deixam de valer
+  useEffect(() => {
+    if (interactive) return;
+    setValues((current) => {
+      const ids = new Set(selectors.map((selector) => selector.id));
+      const kept = Object.fromEntries(Object.entries(current).filter(([id]) => !ids.has(id)));
+      return Object.keys(kept).length === Object.keys(current).length ? current : kept;
+    });
+  }, [interactive, selectors]);
+
+  const hasActiveFilters =
+    filterElements.some((el) => (values[el.id] ?? el.props.value ?? "") !== "") ||
+    (interactive && selectors.some((selector) => Boolean(values[selector.id])));
+
+  const clearAll = useCallback(
+    () => setValues(Object.fromEntries(filterElements.map((el) => [el.id, ""]))),
+    [filterElements],
   );
 
   const setValue = useCallback(
@@ -77,8 +127,20 @@ export const DashboardDataProvider = ({
   }, []);
 
   const value = useMemo(
-    () => ({ mode, values, setValue, filterElements, refreshKey, refresh }),
-    [mode, values, setValue, filterElements, refreshKey, refresh],
+    () => ({
+      mode,
+      values,
+      setValue,
+      filterElements,
+      interactive,
+      selectors,
+      toggleSelection,
+      hasActiveFilters,
+      clearAll,
+      refreshKey,
+      refresh,
+    }),
+    [mode, values, setValue, filterElements, interactive, selectors, toggleSelection, hasActiveFilters, clearAll, refreshKey, refresh],
   );
 
   return <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>;
@@ -148,17 +210,44 @@ export const isBindingReady = (binding: DataBinding | undefined): binding is Dat
   return Boolean(binding.table);
 };
 
-export const useBindingData = (elementId: string, binding: DataBinding | undefined) => {
+export const useBindingData = (
+  elementId: string,
+  binding: DataBinding | undefined,
+  options: { ignoreFilters?: boolean } = {},
+) => {
   const ctx = useCtx();
   const ready = isBindingReady(binding);
 
+  // filtros dos elementos de filtro + seleções de outros gráficos (mesma fonte e tabela)
   const filters = useMemo(() => {
-    if (!ready || binding.mode !== "builder") return [];
-    return ctx.filterElements
-      .filter((el) => el.props.binding?.sourceId === binding.sourceId && el.props.binding.table === binding.table)
-      .map((el) => ({ el, value: filterValueOf(ctx, el) }))
-      .filter((entry) => entry.value !== "");
-  }, [ctx, binding, ready]);
+    if (!ready || binding.mode !== "builder" || options.ignoreFilters) return [];
+    const fromFilters = ctx.filterElements.flatMap((el) => {
+      const fb = el.props.binding;
+      if (!fb) return [];
+      const global = el.props.global === true;
+      // filtro global: vale para qualquer tabela; o servidor ignora as que não têm a coluna
+      if (!global && !(fb.sourceId === binding.sourceId && fb.table === binding.table)) return [];
+      return [
+        {
+          id: el.id,
+          binding: fb,
+          value: filterValueOf(ctx, el),
+          byName: global,
+          range: el.props.mode === "range",
+        },
+      ];
+    });
+    const fromCharts = ctx.interactive
+      ? ctx.selectors.flatMap((selector) =>
+          selector.id !== elementId &&
+          selector.binding.sourceId === binding.sourceId &&
+          selector.binding.table === binding.table
+            ? [{ id: selector.id, binding: selector.binding, value: ctx.values[selector.id] ?? "", byName: false, range: false }]
+            : [],
+        )
+      : [];
+    return [...fromFilters, ...fromCharts].filter((entry) => entry.value !== "");
+  }, [ctx, binding, ready, elementId, options.ignoreFilters]);
 
   let key: string | null = null;
   let load: () => Promise<BindingData> = () => Promise.reject(new Error("sem ligação"));
@@ -166,7 +255,7 @@ export const useBindingData = (elementId: string, binding: DataBinding | undefin
   if (ready) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
-      const publicFilters: PublicFilter[] = filters.map(({ el, value }) => ({ elementId: el.id, value }));
+      const publicFilters: PublicFilter[] = filters.map((entry) => ({ elementId: entry.id, value: entry.value }));
       key = JSON.stringify(["pub", token, elementId, publicFilters, ctx.refreshKey]);
       load = () =>
         api<BindingData>(`/api/public/dashboards/${token}/data`, {
@@ -174,12 +263,17 @@ export const useBindingData = (elementId: string, binding: DataBinding | undefin
           json: { elementId, filters: publicFilters },
         });
     } else {
-      const active: ActiveFilter[] = filters.map(({ el, value }) => ({
-        ...(el.props.binding as FilterBinding),
-        value,
+      const active: ActiveFilter[] = filters.map((entry) => ({
+        ...entry.binding,
+        value: entry.value,
+        ...(entry.byName && { byName: true }),
+        ...(entry.range && { range: true }),
       }));
       key = JSON.stringify(["priv", binding, active, ctx.refreshKey]);
-      load = () => api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding, filters: active } });
+      // depois de "Atualizar", o servidor também ignora o cache dele
+      const fresh = ctx.refreshKey > 0;
+      load = () =>
+        api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding, filters: active, fresh } });
     }
   }
 
@@ -191,7 +285,7 @@ export const useFilterOptions = (element: FilterElement) => {
   const binding = element.props.binding;
   let key: string | null = null;
   let load: () => Promise<FilterOptions> = () => Promise.resolve({ options: [] });
-  if (binding?.sourceId && binding.table && binding.column) {
+  if (binding?.sourceId && binding.table && binding.column && element.props.mode !== "range") {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
       key = JSON.stringify(["pub-opt", token, element.id, ctx.refreshKey]);
@@ -236,6 +330,23 @@ export const toSeries = (binding: DataBinding, data: BindingData): SeriesPoint[]
   return data.rows.map((row) => ({ label: String(row[x] ?? "—"), valor: toNumber(row[y]) ?? 0 }));
 };
 
+/** Dados do gráfico: várias séries (colunas Y extras ou "dividir por") quando configurado. */
+export const toChartData = (binding: DataBinding, data: BindingData): ChartData => {
+  const names = data.columns.map((c) => c.name);
+  if (binding.mode === "builder") {
+    const label = binding.calc?.name ?? binding.measure ?? "Contagem";
+    return buildChartData(
+      data.rows,
+      { x: "label", ys: ["valor"], splitBy: names.includes("serie") ? "serie" : undefined },
+      [label],
+    );
+  }
+  const { x, y } = axesOf(binding, data);
+  const extra = (binding.ys ?? []).filter((name) => names.includes(name) && name !== y);
+  const splitBy = binding.splitBy && names.includes(binding.splitBy) ? binding.splitBy : undefined;
+  return buildChartData(data.rows, { x, ys: [y, ...(splitBy ? [] : extra)], splitBy });
+};
+
 /** Valor numérico do KPI (primeira linha). */
 export const toKpiValue = (binding: DataBinding, data: BindingData): number | null => {
   const row = data.rows[0];
@@ -246,23 +357,4 @@ export const toKpiValue = (binding: DataBinding, data: BindingData): number | nu
   return col ? toNumber(row[col]) : null;
 };
 
-export const formatNumber = (value: number | null, format: NumberFormat = "numero", decimals = 1) => {
-  if (value === null) return "—";
-  const digits = Math.min(Math.max(decimals, 0), 4);
-  switch (format) {
-    case "moeda":
-      return new Intl.NumberFormat("pt-BR", {
-        style: "currency",
-        currency: "BRL",
-        maximumFractionDigits: digits,
-        minimumFractionDigits: Math.min(digits, 2),
-      }).format(value);
-    case "percentual":
-      return `${new Intl.NumberFormat("pt-BR", { maximumFractionDigits: digits }).format(value)}%`;
-    case "compacto":
-      return new Intl.NumberFormat("pt-BR", { notation: "compact", maximumFractionDigits: digits }).format(value);
-    default:
-      return new Intl.NumberFormat("pt-BR", { maximumFractionDigits: digits }).format(value);
-  }
-};
-
+export { formatNumber } from "./format";

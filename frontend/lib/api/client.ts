@@ -29,7 +29,18 @@ export const api = async <T>(path: string, init: RequestInit & { json?: unknown 
   });
   if (res.status === 401) redirectToLogin();
   const text = await res.text();
-  const data = text ? (JSON.parse(text) as unknown) : null;
+  let data: unknown = null;
+  try {
+    data = text ? (JSON.parse(text) as unknown) : null;
+  } catch {
+    // resposta que não é JSON (ex.: proxy sem o backend, durante um reinício)
+    throw new ApiError(
+      res.status,
+      res.status >= 500
+        ? "Servidor indisponível no momento. Tente novamente em instantes."
+        : `Resposta inesperada do servidor (HTTP ${res.status}).`,
+    );
+  }
   if (!res.ok) {
     const message =
       data && typeof data === "object" && "error" in data && typeof data.error === "string"

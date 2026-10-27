@@ -239,8 +239,6 @@
   position: absolute;
   inset: 0;
   display: flex;
-  align-items: flex-start;
-  justify-content: center;
   overflow: auto;
   padding: 24px;
   background:
@@ -249,10 +247,27 @@
     var(--canvas-viewport);
 }
 
+/* margin:auto centraliza a página quando cabe e permite rolar quando não cabe */
 .sd-canvas-frame {
   position: relative;
   flex: none;
+  margin: auto;
   padding: 36px;
+}
+
+/* Visualização/compartilhado: a página toma a tela inteira, sem moldura. */
+.sd-canvas-viewport--fill {
+  padding: 0;
+}
+
+.sd-canvas-frame--fill {
+  padding: 0;
+}
+
+.sd-canvas.sd-canvas--fill {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
 }
 
 .sd-canvas {

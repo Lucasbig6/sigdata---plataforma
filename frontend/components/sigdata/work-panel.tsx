@@ -1,48 +1,57 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { Rnd } from "react-rnd";
+import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   BookmarkPlus,
   Check,
   ChevronRight,
-  Copy,
   Database,
+  Loader2,
   Minus,
+  Pencil,
   Plus,
   Trash2,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { MUNICIPIOS, SERIE_TEMPORAL } from "@/lib/demo-data";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
-import { saveAnalysis } from "@/lib/dashboards/analyses";
+import { draftFromWidget, liveFromResult } from "@/lib/dashboards/from-workspace";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { findLibraryItem } from "@/lib/dashboards/presets";
-import { usePanelStore, WIDGET_MIN_SIZE, type PanelWidget, type WidgetKind } from "@/lib/panel/store";
+import type { ResultColumn } from "@/lib/domain/sources";
+import { editWidget } from "@/lib/panel/edit";
+import {
+  usePanelStore,
+  WIDGET_KIND_LABELS,
+  type PanelWidget,
+  type WidgetKind,
+} from "@/lib/panel/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
+import { fetchResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
+import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
-import { BarChart, DataTable, KpiGrid, LineChart, ResultTable } from "./visualizations";
+import { WidgetView } from "./widget-view";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
 const TABS: { id: TabId; label: string }[] = [
-  { id: "todos", label: "Todos" },
+  { id: "todos", label: "Todas" },
   { id: "grafico", label: "Gráficos" },
-  { id: "tabela", label: "Tabela" },
+  { id: "tabela", label: "Tabelas" },
   { id: "indicadores", label: "Indicadores" },
 ];
 
 const EMPTY_WIDGETS: PanelWidget[] = [];
+
 
 const matchesTab = (kind: WidgetKind, tab: TabId): boolean => {
   switch (tab) {
     case "todos":
       return true;
     case "grafico":
-      return kind === "linha" || kind === "barras";
+      return isChartKind(kind);
     case "tabela":
       return kind === "tabela";
     case "indicadores":
@@ -50,55 +59,215 @@ const matchesTab = (kind: WidgetKind, tab: TabId): boolean => {
   }
 };
 
-const WidgetBody = ({ widget }: { widget: PanelWidget }) => {
-  if (widget.kind === "linha") {
-    return <LineChart data={widget.series ?? SERIE_TEMPORAL} />;
-  }
-  if (widget.kind === "barras") {
-    return <BarChart data={widget.series ?? SERIE_TEMPORAL} />;
-  }
-  if (widget.kind === "kpi") {
-    return <KpiGrid items={widget.kpis ?? []} />;
-  }
-  if (widget.table) return <ResultTable columns={widget.table.columns} rows={widget.table.rows} />;
-  return <DataTable rows={widget.rows ?? MUNICIPIOS} />;
+const fieldCls =
+  "w-full rounded-md border border-border bg-background px-2 py-1.5 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50";
+
+/** Edição de uma visualização salva: título, tipo e colunas (o agente faz o mesmo por ferramenta). */
+const WidgetEditor = ({
+  notebookId,
+  widget,
+  onClose,
+}: {
+  notebookId: string;
+  widget: PanelWidget;
+  onClose: () => void;
+}) => {
+  const [title, setTitle] = useState(widget.title);
+  const [kind, setKind] = useState<WidgetKind>(widget.kind);
+  const [columns, setColumns] = useState<ResultColumn[] | null>(null);
+  const [x, setX] = useState(widget.xCol ?? "");
+  const [y, setY] = useState(widget.yCol ?? "");
+  const [splitBy, setSplitBy] = useState(widget.splitBy ?? "");
+  const [borderWidth, setBorderWidth] = useState(widget.border?.width ?? "");
+  const [borderColor, setBorderColor] = useState(widget.border?.color ?? "");
+  const [borderStyle, setBorderStyle] = useState<"solid" | "dashed" | "dotted">(widget.border?.style ?? "solid");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!widget.resultId) return;
+    let cancelled = false;
+    fetchResult(widget.resultId)
+      .then((result) => !cancelled && setColumns(result.columns))
+      .catch(() => !cancelled && setColumns([]));
+    return () => {
+      cancelled = true;
+    };
+  }, [widget.resultId]);
+
+  const isChart = isChartKind(kind);
+  const canRebind = Boolean(widget.resultId);
+
+  const apply = async () => {
+    setBusy(true);
+    setError(null);
+    const splitChanged = (splitBy || undefined) !== widget.splitBy;
+    const columnsChanged =
+      (x || undefined) !== widget.xCol || (y || undefined) !== widget.yCol || splitChanged;
+    const outcome = await editWidget(notebookId, widget.id, {
+      titulo: title !== widget.title ? title : undefined,
+      kind: kind !== widget.kind ? kind : undefined,
+      x: columnsChanged && x ? x : undefined,
+      y: columnsChanged && y ? y : undefined,
+      splitBy: splitChanged ? splitBy : undefined,
+      border: borderWidth || borderColor || borderStyle !== "solid"
+        ? { width: Number(borderWidth) || undefined, color: borderColor || undefined, style: borderStyle }
+        : undefined,
+    });
+    setBusy(false);
+    if (outcome.ok) onClose();
+    else setError(outcome.error);
+  };
+
+  return (
+    <div className="space-y-2.5 border-b border-border/70 bg-muted/20 p-3">
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] text-muted-foreground">Título</span>
+        <input className={fieldCls} value={title} onChange={(event) => setTitle(event.target.value)} />
+      </label>
+
+      <label className="flex flex-col gap-1">
+        <span className="text-[11px] text-muted-foreground">Tipo</span>
+        <select className={fieldCls} value={kind} onChange={(event) => setKind(event.target.value as WidgetKind)}>
+          {WIDGET_KINDS.map((option) => (
+            <option
+              key={option}
+              value={option}
+              disabled={!canRebind && option !== widget.kind && !(isChartKind(option) && isChartKind(widget.kind))}
+            >
+              {WIDGET_KIND_LABELS[option]}
+            </option>
+          ))}
+        </select>
+      </label>
+
+      {canRebind && columns && columns.length > 0 && (isChart || kind === "kpi") ? (
+        <div className="grid grid-cols-2 gap-2">
+          {isChart ? (
+            <label className="flex flex-col gap-1">
+              <span className="text-[11px] text-muted-foreground">Categoria (X)</span>
+              <select className={fieldCls} value={x} onChange={(event) => setX(event.target.value)}>
+                <option value="">Automática</option>
+                {columns.map((column) => (
+                  <option key={column.name} value={column.name}>
+                    {column.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ) : null}
+          {isChart ? (
+            <label className="col-span-2 flex flex-col gap-1">
+              <span className="text-[11px] text-muted-foreground">Dividir em séries por</span>
+              <select className={fieldCls} value={splitBy} onChange={(event) => setSplitBy(event.target.value)}>
+                <option value="">Sem divisão</option>
+                {columns
+                  .filter((column) => column.name !== x && column.name !== y)
+                  .map((column) => (
+                    <option key={column.name} value={column.name}>
+                      {column.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+          ) : null}
+          {isChart ? (
+            <div className="mt-2">
+              <span className="text-[11px] text-muted-foreground">Borda do gráfico</span>
+              <div className="grid grid-cols-3 gap-2 mt-1">
+                <input
+                  type="number"
+                  value={borderWidth}
+                  onChange={(event) => setBorderWidth(event.target.value)}
+                  className="border rounded-md py-1 px-2 text-xs w-full"
+                  min="0"
+                  placeholder="Largura"
+                />
+                <input
+                  type="color"
+                  value={borderColor}
+                  onChange={(event) => setBorderColor(event.target.value ?? "")}
+                  className="border rounded-md py-1 px-2"
+                />
+                <select
+                  value={borderStyle}
+                  onChange={(event) => setBorderStyle(event.target.value as "solid" | "dashed" | "dotted")}
+                  className="border rounded-md py-1 px-2 text-xs w-full"
+                >
+                  <option value="solid">Sólida</option>
+                  <option value="dashed">Tracejada</option>
+                  <option value="dotted">Pontilhada</option>
+                </select>
+              </div>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {!canRebind ? (
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          Sem consulta de origem: só o título e o tipo de gráfico podem mudar.
+        </p>
+      ) : null}
+      {error ? <p className="text-[11px] text-destructive">{error}</p> : null}
+
+      <div className="flex justify-end gap-1.5">
+        <Button size="xs" variant="ghost" onClick={onClose} disabled={busy}>
+          <X className="size-3" aria-hidden />
+          Cancelar
+        </Button>
+        <Button size="xs" onClick={apply} disabled={busy || !title.trim()}>
+          {busy ? <Loader2 className="size-3 animate-spin" aria-hidden /> : <Check className="size-3" aria-hidden />}
+          Aplicar
+        </Button>
+      </div>
+    </div>
+  );
 };
 
-const WidgetCard = ({
-  widget,
-  onRemove,
-  onFocus,
-}: {
-  widget: PanelWidget;
-  onRemove: () => void;
-  onFocus: () => void;
-}) => (
-  <article
-    onPointerDown={onFocus}
-    className="flex h-full w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm"
-  >
-    <header className="widget-handle flex cursor-grab items-center gap-2 border-b border-border/70 bg-muted/30 px-3 py-1.5 active:cursor-grabbing">
-      <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-foreground" title={widget.title}>
-        {widget.title}
-      </h3>
-      <button
-        type="button"
-        aria-label={`Remover ${widget.title}`}
-        title="Remover"
-        onClick={(event) => {
-          event.stopPropagation();
-          onRemove();
-        }}
-        className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
-      >
-        <Trash2 className="size-3.5" aria-hidden />
-      </button>
-    </header>
-    <div className="min-h-0 flex-1 overflow-auto p-2">
-      <WidgetBody widget={widget} />
-    </div>
-  </article>
-);
+const WidgetCard = ({ notebookId, widget }: { notebookId: string; widget: PanelWidget }) => {
+  const removeWidget = usePanelStore((state) => state.removeWidget);
+  const [editing, setEditing] = useState(false);
+
+  return (
+    <article className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+      <header className="flex items-center gap-2 border-b border-border/70 bg-muted/30 px-3 py-1.5">
+        <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-foreground" title={widget.title}>
+          {widget.title}
+        </h3>
+        <span className="shrink-0 rounded-full border border-border bg-background/60 px-1.5 py-0.5 text-[10px] text-muted-foreground">
+          {WIDGET_KIND_LABELS[widget.kind]}
+        </span>
+        <button
+          type="button"
+          aria-label={`Editar ${widget.title}`}
+          aria-pressed={editing}
+          title="Editar"
+          onClick={() => setEditing((value) => !value)}
+          className={cn(
+            "grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground",
+            editing && "bg-primary/10 text-primary",
+          )}
+        >
+          <Pencil className="size-3.5" aria-hidden />
+        </button>
+        <button
+          type="button"
+          aria-label={`Remover ${widget.title}`}
+          title="Remover"
+          onClick={() => removeWidget(notebookId, widget.id)}
+          className="grid size-6 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-destructive/10 hover:text-destructive"
+        >
+          <Trash2 className="size-3.5" aria-hidden />
+        </button>
+      </header>
+      {editing ? <WidgetEditor notebookId={notebookId} widget={widget} onClose={() => setEditing(false)} /> : null}
+      <div className="max-h-72 overflow-auto p-2">
+        <WidgetView kind={widget.kind} data={widget} />
+      </div>
+    </article>
+  );
+};
 
 const EmptyState = () => (
   <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
@@ -106,13 +275,16 @@ const EmptyState = () => (
       <Database className="size-5" aria-hidden />
     </span>
     <p className="max-w-xs text-sm leading-relaxed text-muted-foreground">
-      Peça um gráfico, indicador ou tabela ao assistente e use &quot;Adicionar ao painel&quot; para
-      fixar a visualização aqui.
+      Peça um gráfico, indicador ou tabela ao assistente. A visualização aparece no chat: clique em
+      &quot;Salvar visualização&quot; para guardá-la aqui.
     </p>
-    <p className="text-xs text-muted-foreground/70">Os widgets podem ser arrastados e redimensionados.</p>
+    <p className="text-xs text-muted-foreground/70">
+      Depois você (ou o assistente) pode editar, e levar tudo para um dashboard.
+    </p>
   </div>
 );
 
+/** Biblioteca de visualizações salvas do projeto (geradas no chat). */
 export const WorkPanel = ({ className }: { className?: string }) => {
   const notebookId = useSearchParams().get("notebook");
   const {
@@ -126,13 +298,9 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   } = useSigdata();
 
   const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
-  const widgets =
-    (notebookId ? widgetsByNotebook[notebookId] : undefined) ?? EMPTY_WIDGETS;
+  const widgets = (notebookId ? widgetsByNotebook[notebookId] : undefined) ?? EMPTY_WIDGETS;
   const loadPanel = usePanelStore((state) => state.load);
   const panelSaveError = usePanelStore((state) => state.saveError);
-  const updateGeometry = usePanelStore((state) => state.updateGeometry);
-  const removeWidget = usePanelStore((state) => state.removeWidget);
-  const bringToFront = usePanelStore((state) => state.bringToFront);
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const notebook = notebooks.find((entry) => entry.id === notebookId);
   const datasets = useDatasetsStore((state) => state.datasets);
@@ -142,7 +310,6 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
   const beginTransaction = useDashboardsStore((state) => state.beginTransaction);
   const addElement = useDashboardsStore((state) => state.addElement);
-  const updateProps = useDashboardsStore((state) => state.updateProps);
   const endTransaction = useDashboardsStore((state) => state.endTransaction);
   const saveDashboard = useDashboardsStore((state) => state.save);
 
@@ -150,7 +317,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const panelVisible = !panelCollapsed || panelMobileOpen;
 
   useEffect(() => {
-    if (notebookId) loadPanel(notebookId);
+    if (notebookId) void loadPanel(notebookId);
   }, [notebookId, loadPanel]);
 
   useEffect(() => {
@@ -159,121 +326,43 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     return () => clearTimeout(timeout);
   }, [note]);
 
+  // mais recentes primeiro
   const filtered = useMemo(
-    () => widgets.filter((widget) => matchesTab(widget.kind, panelView)),
+    () =>
+      widgets
+        .filter((widget) => matchesTab(widget.kind, panelView))
+        .sort((a, b) => b.z - a.z),
     [widgets, panelView],
   );
 
-  const maxZ = widgets.reduce((max, widget) => Math.max(max, widget.z), 0);
-  const containerHeight = Math.max(
-    320,
-    ...widgets.map((widget) => widget.y + widget.h + 24),
-  );
-
-  const handleDragStop = useCallback(
-    (id: string, x: number, y: number) => {
-      if (!notebookId) return;
-      updateGeometry(notebookId, id, { x, y });
-    },
-    [notebookId, updateGeometry],
-  );
-
-  const handleResizeStop = useCallback(
-    (id: string, w: number, h: number, x: number, y: number) => {
-      if (!notebookId) return;
-      updateGeometry(notebookId, id, { w, h, x, y });
-    },
-    [notebookId, updateGeometry],
-  );
-
-  const handleRemove = useCallback(
-    (id: string) => {
-      if (!notebookId) return;
-      removeWidget(notebookId, id);
-    },
-    [notebookId, removeWidget],
-  );
-
-  const handleFocus = useCallback(
-    (id: string) => {
-      if (!notebookId) return;
-      bringToFront(notebookId, id);
-    },
-    [notebookId, bringToFront],
-  );
-
-  const handleSaveAsDashboard = () => {
+  const handleSaveAsDashboard = async () => {
     if (!notebookId || widgets.length === 0) {
-      setNote("Adicione visualizações ao painel antes de salvar.");
+      setNote("Salve visualizações antes de criar o dashboard.");
       return;
     }
     const title = notebook?.title?.trim() || "Dashboard do projeto";
+
+    // visualizações vindas de consulta viram elementos ao vivo; as demais levam uma cópia dos dados
+    const drafts = await Promise.all(
+      widgets.map(async (widget) => {
+        const live = widget.resultId
+          ? await fetchResult(widget.resultId).then(liveFromResult, () => null)
+          : null;
+        return { widget, draft: draftFromWidget(widget, live, title) };
+      }),
+    );
 
     const id = createDashboard();
     openDashboard(id);
     beginTransaction("panel-import");
     renameDashboard(title);
-
-    const keyByKind: Record<WidgetKind, string> = {
-      linha: "line",
-      barras: "bar",
-      kpi: "kpi",
-      tabela: "table",
-    };
-
-    for (const widget of widgets) {
-      const item = findLibraryItem(keyByKind[widget.kind]);
-      if (!item) continue;
-      const elementId = addElement(item, { x: widget.x, y: widget.y });
-      if (!elementId) continue;
-      const patch: Record<string, unknown> = { title: widget.title, showTitle: true };
-      if (widget.kind === "linha") patch.chartType = "line";
-      if (widget.kind === "barras") patch.chartType = "bar";
-      if (widget.kind === "kpi" && widget.kpis?.[0]) {
-        patch.title = widget.kpis[0].label;
-        patch.value = widget.kpis[0].value;
-        patch.description = widget.title;
-      }
-      // cada gráfico/tabela leva os próprios dados como análise salva
-      if (widget.kind !== "kpi" && (widget.series || widget.table || widget.rows)) {
-        const analysis = saveAnalysis(
-          {
-            kpis: widget.kpis ?? [],
-            serie: widget.series ?? [],
-            municipios: widget.rows ?? [],
-            resumos: [],
-            ...(widget.table && { tabela: widget.table }),
-          },
-          `${title} · ${widget.title}`,
-        );
-        patch.dataset = {
-          source: "analysis",
-          ref: analysis.id,
-          categoryField: "periodo",
-          valueField: "valor",
-        };
-      }
-      updateProps(elementId, patch);
+    for (const { widget, draft } of drafts) {
+      if (draft) addElement(draft.item, { x: widget.x, y: widget.y }, draft.props);
     }
-
     endTransaction();
     void saveDashboard();
     savePreferences();
     setNote(`Dashboard "${title}" salvo — abra em Dashboards.`);
-  };
-
-  const handleShare = async () => {
-    if (!notebookId) {
-      setNote("Abra um projeto para compartilhar.");
-      return;
-    }
-    const url = `${window.location.origin}/workspace?notebook=${notebookId}`;
-    try {
-      await navigator.clipboard.writeText(url);
-      setNote("Link copiado (acesso só para você). Para público, salve como dashboard e compartilhe.");
-    } catch {
-      setNote(url);
-    }
   };
 
   return (
@@ -284,23 +373,19 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         "border-s border-border",
         className,
       )}
-      aria-label="Área de trabalho"
+      aria-label="Visualizações salvas"
     >
       <header className="flex flex-col gap-2 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate text-1xl font-medium text-foreground pb-3">
-              {notebook?.title ?? "Painel analítico"}
-            </p>
+            <p className="truncate pb-1 text-base font-medium text-foreground">Visualizações salvas</p>
             <div className="mt-1 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-primary">
                 <BarChart3 className="size-3" aria-hidden />
                 {activeSource ? activeSource.name : "Sem fonte selecionada"}
               </span>
               {widgets.length > 0 ? (
-                <span className="text-[11px] text-muted-foreground">
-                  {widgets.length} widget(s)
-                </span>
+                <span className="text-[11px] text-muted-foreground">{widgets.length} salva(s)</span>
               ) : null}
             </div>
           </div>
@@ -312,11 +397,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
             title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
           >
-            {panelCollapsed ? (
-              <Plus className="size-4" aria-hidden />
-            ) : (
-              <Minus className="size-4" aria-hidden />
-            )}
+            {panelCollapsed ? <Plus className="size-4" aria-hidden /> : <Minus className="size-4" aria-hidden />}
           </Button>
 
           <Button
@@ -332,28 +413,19 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button
-            size="xs"
-            variant="outline"
-            onClick={handleSaveAsDashboard}
-            disabled={widgets.length === 0}
-          >
+          <Button size="xs" variant="outline" onClick={handleSaveAsDashboard} disabled={widgets.length === 0}>
             <BookmarkPlus className="size-3.5" aria-hidden />
-            Salvar como dashboard
-          </Button>
-          <Button size="xs" variant="outline" onClick={handleShare}>
-            <Copy className="size-3.5" aria-hidden />
-            Compartilhar
+            Criar dashboard com estas
           </Button>
           {note ? <span className="text-[11px] text-muted-foreground">{note}</span> : null}
           {panelSaveError ? (
-            <span className="text-[11px] text-destructive">Painel não salvo: {panelSaveError}</span>
+            <span className="text-[11px] text-destructive">Não salvo: {panelSaveError}</span>
           ) : null}
         </div>
 
         <div
           role="tablist"
-          aria-label="Filtrar widgets do painel"
+          aria-label="Filtrar visualizações salvas"
           className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
         >
           {TABS.map((tab) => (
@@ -380,57 +452,21 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         </div>
       </header>
 
-      <div className="relative min-h-0 flex-1 overflow-auto">
-        {!panelVisible ? null : widgets.length === 0 ? (
+      <div className="min-h-0 flex-1 overflow-y-auto">
+        {!panelVisible ? null : widgets.length === 0 || !notebookId ? (
           <EmptyState />
         ) : filtered.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="text-sm text-muted-foreground">Nenhum widget nesta categoria.</p>
+            <p className="text-sm text-muted-foreground">Nenhuma visualização nesta categoria.</p>
             <Button size="xs" variant="outline" onClick={() => setPanelView("todos")}>
-              Ver todos
+              Ver todas
             </Button>
           </div>
         ) : (
-          <div className="relative w-full" style={{ height: containerHeight, minHeight: "100%" }}>
-            {filtered.map((widget) => {
-              const min = WIDGET_MIN_SIZE[widget.kind];
-              return (
-                <Rnd
-                  key={widget.id}
-                  default={{ x: widget.x, y: widget.y, width: widget.w, height: widget.h }}
-                  position={{ x: widget.x, y: widget.y }}
-                  size={{ width: widget.w, height: widget.h }}
-                  bounds="parent"
-                  minWidth={min.w}
-                  minHeight={min.h}
-                  dragHandleClassName="widget-handle"
-                  cancel=".no-drag"
-                  disableDragging={!panelVisible}
-                  onDragStart={() => handleFocus(widget.id)}
-                  onDragStop={(_e, d) => handleDragStop(widget.id, d.x, d.y)}
-                  onResizeStart={() => handleFocus(widget.id)}
-                  onResizeStop={(_e, _direction, ref, _delta, position) =>
-                    handleResizeStop(
-                      widget.id,
-                      ref.offsetWidth,
-                      ref.offsetHeight,
-                      position.x,
-                      position.y,
-                    )
-                  }
-                  style={{ zIndex: 1 + widget.z }}
-                >
-                  <WidgetCard
-                    widget={widget}
-                    onRemove={() => handleRemove(widget.id)}
-                    onFocus={() => handleFocus(widget.id)}
-                  />
-                </Rnd>
-              );
-            })}
-            <span className="sr-only" aria-live="polite">
-              z-index máximo {maxZ}
-            </span>
+          <div className="flex flex-col gap-3 p-3">
+            {filtered.map((widget) => (
+              <WidgetCard key={widget.id} notebookId={notebookId} widget={widget} />
+            ))}
           </div>
         )}
       </div>

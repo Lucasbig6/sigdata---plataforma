@@ -1,3 +1,4 @@
+import { invalidateSourceCache } from "../query-cache";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -173,6 +174,7 @@ export const updateSourceMeta = async (
 export const deleteSource = async (userId: string, id: string) => {
   const row = await getSourceRow(userId, id);
   await db.delete(schema.dataSources).where(eq(schema.dataSources.id, row.id));
+  invalidateSourceCache(row.id);
   if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);
 };
 

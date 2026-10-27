@@ -34,7 +34,7 @@ export const NotebooksHeader = ({
         aria-label="SIGDATA — página inicial"
         className="flex shrink-0 items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
       >
-        <Logo className="h-11 w-auto" />
+        <Logo className="h-14 w-auto" />
       </Link>
       <hr className="hidden h-6 w-px border-l border-r-mauve-200 border-border/80 sm:block" />
 
@@ -97,7 +97,7 @@ export const NotebooksHeader = ({
             onChange={(event) => onQueryChange(event.target.value)}
             placeholder="Pesquisar projetos"
             aria-label="Pesquisar projetos"
-            className="h-8 rounded-full bg-muted/50 pr-3 pl-8 text-xs"
+            className="h-10 rounded-2xl bg-muted/50 pr-4 pl-8 text-xs"
           />
         </div>
 

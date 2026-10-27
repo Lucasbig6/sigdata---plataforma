@@ -107,6 +107,10 @@ export type ThreadComponents = {
 
 const messageGroupBy = groupPartByType({
   reasoning: ["group-chainOfThought", "group-reasoning"],
+  // visualizações e edições aparecem direto no chat, fora do grupo recolhido de ferramentas
+  "tool-call:create_visualization": [],
+  "tool-call:editar_visualizacao": [],
+  "tool-call:remover_visualizacao": [],
   "tool-call": ["group-chainOfThought", "group-tool"],
   "standalone-tool-call": [],
 });

@@ -3,8 +3,10 @@
  * formatos de widget (série, indicadores, tabela).
  */
 import { api } from "@/lib/api/client";
-import type { Kpi, SeriesPoint } from "@/lib/demo-data";
+import type { Kpi } from "@/lib/demo-data";
 import type { AnalyticResult } from "@/lib/domain/sources";
+import { isChartKind } from "@shared/panel";
+import { buildChartData } from "@shared/charts/data";
 import type { GenericTable, WidgetData, WidgetKind } from "@/lib/panel/store";
 
 const cache = new Map<string, Promise<AnalyticResult>>();
@@ -44,13 +46,19 @@ const pickColumns = (result: AnalyticResult, x?: string, y?: string) => {
   return { xCol, yCol };
 };
 
+/** Colunas escolhidas para um gráfico (além de x e y). */
+export type ChartColumns = { x?: string; y?: string; ys?: string[]; splitBy?: string };
+
 /** Valida se o resultado serve para o tipo pedido; devolve mensagem de erro ou null. */
-export const checkResultFor = (result: AnalyticResult, kind: WidgetKind, x?: string, y?: string) => {
+export const checkResultFor = (result: AnalyticResult, kind: WidgetKind, cols: ChartColumns = {}) => {
+  const { x, y, ys, splitBy } = cols;
   const names = result.columns.map((column) => column.name);
   if (x && !names.includes(x)) return `coluna x "${x}" não existe no resultado (${names.join(", ")}).`;
   if (y && !names.includes(y)) return `coluna y "${y}" não existe no resultado (${names.join(", ")}).`;
+  const missing = [...(ys ?? []), ...(splitBy ? [splitBy] : [])].find((name) => !names.includes(name));
+  if (missing) return `coluna "${missing}" não existe no resultado (${names.join(", ")}).`;
   if (result.rows.length === 0) return "o resultado não tem linhas.";
-  if (kind === "linha" || kind === "barras") {
+  if (isChartKind(kind)) {
     const { yCol } = pickColumns(result, x, y);
     if (!yCol || !result.rows.some((row) => toNumber(row[yCol]) !== null)) {
       return "gráficos precisam de uma coluna y numérica.";
@@ -62,17 +70,28 @@ export const checkResultFor = (result: AnalyticResult, kind: WidgetKind, x?: str
 export const widgetDataFromResult = (
   result: AnalyticResult,
   kind: WidgetKind,
-  x?: string,
-  y?: string,
+  cols: ChartColumns = {},
 ): WidgetData => {
+  const { x, y, ys, splitBy } = cols;
   const { xCol, yCol } = pickColumns(result, x, y);
 
-  if (kind === "linha" || kind === "barras") {
-    const series: SeriesPoint[] = result.rows.slice(0, MAX_SERIES_POINTS).map((row) => ({
-      label: String(row[xCol] ?? "—"),
-      valor: toNumber(row[yCol]) ?? 0,
-    }));
-    return { resultId: result.id, series };
+  if (isChartKind(kind)) {
+    const names = result.columns.map((column) => column.name);
+    const extra = (ys ?? []).filter((name) => names.includes(name) && name !== yCol);
+    const split = splitBy && names.includes(splitBy) && splitBy !== xCol ? splitBy : undefined;
+    const chart = buildChartData(result.rows.slice(0, MAX_SERIES_POINTS * 5), {
+      x: xCol,
+      ys: split ? [yCol] : [yCol, ...extra],
+      splitBy: split,
+    });
+    return {
+      resultId: result.id,
+      xCol,
+      yCol,
+      ...(extra.length > 0 && !split && { ysCols: extra }),
+      ...(split && { splitBy: split }),
+      chart,
+    };
   }
 
   if (kind === "kpi") {
@@ -87,7 +106,7 @@ export const widgetDataFromResult = (
         hint: result.title,
       };
     });
-    return { resultId: result.id, kpis };
+    return { resultId: result.id, ...(y && { yCol: y }), kpis };
   }
 
   const table: GenericTable = {

@@ -3,7 +3,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import type { UIMessage } from "ai";
 import { DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
-import type { PanelWidget } from "@shared/panel";
+import { WIDGET_KINDS, type PanelWidget } from "@shared/panel";
 import { db, schema } from "../db";
 import { handle, HttpError, parseBody } from "../http";
 import { getProject, toNotebook } from "../projects";
@@ -117,7 +117,7 @@ const finite = z.number().refine(Number.isFinite);
 const widgetSchema = z
   .object({
     id: z.string().min(1).max(64),
-    kind: z.enum(["linha", "barras", "kpi", "tabela"]),
+    kind: z.enum(WIDGET_KINDS),
     title: z.string().max(200),
     x: finite,
     y: finite,

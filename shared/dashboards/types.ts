@@ -17,6 +17,10 @@
  * `z` e `hidden`.
  */
 
+import type { ChartStyle, ChartType, NumberFormat } from "../charts/types";
+
+export type { ChartType, NumberFormat };
+
 export const DASHBOARD_SCHEMA_VERSION = 1;
 
 export const CANVAS = { width: 1600, height: 1000 } as const;
@@ -31,8 +35,18 @@ export const PAGE_PRESETS = [
   { id: "a4-paisagem", label: "A4 paisagem (1123 × 794)", width: 1123, height: 794 },
   { id: "a4-retrato", label: "A4 retrato (794 × 1123)", width: 794, height: 1123 },
   { id: "carta-paisagem", label: "Carta paisagem (1056 × 816)", width: 1056, height: 816 },
+  { id: "hd", label: "HD 16:9 (1280 × 720)", width: 1280, height: 720 },
+  { id: "4k", label: "4K 16:9 (3840 × 2160)", width: 3840, height: 2160 },
+  { id: "quatro-tres", label: "Apresentação 4:3 (1440 × 1080)", width: 1440, height: 1080 },
   { id: "longo", label: "Rolagem longa (1440 × 2400)", width: 1440, height: 2400 },
 ] as const;
+
+/** Cor de fundo da página: só hexadecimal de 6 dígitos (vai direto para o CSS). */
+export const isPageBackground = (value: unknown): value is string =>
+  typeof value === "string" && /^#[0-9a-fA-F]{6}$/.test(value);
+
+export const isPagePalette = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.length > 0 && value.length <= 12 && value.every(isPageBackground);
 
 /** Tamanho inicial dos elementos ao serem inseridos. */
 export const ELEMENT_SIZES = {
@@ -77,8 +91,6 @@ export type ElementType =
   | "shape"
   | "filter";
 
-export type ChartType = "bar" | "line" | "area" | "pie";
-
 export type ChartColor = 1 | 2 | 3 | 4 | 5;
 
 /**
@@ -122,7 +134,32 @@ export type DataBinding = {
   /** Mapeamento no modo SQL. */
   x?: string;
   y?: string;
+  /** Séries extras no modo SQL: colunas numéricas adicionais (além de `y`). */
+  ys?: string[];
+  /** Divide em uma série por valor desta coluna (builder: agrupa por dimensão + esta coluna). */
+  splitBy?: string;
+  /** Medida calculada (expressão segura, ver expr.ts); substitui `measure` e `agg`. */
+  calc?: CalcMeasure;
+  /** Indicador: compara o último período dos dados com o anterior. */
+  compare?: PeriodCompare;
 };
+
+export type CalcMeasure = { name: string; expr: string };
+
+export type PeriodUnit = "day" | "week" | "month" | "quarter" | "year";
+
+export const PERIOD_UNIT_LABELS: Record<PeriodUnit, string> = {
+  day: "dia",
+  week: "semana",
+  month: "mês",
+  quarter: "trimestre",
+  year: "ano",
+};
+
+export type PeriodCompare = { dateColumn: string; unit: PeriodUnit };
+
+/** Medida reutilizável do painel (aparece como opção ao configurar um elemento). */
+export type DashboardMeasure = { id: string; name: string; sourceId: string; table: string; expr: string };
 
 /** Coluna que um elemento de filtro controla. */
 export type FilterBinding = {
@@ -131,11 +168,13 @@ export type FilterBinding = {
   column: string;
 };
 
-export type NumberFormat = "numero" | "moeda" | "percentual" | "compacto";
-
 export const BINDING_LIMIT_MAX = 500;
 
-export type ChartProps = {
+export type ChartProps = ChartStyle & {
+  /** Clicar numa categoria filtra os outros elementos (padrão: sim). */
+  crossFilter?: boolean;
+  /** Não aplica os filtros do painel a este elemento. */
+  ignoreFilters?: boolean;
   chartType: ChartType;
   title: string;
   showTitle: boolean;
@@ -148,6 +187,7 @@ export type ChartProps = {
 };
 
 export type TableProps = {
+  ignoreFilters?: boolean;
   title: string;
   showTitle: boolean;
   dataset: DatasetRef;
@@ -156,6 +196,7 @@ export type TableProps = {
 };
 
 export type IndicatorProps = {
+  ignoreFilters?: boolean;
   title: string;
   value: string;
   description: string;
@@ -201,6 +242,10 @@ export type ShapeProps = {
 export type FilterKind = "periodo" | "categoria" | "municipio";
 
 export type FilterProps = {
+  /** Vale para todas as páginas e para qualquer tabela que tenha uma coluna com o mesmo nome. */
+  global?: boolean;
+  /** "range" = intervalo de datas (valor `AAAA-MM-DD..AAAA-MM-DD`, qualquer ponta pode faltar). */
+  mode?: "list" | "range";
   label: string;
   kind: FilterKind;
   options: string[];
@@ -211,6 +256,10 @@ export type FilterProps = {
 
 type ElementBase = {
   id: string;
+  /** Elementos com o mesmo groupId são selecionados e movidos juntos. */
+  groupId?: string;
+  /** Não aparece no layout para celular. */
+  hideOnMobile?: boolean;
   x: number;
   y: number;
   w: number;
@@ -232,7 +281,23 @@ export type DashboardElement =
   | (ElementBase & { type: "shape"; props: ShapeProps })
   | (ElementBase & { type: "filter"; props: FilterProps });
 
+export type DashboardPage = {
+  id: string;
+  name: string;
+  canvas: { width: number; height: number; background?: string; palette?: string[] };
+  elements: DashboardElement[];
+};
+
+export const MAX_PAGES = 20;
+
 export type Dashboard = {
+  /**
+   * Várias páginas: a lista completa, em ordem. `canvas` e `elements` do topo
+   * espelham a página ativa no editor e a primeira página no que é salvo.
+   * Ausente = painel de uma página só.
+   */
+  pages?: DashboardPage[];
+  measures?: DashboardMeasure[];
   id: string;
   schemaVersion: number;
   name: string;
@@ -240,7 +305,8 @@ export type Dashboard = {
   origin: "demo" | "user";
   createdAt: number;
   updatedAt: number;
-  canvas: { width: number; height: number };
+  /** `background` ausente = cor padrão do tema; `palette` = cores dos gráficos do painel. */
+  canvas: { width: number; height: number; background?: string; palette?: string[] };
   elements: DashboardElement[];
 };
 
@@ -326,7 +392,7 @@ const ELEMENT_TYPES: ElementType[] = [
 
 const sanitizeElement = (raw: unknown): DashboardElement | null => {
   if (!isRecord(raw)) return null;
-  const { id, type, x, y, w, h, z, hidden, props } = raw;
+  const { id, type, x, y, w, h, z, hidden, props, groupId, hideOnMobile } = raw;
   if (typeof id !== "string" || !ELEMENT_TYPES.includes(type as ElementType)) return null;
   if (![x, y, w, h, z].every((n) => typeof n === "number" && Number.isFinite(n))) return null;
   if (!isRecord(props)) return null;
@@ -339,13 +405,54 @@ const sanitizeElement = (raw: unknown): DashboardElement | null => {
     h,
     z,
     hidden: hidden === true,
+    ...(typeof groupId === "string" && groupId.length <= 64 && { groupId }),
+    ...(hideOnMobile === true && { hideOnMobile: true }),
     props,
   } as DashboardElement;
 };
 
+const sanitizeCanvas = (raw: unknown): Dashboard["canvas"] =>
+  isRecord(raw)
+    ? {
+        width: typeof raw.width === "number" ? raw.width : CANVAS.width,
+        height: typeof raw.height === "number" ? raw.height : CANVAS.height,
+        ...(isPageBackground(raw.background) && { background: raw.background }),
+        ...(isPagePalette(raw.palette) && { palette: raw.palette }),
+      }
+    : { ...CANVAS };
+
+const sanitizeElementList = (raw: unknown, canvas: Dashboard["canvas"]): DashboardElement[] => {
+  const elements = (Array.isArray(raw) ? raw : [])
+    .map(sanitizeElement)
+    .filter((el): el is DashboardElement => el !== null);
+  return reindexLayers(elements.map((el) => ({ ...el, ...clampPosition(el, canvas) })));
+};
+
+const sanitizeMeasures = (raw: unknown): DashboardMeasure[] =>
+  (Array.isArray(raw) ? raw : []).flatMap((entry): DashboardMeasure[] => {
+    if (!isRecord(entry)) return [];
+    const { id, name, sourceId, table, expr } = entry;
+    if (![id, name, sourceId, table, expr].every((v) => typeof v === "string" && v.length > 0)) return [];
+    return [
+      {
+        id: String(id).slice(0, 64),
+        name: String(name).slice(0, 80),
+        sourceId: String(sourceId).slice(0, 64),
+        table: String(table).slice(0, 256),
+        expr: String(expr).slice(0, 300),
+      },
+    ];
+  });
+
+/** Todos os elementos do painel, de todas as páginas. */
+export const allElements = (dashboard: Pick<Dashboard, "elements" | "pages">): DashboardElement[] =>
+  dashboard.pages && dashboard.pages.length > 0
+    ? dashboard.pages.flatMap((page) => page.elements)
+    : dashboard.elements;
+
 /**
- * Valida dados lidos do localStorage (entradas inválidas ou de versões
- * antigas retornam null e são ignoradas com segurança).
+ * Valida o documento recebido (do servidor ou salvo antes): entradas inválidas
+ * ou de versões futuras retornam null; páginas e medidas são saneadas.
  */
 export const migrateDashboard = (raw: unknown): Dashboard | null => {
   if (!isRecord(raw)) return null;
@@ -354,16 +461,36 @@ export const migrateDashboard = (raw: unknown): Dashboard | null => {
   if (raw.schemaVersion > DASHBOARD_SCHEMA_VERSION) return null;
   if (!Array.isArray(raw.elements)) return null;
 
-  const elements = raw.elements
-    .map(sanitizeElement)
-    .filter((el): el is DashboardElement => el !== null);
+  let canvas = sanitizeCanvas(raw.canvas);
+  let elements = sanitizeElementList(raw.elements, canvas);
 
-  const canvas = isRecord(raw.canvas)
-    ? {
-        width: typeof raw.canvas.width === "number" ? raw.canvas.width : CANVAS.width,
-        height: typeof raw.canvas.height === "number" ? raw.canvas.height : CANVAS.height,
-      }
-    : { ...CANVAS };
+  let pages: DashboardPage[] | undefined;
+  if (Array.isArray(raw.pages) && raw.pages.length > 1) {
+    const seen = new Set<string>();
+    pages = raw.pages.slice(0, MAX_PAGES).flatMap((entry, index): DashboardPage[] => {
+      if (!isRecord(entry)) return [];
+      const id = typeof entry.id === "string" && entry.id && !seen.has(entry.id) ? entry.id.slice(0, 64) : `pg-${index}`;
+      seen.add(id);
+      const pageCanvas = sanitizeCanvas(entry.canvas);
+      return [
+        {
+          id,
+          name: typeof entry.name === "string" && entry.name.trim() ? entry.name.trim().slice(0, 60) : `Página ${index + 1}`,
+          canvas: pageCanvas,
+          elements: sanitizeElementList(entry.elements, pageCanvas),
+        },
+      ];
+    });
+    if (pages.length > 1) {
+      // o topo espelha a primeira página
+      canvas = pages[0].canvas;
+      elements = pages[0].elements;
+    } else {
+      pages = undefined;
+    }
+  }
+
+  const measures = sanitizeMeasures(raw.measures);
 
   return {
     id: raw.id,
@@ -374,6 +501,8 @@ export const migrateDashboard = (raw: unknown): Dashboard | null => {
     createdAt: typeof raw.createdAt === "number" ? raw.createdAt : Date.now(),
     updatedAt: typeof raw.updatedAt === "number" ? raw.updatedAt : Date.now(),
     canvas,
-    elements: reindexLayers(elements.map((el) => ({ ...el, ...clampPosition(el, canvas) }))),
+    elements,
+    ...(pages && { pages }),
+    ...(measures.length > 0 && { measures }),
   };
 };

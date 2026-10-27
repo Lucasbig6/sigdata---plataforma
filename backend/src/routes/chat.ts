@@ -22,8 +22,8 @@ const MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
 // sem max_tokens a API estima a saída e rejeita a requisição ("Request too large").
 const MAX_OUTPUT_TOKENS = Number(process.env.GROQ_MAX_OUTPUT_TOKENS) || 900;
 
-// consulta → (correção) → visualização → resposta
-const MAX_STEPS = 6;
+// consulta → (correção) → visualização/edição → resposta
+const MAX_STEPS = 8;
 
 type FrontendToolDefs = Record<string, { description?: string; parameters: JSONSchema7 }>;
 

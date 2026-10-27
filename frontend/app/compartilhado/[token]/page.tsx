@@ -1,49 +1,64 @@
 "use client";
 
-import { Loader2, Minus, Plus, RefreshCw } from "lucide-react";
-import { useParams } from "next/navigation";
+import { Loader2 } from "lucide-react";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { DashboardCanvas } from "@/components/dashboards/canvas";
+import { ClearFilters } from "@/components/dashboards/clear-filters";
+import { RefreshControl } from "@/components/dashboards/refresh-control";
+import { ExportMenu } from "@/components/dashboards/export-menu";
+import { PageTabs } from "@/components/dashboards/page-tabs";
+import { ViewControls } from "@/components/dashboards/view-controls";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import type { SavedAnalysis } from "@/lib/dashboards/analyses";
-import { DashboardDataProvider, useDashboardData } from "@/lib/dashboards/live-data";
+import { DashboardDataProvider } from "@/lib/dashboards/live-data";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import type { Dashboard } from "@/lib/dashboards/types";
+import { CANVAS, type Dashboard } from "@/lib/dashboards/types";
+import { toMobileLayout } from "@/lib/dashboards/mobile-layout";
+import { globalFiltersFromOtherPages } from "@/lib/dashboards/pages";
+import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
 
 type State =
   | { status: "loading" }
   | { status: "error"; message: string }
   | { status: "ready"; dashboard: Dashboard };
 
-const RefreshButton = () => {
-  const { refresh } = useDashboardData();
-  return (
-    <button
-      type="button"
-      onClick={refresh}
-      title="Atualizar dados"
-      aria-label="Atualizar dados"
-      className="grid size-8 place-items-center rounded-md border border-border/70 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
-    >
-      <RefreshCw className="size-3.5" aria-hidden />
-    </button>
-  );
-};
-
 /** Visualização pública (somente leitura) de um dashboard compartilhado por link. */
 export default function SharedDashboardPage() {
   const { token } = useParams<{ token: string }>();
+  // ?embed=1: sem cabeçalho, para incorporar em outra página
+  const embed = useSearchParams().get("embed") === "1";
   const loadPublic = useDashboardsStore((s) => s.loadPublic);
   const [state, setState] = useState<State>({ status: "loading" });
-  const [zoom, setZoom] = useState(1);
+  const dashboard = state.status === "ready" ? state.dashboard : null;
+  // a página aberta (o visitante troca pelas abas) vem do store
+  const current = useDashboardsStore((s) => (s.currentId ? (s.dashboards[s.currentId] ?? null) : null));
+  const activePageId = useDashboardsStore((s) => s.activePageId);
+  const pageElements = useMemo(
+    () => (current ? [...current.elements, ...globalFiltersFromOtherPages(current, activePageId)] : []),
+    [current, activePageId],
+  );
+  // celular: começa no layout de celular em telas estreitas
+  const [mobile, setMobile] = useState(false);
+  useEffect(() => {
+    if (window.innerWidth < 768) setMobile(true);
+  }, []);
+  const mobileCanvas = useMemo(() => (current && mobile ? toMobileLayout(current).canvas : null), [current, mobile]);
+  const { stageRef, stage, zoom, mode: fitMode, setMode: setFitMode, setZoom } = useZoomFit({
+    canvas: mobileCanvas ?? current?.canvas ?? dashboard?.canvas ?? CANVAS,
+    padding: 0,
+    maxZoom: 4,
+    // páginas muito compridas (rolagem longa) leem melhor ocupando a largura toda
+    initialMode: "page",
+  });
   const mode = useMemo(() => ({ kind: "public" as const, token }), [token]);
 
   useEffect(() => {
     let cancelled = false;
     fetch(`/api/public/dashboards/${encodeURIComponent(token)}`)
       .then(async (res) => {
-        const data = (await res.json()) as
+        const data = (await res.json().catch(() => ({ error: "Servidor indisponível no momento." }))) as
           | { dashboard: Dashboard; analyses: SavedAnalysis[] }
           | { error: string };
         if (cancelled) return;
@@ -56,15 +71,17 @@ export default function SharedDashboardPage() {
         }
         loadPublic(data.dashboard, data.analyses);
         setState({ status: "ready", dashboard: data.dashboard });
-        // ajusta o zoom inicial à largura da janela
-        const fit = (window.innerWidth - 48) / data.dashboard.canvas.width;
-        setZoom(Math.max(0.3, Math.min(1, Math.round(fit * 10) / 10)));
       })
       .catch(() => !cancelled && setState({ status: "error", message: "Falha de rede." }));
     return () => {
       cancelled = true;
     };
   }, [token, loadPublic]);
+
+  // páginas bem mais altas que largas (retrato/rolagem longa) começam ajustadas à largura
+  useEffect(() => {
+    if (dashboard && (mobile || dashboard.canvas.height > dashboard.canvas.width * 1.4)) setFitMode("width");
+  }, [dashboard, mobile, setFitMode]);
 
   if (state.status === "loading") {
     return (
@@ -87,8 +104,9 @@ export default function SharedDashboardPage() {
   }
 
   return (
-    <DashboardDataProvider mode={mode} elements={state.dashboard.elements}>
+    <DashboardDataProvider mode={mode} elements={pageElements} interactive>
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
+      {embed ? null : (
       <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border/60 bg-card/60 px-6 backdrop-blur">
         <LogoMark className="h-9 w-auto shrink-0" />
         <div className="min-w-0">
@@ -102,31 +120,36 @@ export default function SharedDashboardPage() {
           </p>
         </div>
         <div className="ml-auto flex items-center gap-2">
-          <RefreshButton />
-          <div className="flex items-center gap-1 rounded-md border border-border/70 bg-background px-1 py-0.5">
-            <button
-              type="button"
-              aria-label="Diminuir zoom"
-              onClick={() => setZoom((z) => Math.max(0.3, Math.round((z - 0.1) * 10) / 10))}
-              className="grid size-6 place-items-center rounded text-muted-foreground hover:text-foreground"
-            >
-              <Minus className="size-3.5" aria-hidden />
-            </button>
-            <span className="w-10 text-center text-[11px] tabular-nums">{Math.round(zoom * 100)}%</span>
-            <button
-              type="button"
-              aria-label="Aumentar zoom"
-              onClick={() => setZoom((z) => Math.min(2, Math.round((z + 0.1) * 10) / 10))}
-              className="grid size-6 place-items-center rounded text-muted-foreground hover:text-foreground"
-            >
-              <Plus className="size-3.5" aria-hidden />
-            </button>
-          </div>
+          <RefreshControl />
+          <ExportMenu mobileSize={mobileCanvas ?? undefined} />
           <ThemeToggle />
         </div>
       </header>
-      <div className="relative min-h-0 flex-1 overflow-hidden">
-        <DashboardCanvas zoom={zoom} preview />
+      )}
+      <div ref={stageRef} className="relative min-h-0 flex-1 overflow-hidden bg-background">
+        <DashboardCanvas zoom={zoom} preview fill mobile={mobile} />
+        <ClearFilters className="absolute left-3 top-3 z-20" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40">
+          <PageTabs readOnly className="pointer-events-auto" />
+        </div>
+        {embed ? (
+          <div className="absolute right-3 top-3 z-20">
+            <RefreshControl />
+          </div>
+        ) : null}
+        <ViewControls
+          className="absolute bottom-3 right-3"
+          zoom={zoom}
+          mode={fitMode}
+          onMode={setFitMode}
+          onZoom={setZoom}
+          mobile={mobile}
+          onMobile={(next) => {
+            setMobile(next);
+            setFitMode(next ? "width" : "page");
+          }}
+          fullscreenTarget={() => stage}
+        />
       </div>
     </div>
     </DashboardDataProvider>

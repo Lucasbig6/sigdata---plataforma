@@ -21,7 +21,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { UIMessage } from "ai";
 import type { AnalysisSnapshot } from "@shared/analyses";
-import type { DashboardElement } from "@shared/dashboards/types";
+import type { DashboardElement, DashboardMeasure, DashboardPage } from "@shared/dashboards/types";
 import type { PanelWidget } from "@shared/panel";
 import type { ResultColumn, SourceKind, SourceStatus, SourceTable } from "@shared/domain/sources";
 
@@ -203,8 +203,10 @@ export const analyses = pgTable(
 
 export type DashboardDoc = {
   schemaVersion: number;
-  canvas: { width: number; height: number };
+  canvas: { width: number; height: number; background?: string; palette?: string[] };
   elements: DashboardElement[];
+  pages?: DashboardPage[];
+  measures?: DashboardMeasure[];
 };
 
 export const dashboards = pgTable(
@@ -233,3 +235,23 @@ export const dashboards = pgTable(
 export const projectsRelations = relations(projects, ({ one }) => ({
   source: one(dataSources, { fields: [projects.sourceId], references: [dataSources.id] }),
 }));
+
+/** Versões anteriores de um dashboard (histórico, restauráveis). */
+export const dashboardVersions = pgTable(
+  "dashboard_versions",
+  {
+    id: text("id").primaryKey(),
+    dashboardId: text("dashboard_id")
+      .notNull()
+      .references(() => dashboards.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    /** Nome dado pelo usuário; vazio = versão automática. */
+    label: text("label").notNull().default(""),
+    name: text("name").notNull(),
+    doc: jsonb("doc").$type<DashboardDoc>().notNull(),
+    createdAt: createdAt(),
+  },
+  (table) => [index("dashboard_versions_idx").on(table.dashboardId, table.createdAt)],
+);
