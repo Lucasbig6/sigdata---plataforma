@@ -1,0 +1,681 @@
+[
+  {
+    "name": "Visão geral municipal",
+    "description": "Indicadores sintéticos, evolução mensal e comparativo entre municípios fictícios.",
+    "schemaVersion": 1,
+    "canvas": {
+      "width": 1600,
+      "height": 1000
+    },
+    "elements": [
+      {
+        "id": "title-7cb09b79",
+        "type": "title",
+        "x": 40,
+        "y": 36,
+        "w": 720,
+        "h": 64,
+        "z": 0,
+        "hidden": false,
+        "props": {
+          "content": "Visão geral municipal",
+          "fontSize": 34,
+          "bold": true,
+          "align": "left",
+          "color": "#E8ECEF"
+        }
+      },
+      {
+        "id": "text-844af418",
+        "type": "text",
+        "x": 40,
+        "y": 112,
+        "w": 760,
+        "h": 52,
+        "z": 1,
+        "hidden": false,
+        "props": {
+          "content": "Dados de demonstração — nenhuma fonte real conectada ao painel.",
+          "fontSize": 15,
+          "bold": false,
+          "align": "left",
+          "color": "#9FB0B4"
+        }
+      },
+      {
+        "id": "kpi-05048542",
+        "type": "kpi",
+        "x": 40,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 2,
+        "hidden": false,
+        "props": {
+          "title": "Índice geral",
+          "value": "74,2",
+          "description": "base 0–100",
+          "unit": "",
+          "delta": 0,
+          "showDelta": false
+        }
+      },
+      {
+        "id": "kpi-95f1f3a4",
+        "type": "kpi",
+        "x": 300,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 3,
+        "hidden": false,
+        "props": {
+          "title": "Receita",
+          "value": "128,6",
+          "description": "acumulado no ano",
+          "unit": "R$ mi",
+          "delta": 0,
+          "showDelta": false
+        }
+      },
+      {
+        "id": "percent-b5f2ab36",
+        "type": "percent",
+        "x": 560,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 4,
+        "hidden": false,
+        "props": {
+          "title": "Cobertura",
+          "value": "86",
+          "description": "serviços mapeados",
+          "unit": "%",
+          "delta": 5.1,
+          "showDelta": true
+        }
+      },
+      {
+        "id": "comparison-79ce11db",
+        "type": "comparison",
+        "x": 820,
+        "y": 184,
+        "w": 300,
+        "h": 132,
+        "z": 5,
+        "hidden": false,
+        "props": {
+          "title": "Variação no período",
+          "value": "+3,4",
+          "description": "vs. período anterior",
+          "unit": "%",
+          "delta": 3.4,
+          "showDelta": true
+        }
+      },
+      {
+        "id": "filter-8ac0d893",
+        "type": "filter",
+        "x": 1300,
+        "y": 184,
+        "w": 260,
+        "h": 92,
+        "z": 6,
+        "hidden": false,
+        "props": {
+          "label": "Período",
+          "kind": "periodo",
+          "options": [
+            "Últimos 12 meses",
+            "Últimos 6 meses",
+            "Ano corrente",
+            "Ano anterior"
+          ],
+          "value": "Últimos 12 meses"
+        }
+      },
+      {
+        "id": "chart-d97a1c53",
+        "type": "chart",
+        "x": 40,
+        "y": 348,
+        "w": 740,
+        "h": 300,
+        "z": 7,
+        "hidden": false,
+        "props": {
+          "chartType": "bar",
+          "title": "Índice mensal",
+          "showTitle": true,
+          "subtitle": "2024 — dados fictícios",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "color": 2,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "chart-0e5fd4ac",
+        "type": "chart",
+        "x": 820,
+        "y": 348,
+        "w": 740,
+        "h": 300,
+        "z": 8,
+        "hidden": false,
+        "props": {
+          "chartType": "line",
+          "title": "Evolução do índice",
+          "showTitle": true,
+          "subtitle": "serie mensal fictícia",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "color": 3,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "table-d0542335",
+        "type": "table",
+        "x": 40,
+        "y": 672,
+        "w": 940,
+        "h": 288,
+        "z": 9,
+        "hidden": false,
+        "props": {
+          "title": "Municípios (demonstração)",
+          "showTitle": true,
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "density": "confortavel"
+        }
+      },
+      {
+        "id": "chart-7f00fa47",
+        "type": "chart",
+        "x": 1010,
+        "y": 672,
+        "w": 280,
+        "h": 288,
+        "z": 10,
+        "hidden": false,
+        "props": {
+          "chartType": "pie",
+          "title": "Composição",
+          "showTitle": false,
+          "subtitle": "",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "municipio",
+            "valueField": "indice"
+          },
+          "color": 2,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "text-e172d2ec",
+        "type": "text",
+        "x": 1320,
+        "y": 672,
+        "w": 240,
+        "h": 288,
+        "z": 11,
+        "hidden": false,
+        "props": {
+          "content": "Resumo: os municípios fictícios concentram índices entre 68 e 82. Números ilustrativos, sem vínculo com bases reais.",
+          "fontSize": 14,
+          "bold": false,
+          "align": "left",
+          "color": "#9FB0B4"
+        }
+      }
+    ]
+  },
+  {
+    "name": "Receita e cobertura",
+    "description": "Receita por município, evolução acumulada e filtros demonstrativos.",
+    "schemaVersion": 1,
+    "canvas": {
+      "width": 1600,
+      "height": 1000
+    },
+    "elements": [
+      {
+        "id": "title-abbb854a",
+        "type": "title",
+        "x": 40,
+        "y": 36,
+        "w": 760,
+        "h": 64,
+        "z": 0,
+        "hidden": false,
+        "props": {
+          "content": "Receita e cobertura",
+          "fontSize": 34,
+          "bold": true,
+          "align": "left",
+          "color": "#E8ECEF"
+        }
+      },
+      {
+        "id": "filter-9634ff56",
+        "type": "filter",
+        "x": 1300,
+        "y": 44,
+        "w": 260,
+        "h": 92,
+        "z": 1,
+        "hidden": false,
+        "props": {
+          "label": "Município",
+          "kind": "municipio",
+          "options": [
+            "Todos os municípios",
+            "Aurora do Norte",
+            "Bela Vista do Sul",
+            "Campos do Rio",
+            "Dourados",
+            "Espinhaço",
+            "Farol da Serra"
+          ],
+          "value": "Todos os municípios"
+        }
+      },
+      {
+        "id": "chart-67eb35ca",
+        "type": "chart",
+        "x": 40,
+        "y": 160,
+        "w": 740,
+        "h": 340,
+        "z": 2,
+        "hidden": false,
+        "props": {
+          "chartType": "bar",
+          "title": "Receita por município",
+          "showTitle": true,
+          "subtitle": "R$ milhões — demonstração",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "municipio",
+            "valueField": "receita"
+          },
+          "color": 2,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "chart-3071632e",
+        "type": "chart",
+        "x": 820,
+        "y": 160,
+        "w": 740,
+        "h": 340,
+        "z": 3,
+        "hidden": false,
+        "props": {
+          "chartType": "area",
+          "title": "Índice acumulado",
+          "showTitle": true,
+          "subtitle": "Dados de demonstração",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "color": 4,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "comparison-e28161bd",
+        "type": "comparison",
+        "x": 40,
+        "y": 540,
+        "w": 300,
+        "h": 132,
+        "z": 4,
+        "hidden": false,
+        "props": {
+          "title": "Receita no período",
+          "value": "-1,8",
+          "description": "vs. período anterior",
+          "unit": "%",
+          "delta": -1.8,
+          "showDelta": true
+        }
+      },
+      {
+        "id": "percent-8713f69c",
+        "type": "percent",
+        "x": 360,
+        "y": 540,
+        "w": 240,
+        "h": 132,
+        "z": 5,
+        "hidden": false,
+        "props": {
+          "title": "Cobertura",
+          "value": "86",
+          "description": "serviços mapeados",
+          "unit": "%",
+          "delta": 5.1,
+          "showDelta": true
+        }
+      },
+      {
+        "id": "shape-1b9f3184",
+        "type": "shape",
+        "x": 820,
+        "y": 540,
+        "w": 300,
+        "h": 160,
+        "z": 6,
+        "hidden": false,
+        "props": {
+          "shape": "retangulo",
+          "fill": "rgba(128, 206, 196, 0.16)",
+          "border": "rgba(128, 206, 196, 0.45)",
+          "borderWidth": 1,
+          "radius": 18
+        }
+      },
+      {
+        "id": "divider-d6a7f258",
+        "type": "divider",
+        "x": 40,
+        "y": 730,
+        "w": 1080,
+        "h": 24,
+        "z": 7,
+        "hidden": false,
+        "props": {
+          "thickness": 2,
+          "color": "#39464B",
+          "style": "solid"
+        }
+      },
+      {
+        "id": "text-1af743c3",
+        "type": "text",
+        "x": 40,
+        "y": 772,
+        "w": 740,
+        "h": 168,
+        "z": 8,
+        "hidden": false,
+        "props": {
+          "content": "Leitura sugerida: a receita cresce até meados do ano e recua no segundo semestre fictício. Use os filtros para simular recortes — as opções são locais e não consultam fontes externas.",
+          "fontSize": 16,
+          "bold": false,
+          "align": "left",
+          "color": "#E8ECEF"
+        }
+      },
+      {
+        "id": "text-b23f125c",
+        "type": "text",
+        "x": 820,
+        "y": 730,
+        "w": 740,
+        "h": 210,
+        "z": 9,
+        "hidden": false,
+        "props": {
+          "content": "Cobertura de serviços mapeados em base fictícia (86%). Os valores exibidos são ilustrativos e não representam resultados de análise.",
+          "fontSize": 16,
+          "bold": false,
+          "align": "left",
+          "color": "#9FB0B4"
+        }
+      }
+    ]
+  },
+  {
+    "name": "Painel executivo",
+    "description": "Síntese para apresentação: KPIs, tendência, composição e tabela.",
+    "schemaVersion": 1,
+    "canvas": {
+      "width": 1600,
+      "height": 1000
+    },
+    "elements": [
+      {
+        "id": "title-06e072a9",
+        "type": "title",
+        "x": 40,
+        "y": 36,
+        "w": 860,
+        "h": 64,
+        "z": 0,
+        "hidden": false,
+        "props": {
+          "content": "Painel executivo",
+          "fontSize": 34,
+          "bold": true,
+          "align": "left",
+          "color": "#E8ECEF"
+        }
+      },
+      {
+        "id": "text-dc15a4ab",
+        "type": "text",
+        "x": 40,
+        "y": 112,
+        "w": 860,
+        "h": 48,
+        "z": 1,
+        "hidden": false,
+        "props": {
+          "content": "Conjunto fictício para demonstração de composição de painel.",
+          "fontSize": 15,
+          "bold": false,
+          "align": "left",
+          "color": "#9FB0B4"
+        }
+      },
+      {
+        "id": "kpi-e4ec300f",
+        "type": "kpi",
+        "x": 40,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 2,
+        "hidden": false,
+        "props": {
+          "title": "Índice geral",
+          "value": "74,2",
+          "description": "base 0–100",
+          "unit": "",
+          "delta": 0,
+          "showDelta": false
+        }
+      },
+      {
+        "id": "kpi-7033bf67",
+        "type": "kpi",
+        "x": 300,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 3,
+        "hidden": false,
+        "props": {
+          "title": "Receita",
+          "value": "128,6",
+          "description": "acumulado",
+          "unit": "R$ mi",
+          "delta": 0,
+          "showDelta": false
+        }
+      },
+      {
+        "id": "percent-b1100788",
+        "type": "percent",
+        "x": 560,
+        "y": 184,
+        "w": 240,
+        "h": 132,
+        "z": 4,
+        "hidden": false,
+        "props": {
+          "title": "Cobertura",
+          "value": "86",
+          "description": "serviços mapeados",
+          "unit": "%",
+          "delta": 5.1,
+          "showDelta": true
+        }
+      },
+      {
+        "id": "filter-68c3c7d2",
+        "type": "filter",
+        "x": 1300,
+        "y": 184,
+        "w": 260,
+        "h": 92,
+        "z": 5,
+        "hidden": false,
+        "props": {
+          "label": "Categoria",
+          "kind": "categoria",
+          "options": [
+            "Todos os setores",
+            "Saúde",
+            "Educação",
+            "Mobilidade",
+            "Assistência"
+          ],
+          "value": "Todos os setores"
+        }
+      },
+      {
+        "id": "chart-de14f0d9",
+        "type": "chart",
+        "x": 40,
+        "y": 348,
+        "w": 940,
+        "h": 300,
+        "z": 6,
+        "hidden": false,
+        "props": {
+          "chartType": "line",
+          "title": "Tendência do índice",
+          "showTitle": true,
+          "subtitle": "Dados de demonstração",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "color": 2,
+          "showGrid": true,
+          "showLegend": false
+        }
+      },
+      {
+        "id": "chart-71b30af5",
+        "type": "chart",
+        "x": 1010,
+        "y": 184,
+        "w": 550,
+        "h": 464,
+        "z": 7,
+        "hidden": false,
+        "props": {
+          "chartType": "pie",
+          "title": "Composição por município",
+          "showTitle": true,
+          "subtitle": "Dados de demonstração",
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "municipio",
+            "valueField": "indice"
+          },
+          "color": 2,
+          "showGrid": true,
+          "showLegend": true
+        }
+      },
+      {
+        "id": "table-a61b243a",
+        "type": "table",
+        "x": 40,
+        "y": 672,
+        "w": 940,
+        "h": 288,
+        "z": 8,
+        "hidden": false,
+        "props": {
+          "title": "Detalhamento (demonstração)",
+          "showTitle": true,
+          "dataset": {
+            "source": "demo",
+            "ref": "demo",
+            "categoryField": "periodo",
+            "valueField": "valor"
+          },
+          "density": "confortavel"
+        }
+      },
+      {
+        "id": "divider-a671f55c",
+        "type": "divider",
+        "x": 1010,
+        "y": 672,
+        "w": 550,
+        "h": 24,
+        "z": 9,
+        "hidden": false,
+        "props": {
+          "thickness": 2,
+          "color": "#39464B",
+          "style": "solid"
+        }
+      },
+      {
+        "id": "text-67aa2bbc",
+        "type": "text",
+        "x": 1010,
+        "y": 716,
+        "w": 550,
+        "h": 244,
+        "z": 10,
+        "hidden": false,
+        "props": {
+          "content": "Painel pronto para apresentação. Altere tamanhos, camadas e propriedades no editor; a pré-visualização esconde todos os controles de edição.",
+          "fontSize": 16,
+          "bold": false,
+          "align": "left",
+          "color": "#E8ECEF"
+        }
+      }
+    ]
+  }
+]

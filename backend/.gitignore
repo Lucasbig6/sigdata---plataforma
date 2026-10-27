@@ -1,0 +1,6 @@
+node_modules/
+.env
+.env.*
+!.env.example
+# arquivos enviados e bancos DuckDB das fontes
+/storage/
