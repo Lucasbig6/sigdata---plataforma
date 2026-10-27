@@ -1,28 +1,37 @@
 "use client";
 
-import { Check, LineChart, Loader2, Plus, Table2, BarChart3, Hash } from "lucide-react";
+import {
+  BarChart3,
+  Check,
+  ChevronDown,
+  Database,
+  Hash,
+  LineChart,
+  Loader2,
+  Plus,
+  Table2,
+} from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import type { JSONSchema7 } from "ai";
 import {
   useAssistantTool,
+  useAssistantToolUI,
   type AssistantToolProps,
   type ToolCallMessagePartProps,
 } from "@assistant-ui/react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import {
-  MUNICIPIOS,
-  SERIE_TEMPORAL,
-  type Kpi,
-  type Municipio,
-  type SeriesPoint,
-} from "@/lib/demo-data";
-import { WIDGET_KIND_LABELS, usePanelStore, type WidgetKind } from "@/lib/panel/store";
+import type { Kpi, Municipio, SeriesPoint } from "@/lib/demo-data";
+import { WIDGET_KIND_LABELS, usePanelStore, type WidgetData, type WidgetKind } from "@/lib/panel/store";
+import { checkResultFor, fetchResult, widgetDataFromResult } from "@/lib/results/client";
 
 export type CreateVisualizationArgs = {
   kind: WidgetKind;
   titulo: string;
+  resultId?: string;
+  x?: string;
+  y?: string;
   serie?: SeriesPoint[];
   kpis?: { label: string; value: string; delta?: number; hint?: string }[];
   rows?: Municipio[];
@@ -31,37 +40,6 @@ export type CreateVisualizationArgs = {
 export type CreateVisualizationResult =
   | { ok: true; kind: WidgetKind; titulo: string }
   | { ok: false; error: string };
-
-const SERIES_ITEM: JSONSchema7 = {
-  type: "object",
-  properties: {
-    label: { type: "string" },
-    valor: { type: "number" },
-  },
-  required: ["label", "valor"],
-};
-
-const KPI_ITEM: JSONSchema7 = {
-  type: "object",
-  properties: {
-    label: { type: "string" },
-    value: { type: "string" },
-    delta: { type: "number" },
-    hint: { type: "string" },
-  },
-  required: ["label", "value"],
-};
-
-const ROW_ITEM: JSONSchema7 = {
-  type: "object",
-  properties: {
-    nome: { type: "string" },
-    indice: { type: "number" },
-    variacao: { type: "number" },
-    receita: { type: "number" },
-  },
-  required: ["nome", "indice", "variacao", "receita"],
-};
 
 export const createVisualizationParameters: JSONSchema7 = {
   type: "object",
@@ -75,20 +53,17 @@ export const createVisualizationParameters: JSONSchema7 = {
       type: "string",
       description: "Título curto da visualização.",
     },
-    serie: {
-      type: "array",
-      items: SERIES_ITEM,
-      description: "Série de pontos {label, valor} para gráficos de linha ou barras.",
+    resultId: {
+      type: "string",
+      description: "resultId devolvido por consultar_dados. Obrigatório quando há fonte de dados.",
     },
-    kpis: {
-      type: "array",
-      items: KPI_ITEM,
-      description: "Indicadores para o widget de tipo kpi.",
+    x: {
+      type: "string",
+      description: "Coluna do resultado usada como categoria/rótulo (gráficos).",
     },
-    rows: {
-      type: "array",
-      items: ROW_ITEM,
-      description: "Linhas da tabela ({nome, indice, variacao, receita}).",
+    y: {
+      type: "string",
+      description: "Coluna numérica do resultado usada como valor (gráficos e kpi).",
     },
   },
   required: ["kind", "titulo"],
@@ -100,6 +75,9 @@ const KIND_ICON: Record<WidgetKind, typeof LineChart> = {
   kpi: Hash,
   tabela: Table2,
 };
+
+const isWidgetKind = (value: unknown): value is WidgetKind =>
+  value === "linha" || value === "barras" || value === "kpi" || value === "tabela";
 
 const isValidSeries = (value: unknown): value is SeriesPoint[] =>
   Array.isArray(value) &&
@@ -134,43 +112,46 @@ const isValidRows = (value: unknown): value is Municipio[] =>
       typeof (item as Municipio).indice === "number",
   );
 
+/** Dados do widget: preferencialmente do resultado salvo; dados inline só como compatibilidade. */
+const resolveWidgetData = async (args: CreateVisualizationArgs): Promise<WidgetData> => {
+  const kind = args.kind;
+  if (args.resultId) {
+    const result = await fetchResult(args.resultId);
+    const problem = checkResultFor(result, kind, args.x, args.y);
+    if (problem) throw new Error(problem);
+    return widgetDataFromResult(result, kind, args.x, args.y);
+  }
+  if ((kind === "linha" || kind === "barras") && isValidSeries(args.serie)) return { series: args.serie };
+  if (kind === "kpi" && isValidKpis(args.kpis)) {
+    return {
+      kpis: args.kpis.map((kpi) => ({ ...kpi, delta: kpi.delta ?? 0, hint: kpi.hint ?? "" })) as Kpi[],
+    };
+  }
+  if (kind === "tabela" && isValidRows(args.rows)) return { rows: args.rows };
+  throw new Error("informe resultId (de consultar_dados) para criar a visualização.");
+};
+
 const executeCreateVisualization = async (
   args: CreateVisualizationArgs,
 ): Promise<CreateVisualizationResult> => {
-  const kind = args?.kind;
   const titulo = (args?.titulo ?? "").trim();
-
-  if (kind !== "linha" && kind !== "barras" && kind !== "kpi" && kind !== "tabela") {
+  if (!isWidgetKind(args?.kind)) {
     return { ok: false, error: "kind inválido. Use linha, barras, kpi ou tabela." };
   }
-  if (!titulo) {
-    return { ok: false, error: "titulo é obrigatório." };
+  if (!titulo) return { ok: false, error: "titulo é obrigatório." };
+  try {
+    await resolveWidgetData(args);
+  } catch (error) {
+    return { ok: false, error: (error as Error).message };
   }
-
-  if (kind === "linha" || kind === "barras") {
-    if (!isValidSeries(args.serie)) {
-      return {
-        ok: false,
-        error: "serie com {label, valor} é obrigatória para gráficos.",
-      };
-    }
-  }
-
-  if (kind === "kpi" && !isValidKpis(args.kpis)) {
-    return { ok: false, error: "kpis com {label, value} é obrigatório para indicadores." };
-  }
-
-  if (kind === "tabela" && !isValidRows(args.rows)) {
-    return {
-      ok: false,
-      error: "rows com {nome, indice, variacao, receita} é obrigatório para tabelas.",
-    };
-  }
-
-  return { ok: true, kind, titulo };
+  return { ok: true, kind: args.kind, titulo };
 };
 
 const kindSummary = (args: CreateVisualizationArgs): string => {
+  if (args.resultId) {
+    const axes = [args.x, args.y].filter(Boolean).join(" × ");
+    return axes ? `Resultado da consulta · ${axes}` : "Resultado da consulta";
+  }
   switch (args.kind) {
     case "linha":
     case "barras":
@@ -189,56 +170,32 @@ const CreateVisualizationUI = (
   const notebookId = useSearchParams().get("notebook");
   const addWidget = usePanelStore((state) => state.addWidget);
   const [added, setAdded] = useState(false);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const kind: WidgetKind =
-    args?.kind === "linha" || args?.kind === "barras" || args?.kind === "kpi"
-      ? args.kind
-      : args?.kind === "tabela"
-        ? "tabela"
-        : "linha";
+  const kind: WidgetKind = isWidgetKind(args?.kind) ? args.kind : "linha";
   const Icon = KIND_ICON[kind];
   const titulo = (args?.titulo ?? "").trim() || WIDGET_KIND_LABELS[kind];
   const running = status?.type === "running" || status?.type === "requires-action";
   const failed = status?.type === "incomplete" || (result != null && result.ok === false);
-  const done = status?.type === "complete" || (result != null && result.ok === true);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (!notebookId) {
       setError("Abra um projeto antes de adicionar visualizações ao painel.");
       return;
     }
-    const widget = addWidget(notebookId, {
-      kind,
-      title: titulo,
-      ...(args?.serie && isValidSeries(args.serie)
-        ? { series: args.serie }
-        : kind === "linha" || kind === "barras"
-          ? { series: SERIE_TEMPORAL }
-          : {}),
-      ...(args?.kpis && isValidKpis(args.kpis)
-        ? {
-            kpis: args.kpis.map((kpi) => ({
-              ...kpi,
-              delta: kpi.delta ?? 0,
-              hint: kpi.hint ?? "",
-            })) as Kpi[],
-          }
-        : {}),
-      ...(args?.rows && isValidRows(args.rows)
-        ? { rows: args.rows }
-        : kind === "tabela"
-          ? { rows: MUNICIPIOS }
-          : {}),
-    });
-    if (widget) {
+    setBusy(true);
+    try {
+      const data = await resolveWidgetData({ ...args, kind });
+      const widget = addWidget(notebookId, { kind, title: titulo, ...data });
+      if (!widget) throw new Error("O painel atingiu o limite de widgets.");
       setAdded(true);
       setError(null);
-      if (status?.type === "running" || status?.type === "requires-action") {
-        addResult({ ok: true, kind, titulo });
-      }
-    } else {
-      setError("Não foi possível adicionar ao painel.");
+      if (running) addResult({ ok: true, kind, titulo });
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
     }
   };
 
@@ -259,29 +216,32 @@ const CreateVisualizationUI = (
             {args ? kindSummary(args) : "Aguardando dados…"}
           </p>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}
+          {!error && failed && result && !result.ok ? (
+            <p className="text-xs text-destructive">{result.error}</p>
+          ) : null}
         </div>
         <div className="flex shrink-0 items-center gap-1.5">
-          {running ? (
+          {running && !args ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
               <Loader2 className="size-3 animate-spin" aria-hidden />
               Processando
             </span>
-          ) : failed ? (
-            <span className="text-[11px] text-destructive">Falha</span>
-          ) : added || (done && result?.ok) ? (
+          ) : added ? (
             <span className="inline-flex items-center gap-1 text-[11px] text-primary">
               <Check className="size-3" aria-hidden />
               No painel
             </span>
+          ) : failed ? (
+            <span className="text-[11px] text-destructive">Falha</span>
           ) : (
             <Button
               type="button"
               size="xs"
               onClick={handleAdd}
-              className={cn(running && "pointer-events-none opacity-60")}
-              disabled={running}
+              className={cn(busy && "pointer-events-none opacity-60")}
+              disabled={busy}
             >
-              <Plus className="size-3" aria-hidden />
+              {busy ? <Loader2 className="size-3 animate-spin" aria-hidden /> : <Plus className="size-3" aria-hidden />}
               Adicionar ao painel
             </Button>
           )}
@@ -295,16 +255,110 @@ const createVisualizationTool = {
   toolName: "create_visualization",
   type: "frontend",
   description:
-    "Cria uma visualização (linha, barras, kpi ou tabela) no painel lateral do workspace. " +
-    "Use quando o usuário pedir um gráfico, indicador ou tabela. " +
-    "Após a chamada, o usuário pode clicar em 'Adicionar ao painel' para fixar o widget.",
+    "Cria uma visualização (linha, barras, kpi ou tabela) a partir de um resultado de consultar_dados. " +
+    "Passe resultId e as colunas x (categoria) e y (valor). " +
+    "O usuário clica em 'Adicionar ao painel' para fixar o widget.",
   parameters: createVisualizationParameters,
   execute: executeCreateVisualization,
   render: CreateVisualizationUI,
 } satisfies AssistantToolProps<CreateVisualizationArgs, CreateVisualizationResult>;
 
-/** Registra a tool create_visualization no model context + render UI. */
+/* ------------------------------------------------- consultar_dados (servidor) */
+
+type QueryArgs = { sql: string; titulo: string };
+type QueryOutput =
+  | {
+      resultId: string;
+      colunas: { nome: string; tipo: string }[];
+      totalLinhas: number;
+      truncado: boolean;
+      amostra: Record<string, unknown>[];
+    }
+  | { erro: string };
+
+const cellText = (value: unknown) =>
+  typeof value === "number"
+    ? value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })
+    : value == null
+      ? "—"
+      : String(value);
+
+const QueryToolUI = ({ args, result, status }: ToolCallMessagePartProps<QueryArgs, QueryOutput>) => {
+  const [open, setOpen] = useState(false);
+  const running = status?.type === "running";
+  const failed = result != null && "erro" in result;
+  const ok = result != null && "resultId" in result ? result : null;
+
+  return (
+    <div className="my-2 max-w-xl rounded-xl border border-border bg-card/60 text-sm shadow-sm">
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-start"
+        aria-expanded={open}
+      >
+        <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-border bg-muted/40 text-muted-foreground">
+          {running ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Database className="size-3.5" aria-hidden />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-xs font-medium text-foreground">
+            {args?.titulo || "Consulta aos dados"}
+          </span>
+          <span className={cn("block truncate text-[11px]", failed ? "text-destructive" : "text-muted-foreground")}>
+            {running
+              ? "Consultando a fonte de dados…"
+              : failed
+                ? result.erro
+                : ok
+                  ? `${ok.totalLinhas} linha(s)${ok.truncado ? " (truncado)" : ""} · ${ok.colunas.length} coluna(s)`
+                  : "Aguardando…"}
+          </span>
+        </span>
+        <ChevronDown
+          className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
+          aria-hidden
+        />
+      </button>
+      {open ? (
+        <div className="space-y-2 border-t border-border px-3.5 py-3">
+          <pre className="max-h-48 overflow-auto rounded-lg bg-muted/50 p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
+            {args?.sql}
+          </pre>
+          {ok && ok.amostra.length > 0 ? (
+            <div className="max-h-56 overflow-auto rounded-lg border border-border">
+              <table className="w-full text-[11px]">
+                <thead className="sticky top-0 bg-muted/80">
+                  <tr>
+                    {ok.colunas.map((column) => (
+                      <th key={column.nome} className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-muted-foreground">
+                        {column.nome}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+                <tbody>
+                  {ok.amostra.map((row, index) => (
+                    <tr key={index} className="border-t border-border/60">
+                      {ok.colunas.map((column) => (
+                        <td key={column.nome} className="whitespace-nowrap px-2 py-1 text-foreground">
+                          {cellText(row[column.nome])}
+                        </td>
+                      ))}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+/** Registra create_visualization (frontend) e a UI de consultar_dados (executada no servidor). */
 export const VisualizationTools = () => {
   useAssistantTool(createVisualizationTool);
+  useAssistantToolUI({ toolName: "consultar_dados", render: QueryToolUI });
   return null;
 };

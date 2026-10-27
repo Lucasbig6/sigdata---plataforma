@@ -15,7 +15,8 @@ import {
   Trash2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DEMO_NOTICE, DEMO_SOURCE, MUNICIPIOS, SERIE_TEMPORAL } from "@/lib/demo-data";
+import { MUNICIPIOS, SERIE_TEMPORAL } from "@/lib/demo-data";
+import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { saveAnalysis } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { findLibraryItem } from "@/lib/dashboards/presets";
@@ -23,7 +24,7 @@ import { usePanelStore, WIDGET_MIN_SIZE, type PanelWidget, type WidgetKind } fro
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata } from "@/lib/sigdata-store";
 import { cn } from "@/lib/utils";
-import { BarChart, DataTable, KpiGrid, LineChart } from "./visualizations";
+import { BarChart, DataTable, KpiGrid, LineChart, ResultTable } from "./visualizations";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
@@ -59,6 +60,7 @@ const WidgetBody = ({ widget }: { widget: PanelWidget }) => {
   if (widget.kind === "kpi") {
     return <KpiGrid items={widget.kpis ?? []} />;
   }
+  if (widget.table) return <ResultTable columns={widget.table.columns} rows={widget.table.rows} />;
   return <DataTable rows={widget.rows ?? MUNICIPIOS} />;
 };
 
@@ -126,11 +128,16 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
   const widgets =
     (notebookId ? widgetsByNotebook[notebookId] : undefined) ?? EMPTY_WIDGETS;
-  const hydratePanel = usePanelStore((state) => state.hydrate);
+  const loadPanel = usePanelStore((state) => state.load);
+  const panelSaveError = usePanelStore((state) => state.saveError);
   const updateGeometry = usePanelStore((state) => state.updateGeometry);
   const removeWidget = usePanelStore((state) => state.removeWidget);
   const bringToFront = usePanelStore((state) => state.bringToFront);
   const notebooks = useNotebooksStore((state) => state.notebooks);
+  const notebook = notebooks.find((entry) => entry.id === notebookId);
+  const datasets = useDatasetsStore((state) => state.datasets);
+  const activeSource = datasets.find((entry) => entry.id === notebook?.sourceId) ?? null;
+  const renameDashboard = useDashboardsStore((state) => state.rename);
   const openDashboard = useDashboardsStore((state) => state.openDashboard);
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
   const beginTransaction = useDashboardsStore((state) => state.beginTransaction);
@@ -143,8 +150,8 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const panelVisible = !panelCollapsed || panelMobileOpen;
 
   useEffect(() => {
-    hydratePanel();
-  }, [hydratePanel]);
+    if (notebookId) loadPanel(notebookId);
+  }, [notebookId, loadPanel]);
 
   useEffect(() => {
     if (!note) return;
@@ -200,25 +207,12 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       setNote("Adicione visualizações ao painel antes de salvar.");
       return;
     }
-    const notebook = notebooks.find((entry) => entry.id === notebookId);
     const title = notebook?.title?.trim() || "Dashboard do projeto";
-
-    if (widgets.some((widget) => widget.series && widget.series.length > 0)) {
-      const firstChart = widgets.find((widget) => widget.series && widget.series.length > 0);
-      saveAnalysis(
-        {
-          kpis: widgets.find((widget) => widget.kpis)?.kpis ?? [],
-          serie: firstChart?.series ?? SERIE_TEMPORAL,
-          municipios: widgets.find((widget) => widget.rows)?.rows ?? MUNICIPIOS,
-          resumos: [],
-        },
-        `${title} · análise`,
-      );
-    }
 
     const id = createDashboard();
     openDashboard(id);
     beginTransaction("panel-import");
+    renameDashboard(title);
 
     const keyByKind: Record<WidgetKind, string> = {
       linha: "line",
@@ -238,12 +232,32 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       if (widget.kind === "kpi" && widget.kpis?.[0]) {
         patch.title = widget.kpis[0].label;
         patch.value = widget.kpis[0].value;
+        patch.description = widget.title;
+      }
+      // cada gráfico/tabela leva os próprios dados como análise salva
+      if (widget.kind !== "kpi" && (widget.series || widget.table || widget.rows)) {
+        const analysis = saveAnalysis(
+          {
+            kpis: widget.kpis ?? [],
+            serie: widget.series ?? [],
+            municipios: widget.rows ?? [],
+            resumos: [],
+            ...(widget.table && { tabela: widget.table }),
+          },
+          `${title} · ${widget.title}`,
+        );
+        patch.dataset = {
+          source: "analysis",
+          ref: analysis.id,
+          categoryField: "periodo",
+          valueField: "valor",
+        };
       }
       updateProps(elementId, patch);
     }
 
     endTransaction();
-    saveDashboard();
+    void saveDashboard();
     savePreferences();
     setNote(`Dashboard "${title}" salvo — abra em Dashboards.`);
   };
@@ -256,7 +270,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     const url = `${window.location.origin}/workspace?notebook=${notebookId}`;
     try {
       await navigator.clipboard.writeText(url);
-      setNote("Link do projeto copiado.");
+      setNote("Link copiado (acesso só para você). Para público, salve como dashboard e compartilhe.");
     } catch {
       setNote(url);
     }
@@ -276,12 +290,12 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
             <p className="truncate text-1xl font-medium text-foreground pb-3">
-              {notebooks.find((entry) => entry.id === notebookId)?.title ?? "Painel analítico"}
+              {notebook?.title ?? "Painel analítico"}
             </p>
             <div className="mt-1 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-primary">
                 <BarChart3 className="size-3" aria-hidden />
-                {DEMO_NOTICE}
+                {activeSource ? activeSource.name : "Sem fonte selecionada"}
               </span>
               {widgets.length > 0 ? (
                 <span className="text-[11px] text-muted-foreground">
@@ -332,6 +346,9 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             Compartilhar
           </Button>
           {note ? <span className="text-[11px] text-muted-foreground">{note}</span> : null}
+          {panelSaveError ? (
+            <span className="text-[11px] text-destructive">Painel não salvo: {panelSaveError}</span>
+          ) : null}
         </div>
 
         <div
@@ -419,11 +436,17 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       </div>
 
       <p className="border-t border-border/60 px-4 py-2 text-[10px] text-muted-foreground/80">
-        {DEMO_SOURCE}
-        <span className="ms-1.5 inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 align-middle">
-          <Check className="size-3 text-primary" aria-hidden />
-          demonstração
-        </span>
+        {activeSource ? (
+          <>
+            Fonte: {activeSource.name}
+            <span className="ms-1.5 inline-flex items-center gap-1 rounded-md border border-border px-1.5 py-0.5 align-middle">
+              <Check className="size-3 text-primary" aria-hidden />
+              {DATASET_KIND_LABELS[activeSource.kind]}
+            </span>
+          </>
+        ) : (
+          "Escolha um conjunto de dados na barra lateral para o assistente consultar."
+        )}
       </p>
     </section>
   );

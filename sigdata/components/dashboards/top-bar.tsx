@@ -4,9 +4,13 @@ import { ArrowLeft, Eye, EyeOff, Minus, Plus, Redo2, Save, Undo2 } from "lucide-
 import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { ShareMenu } from "./share-menu";
 
 type Props = {
+  dashboardId: string;
   name: string;
+  saving: boolean;
+  saveError: string | null;
   dirty: boolean;
   savedAt: number | null;
   canUndo: boolean;
@@ -25,7 +29,10 @@ const iconBtn =
   "grid size-9 place-items-center rounded-md border border-border/70 bg-background text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-40";
 
 export const TopBar = ({
+  dashboardId,
   name,
+  saving,
+  saveError,
   dirty,
   savedAt,
   canUndo,
@@ -39,7 +46,18 @@ export const TopBar = ({
   onZoom,
   onTogglePreview,
 }: Props) => {
-  const status = dirty ? (
+  const status = saving ? (
+    <span className="rounded-full border border-border/70 bg-muted/50 px-2 py-0.5 text-[10px] text-muted-foreground">
+      Salvando…
+    </span>
+  ) : saveError ? (
+    <span
+      title={saveError}
+      className="rounded-full border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] font-medium text-destructive"
+    >
+      Erro ao salvar
+    </span>
+  ) : dirty ? (
     <span className="rounded-full border border-amber-500/40 bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-600 dark:border-amber-400/40 dark:bg-amber-400/10 dark:text-amber-300">
       Alterações não salvas
     </span>
@@ -140,10 +158,12 @@ export const TopBar = ({
           </span>
         </button>
 
+        <ShareMenu dashboardId={dashboardId} dirty={dirty} />
+
         <button
           type="button"
           onClick={onSave}
-          disabled={!dirty}
+          disabled={!dirty || saving}
           className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Save className="size-4" aria-hidden />

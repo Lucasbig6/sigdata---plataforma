@@ -1,6 +1,6 @@
 "use client";
 
-import { resolveTableRows } from "@/lib/dashboards/datasets";
+import { isDemoDataset, resolveTable } from "@/lib/dashboards/datasets";
 import type { DashboardElement } from "@/lib/dashboards/types";
 import { useTheme } from "next-themes";
 import { ChartView, useChartTheme } from "./charts";
@@ -64,10 +64,13 @@ const ElementHeader = ({ title, showTitle }: { title: string; showTitle: boolean
     </p>
   ) : null;
 
+const formatCell = (value: unknown) =>
+  typeof value === "number" ? nf(value) : value == null ? "—" : String(value);
+
 const TableElement = ({ element }: { element: DashboardElement & { type: "table" } }) => {
   const { title, showTitle, dataset, density } = element.props;
-  const rows = resolveTableRows(dataset);
-  const tones = useSemanticTones();
+  const { columns, rows } = resolveTable(dataset);
+  const demo = isDemoDataset(dataset);
   const rowClass = density === "compacta" ? "px-4 py-1.5 text-[12px]" : "px-4 py-2.5 text-[13px]";
 
   return (
@@ -77,42 +80,36 @@ const TableElement = ({ element }: { element: DashboardElement & { type: "table"
         <table className="w-full border-collapse text-left">
           <thead className="sticky top-0 z-10 bg-panel/95 backdrop-blur">
             <tr className="text-[11px] uppercase tracking-wide text-muted-foreground">
-              <th className="px-4 py-2 font-medium">Município</th>
-              <th className="px-4 py-2 font-medium">Índice</th>
-              <th className="px-4 py-2 font-medium">Receita (R$ mi)</th>
-              <th className="px-4 py-2 font-medium">Variação</th>
+              {columns.map((column) => (
+                <th key={column} className="whitespace-nowrap px-4 py-2 font-medium">
+                  {column}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {rows.map((row) => (
+            {rows.map((row, index) => (
               <tr
-                key={row.nome}
+                key={index}
                 className="border-t border-border/50 text-foreground/90 transition-colors hover:bg-muted/40"
               >
-                <td className={`${rowClass} font-medium`}>{row.nome}</td>
-                <td className={`${rowClass} tabular-nums`}>{nf(row.indice)}</td>
-                <td className={`${rowClass} tabular-nums`}>{nf(row.receita)}</td>
-                <td
-                  className={`${rowClass} tabular-nums`}
-                  style={{
-                    color:
-                      row.variacao > 0
-                        ? tones.positive
-                        : row.variacao < 0
-                          ? tones.negative
-                          : undefined,
-                  }}
-                >
-                  {row.variacao > 0 ? "+" : ""}
-                  {nf(row.variacao)}%
-                </td>
+                {columns.map((column, colIndex) => (
+                  <td
+                    key={column}
+                    className={`${rowClass} ${colIndex === 0 ? "font-medium" : ""} ${
+                      typeof row[column] === "number" ? "tabular-nums" : ""
+                    }`}
+                  >
+                    {formatCell(row[column])}
+                  </td>
+                ))}
               </tr>
             ))}
           </tbody>
         </table>
       </div>
       <p className="shrink-0 border-t border-border/50 px-4 py-1.5 text-[10px] text-muted-foreground">
-        Dados de demonstração — sem fonte real conectada.
+        {demo ? "Dados de demonstração — sem fonte real conectada." : `${rows.length} linha(s) da análise salva.`}
       </p>
     </Panel>
   );

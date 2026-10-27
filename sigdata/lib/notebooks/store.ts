@@ -1,8 +1,9 @@
 /**
- * Metadados dos notebooks (sessões de chat) da home SIGDATA.
- * Persiste apenas metadados em localStorage; as mensagens vivem no runtime do chat.
+ * Projetos (notebooks) do usuário, persistidos no servidor (/api/projects).
+ * Mutações são otimistas: a interface atualiza na hora e a API grava em seguida.
  */
 import { create } from "zustand";
+import { api, background } from "@/lib/api/client";
 import { useChatStore } from "@/lib/chat/store";
 import { usePanelStore } from "@/lib/panel/store";
 
@@ -13,114 +14,116 @@ export type Notebook = {
   updatedAt: number;
   coverIndex: number;
   sourceCount: number;
+  /** Fonte de dados ativa no workspace do projeto. */
+  sourceId: string | null;
 };
-
-const STORAGE_KEY = "sigdata.notebooks.v1";
 
 export const COVER_COUNT = 8;
 
 export const DEFAULT_NOTEBOOK_TITLE = "Projeto sem título";
 
-type Persisted = {
-  notebooks?: Notebook[];
-};
-
-const readPersisted = (): Notebook[] => {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw) as Persisted;
-    if (!Array.isArray(parsed.notebooks)) return [];
-    return parsed.notebooks.filter(
-      (notebook): notebook is Notebook =>
-        typeof notebook === "object" &&
-        notebook !== null &&
-        typeof notebook.id === "string" &&
-        typeof notebook.title === "string" &&
-        typeof notebook.createdAt === "number" &&
-        typeof notebook.updatedAt === "number" &&
-        typeof notebook.coverIndex === "number" &&
-        typeof notebook.sourceCount === "number",
-    );
-  } catch {
-    return [];
-  }
-};
-
-const persist = (notebooks: Notebook[]) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ notebooks }));
-  } catch {
-    /* modo privado / storage indisponível */
-  }
-};
-
-const uid = (): string =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `nb-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
 type NotebooksStore = {
   hydrated: boolean;
+  error: string | null;
   notebooks: Notebook[];
 
   hydrate: () => void;
   createNotebook: (title?: string) => string;
   renameNotebook: (id: string, title: string) => void;
-  touchNotebook: (id: string, patch?: { title?: string; sourceCount?: number }) => void;
+  touchNotebook: (id: string, patch?: { title?: string }) => void;
+  setNotebookSource: (id: string, sourceId: string | null) => void;
   deleteNotebook: (id: string) => void;
 };
 
-export const useNotebooksStore = create<NotebooksStore>((set, get) => ({
-  hydrated: false,
-  notebooks: [],
+let hydrating: Promise<void> | null = null;
+/** Criações ainda não confirmadas pelo servidor (PATCH precisa esperar o POST). */
+const pendingCreates = new Map<string, Promise<unknown>>();
 
-  hydrate: () => {
-    if (get().hydrated) return;
-    set({ hydrated: true, notebooks: readPersisted() });
-  },
+const afterCreate = (id: string, fn: () => Promise<unknown>) =>
+  (pendingCreates.get(id) ?? Promise.resolve()).then(fn);
 
-  createNotebook: (title) => {
-    const now = Date.now();
-    const notebook: Notebook = {
-      id: uid(),
-      title: title?.trim() || DEFAULT_NOTEBOOK_TITLE,
-      createdAt: now,
-      updatedAt: now,
-      coverIndex: Math.floor(Math.random() * COVER_COUNT),
-      sourceCount: 0,
-    };
-    const notebooks = [notebook, ...get().notebooks];
-    set({ notebooks });
-    persist(notebooks);
-    return notebook.id;
-  },
+export const useNotebooksStore = create<NotebooksStore>((set, get) => {
+  const patchLocal = (id: string, patch: Partial<Notebook>) =>
+    set({
+      notebooks: get().notebooks.map((notebook) =>
+        notebook.id === id ? { ...notebook, ...patch, updatedAt: Date.now() } : notebook,
+      ),
+    });
 
-  renameNotebook: (id, title) => {
-    const trimmed = title.trim() || DEFAULT_NOTEBOOK_TITLE;
-    const notebooks = get().notebooks.map((notebook) =>
-      notebook.id === id ? { ...notebook, title: trimmed, updatedAt: Date.now() } : notebook,
-    );
-    set({ notebooks });
-    persist(notebooks);
-  },
+  return {
+    hydrated: false,
+    error: null,
+    notebooks: [],
 
-  touchNotebook: (id, patch) => {
-    if (!get().notebooks.some((notebook) => notebook.id === id)) return;
-    const notebooks = get().notebooks.map((notebook) =>
-      notebook.id === id ? { ...notebook, ...patch, updatedAt: Date.now() } : notebook,
-    );
-    set({ notebooks });
-    persist(notebooks);
-  },
+    hydrate: () => {
+      if (get().hydrated || hydrating) return;
+      hydrating = api<Notebook[]>("/api/projects")
+        .then((notebooks) => set({ hydrated: true, notebooks, error: null }))
+        .catch((error: Error) => set({ hydrated: true, error: error.message }))
+        .finally(() => {
+          hydrating = null;
+        });
+    },
 
-  deleteNotebook: (id) => {
-    const notebooks = get().notebooks.filter((notebook) => notebook.id !== id);
-    set({ notebooks });
-    persist(notebooks);
-    useChatStore.getState().clearNotebook(id);
-    usePanelStore.getState().clearNotebook(id);
-  },
-}));
+    createNotebook: (title) => {
+      const now = Date.now();
+      const notebook: Notebook = {
+        id: crypto.randomUUID(),
+        title: title?.trim() || DEFAULT_NOTEBOOK_TITLE,
+        createdAt: now,
+        updatedAt: now,
+        coverIndex: Math.floor(Math.random() * COVER_COUNT),
+        sourceCount: 0,
+        sourceId: null,
+      };
+      set({ notebooks: [notebook, ...get().notebooks] });
+      const request = api<Notebook>("/api/projects", {
+        method: "POST",
+        json: { id: notebook.id, title: notebook.title, coverIndex: notebook.coverIndex },
+      }).finally(() => pendingCreates.delete(notebook.id));
+      pendingCreates.set(notebook.id, request);
+      background(request, "criar projeto");
+      return notebook.id;
+    },
+
+    renameNotebook: (id, title) => {
+      const trimmed = title.trim() || DEFAULT_NOTEBOOK_TITLE;
+      patchLocal(id, { title: trimmed });
+      background(
+        afterCreate(id, () => api(`/api/projects/${id}`, { method: "PATCH", json: { title: trimmed } })),
+        "renomear projeto",
+      );
+    },
+
+    touchNotebook: (id, patch) => {
+      if (!get().notebooks.some((notebook) => notebook.id === id)) return;
+      patchLocal(id, patch ?? {});
+      if (patch?.title !== undefined) {
+        background(
+          afterCreate(id, () =>
+            api(`/api/projects/${id}`, { method: "PATCH", json: { title: patch.title } }),
+          ),
+          "atualizar projeto",
+        );
+      }
+    },
+
+    setNotebookSource: (id, sourceId) => {
+      patchLocal(id, { sourceId, sourceCount: sourceId ? 1 : 0 });
+      background(
+        afterCreate(id, () => api(`/api/projects/${id}`, { method: "PATCH", json: { sourceId } })),
+        "trocar fonte do projeto",
+      );
+    },
+
+    deleteNotebook: (id) => {
+      set({ notebooks: get().notebooks.filter((notebook) => notebook.id !== id) });
+      useChatStore.getState().clearNotebook(id);
+      usePanelStore.getState().clearNotebook(id);
+      background(
+        afterCreate(id, () => api(`/api/projects/${id}`, { method: "DELETE" })),
+        "excluir projeto",
+      );
+    },
+  };
+});

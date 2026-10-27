@@ -3,13 +3,17 @@
  *
  * Formato comum de visualização (chat -> editor): o snapshot guarda os mesmos
  * tipos usados pelos dados fictícios do projeto, permitindo que uma análise
- * salva vire um elemento do dashboard sem reestruturar o chat.
+ * salva vire um elemento do dashboard sem reestruturar o chat. `tabela` guarda
+ * resultados com colunas arbitrárias (vindos de consultas reais).
  *
- * Persistência local (localStorage). Nenhum dado sensível é armazenado.
+ * Persistência no servidor (/api/analyses); leitura síncrona via cache em memória,
+ * porque os renderizadores do editor resolvem dados de forma síncrona.
  */
+import { create } from "zustand";
+import { api, background } from "@/lib/api/client";
 import type { Kpi, Municipio, ResumoItem, SeriesPoint } from "@/lib/demo-data";
+import type { GenericTable } from "@/lib/panel/store";
 
-export const ANALYSES_STORAGE_KEY = "sigdata.analyses.v1";
 export const ANALYSES_LIMIT = 20;
 
 export type AnalysisSnapshot = {
@@ -17,6 +21,7 @@ export type AnalysisSnapshot = {
   serie: SeriesPoint[];
   municipios: Municipio[];
   resumos: ResumoItem[];
+  tabela?: GenericTable;
 };
 
 export type SavedAnalysis = {
@@ -27,61 +32,56 @@ export type SavedAnalysis = {
   snapshot: AnalysisSnapshot;
 };
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null;
-
-const readRaw = (): unknown => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(ANALYSES_STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as unknown) : null;
-  } catch {
-    return null;
-  }
+type AnalysesStore = {
+  hydrated: boolean;
+  analyses: SavedAnalysis[];
+  hydrate: () => void;
+  /** Carrega um conjunto já conhecido (ex.: página pública de compartilhamento). */
+  replace: (analyses: SavedAnalysis[]) => void;
 };
 
-const writeRaw = (data: SavedAnalysis[]): void => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(ANALYSES_STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    /* modo privado / storage indisponível */
-  }
-};
+let hydrating = false;
 
-const sanitize = (raw: unknown): SavedAnalysis[] => {
-  if (!Array.isArray(raw)) return [];
-  return raw.filter((item): item is SavedAnalysis => {
-    if (!isRecord(item)) return false;
-    return (
-      typeof item.id === "string" &&
-      typeof item.title === "string" &&
-      typeof item.savedAt === "number" &&
-      isRecord(item.snapshot)
-    );
-  }) as SavedAnalysis[];
-};
+export const useAnalysesStore = create<AnalysesStore>((set, get) => ({
+  hydrated: false,
+  analyses: [],
+  hydrate: () => {
+    if (get().hydrated || hydrating) return;
+    hydrating = true;
+    api<SavedAnalysis[]>("/api/analyses")
+      .then((analyses) => set({ hydrated: true, analyses }))
+      .catch((error: unknown) => {
+        console.error("[sigdata] carregar análises:", error);
+        set({ hydrated: true });
+      })
+      .finally(() => {
+        hydrating = false;
+      });
+  },
+  replace: (analyses) => set({ hydrated: true, analyses }),
+}));
 
-export const listAnalyses = (): SavedAnalysis[] => sanitize(readRaw());
+export const listAnalyses = (): SavedAnalysis[] => useAnalysesStore.getState().analyses;
 
 export const getAnalysis = (id: string): SavedAnalysis | undefined =>
   listAnalyses().find((analysis) => analysis.id === id);
 
-/**
- * Grava uma análise nova no início da lista (mantém as mais recentes).
- * Se já existir análise com o mesmo título no mesmo dia, substitui em vez de
- * duplicar.
- */
+/** Grava uma análise nova (otimista) e devolve o registro com id já definido. */
 export const saveAnalysis = (snapshot: AnalysisSnapshot, title: string): SavedAnalysis => {
   const analysis: SavedAnalysis = {
-    id: `an-${Date.now().toString(36)}`,
+    id: `an-${crypto.randomUUID().slice(0, 12)}`,
     title: title.trim() || "Análise sem título",
     savedAt: Date.now(),
     source: "chat",
     snapshot,
   };
-  const existing = listAnalyses().filter((item) => item.title !== analysis.title);
-  const next = [analysis, ...existing].slice(0, ANALYSES_LIMIT);
-  writeRaw(next);
+  useAnalysesStore.setState({ analyses: [analysis, ...listAnalyses()] });
+  background(
+    api("/api/analyses", {
+      method: "POST",
+      json: { id: analysis.id, title: analysis.title, snapshot },
+    }),
+    "salvar análise",
+  );
   return analysis;
 };

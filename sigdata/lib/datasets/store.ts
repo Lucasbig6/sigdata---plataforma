@@ -1,164 +1,116 @@
 /**
- * Datasets (fontes de dados) definidos pelo analista na home.
- * Persiste apenas metadados em localStorage; o conteúdo em si vive fora do navegador.
+ * Fontes de dados do usuário (/api/sources): arquivos CSV/XLSX carregados no
+ * motor analítico e conexões Postgres externas. A fonte ativa é escolhida por
+ * projeto (ver `setNotebookSource` em lib/notebooks/store).
  */
 import { create } from "zustand";
+import { api } from "@/lib/api/client";
+import {
+  SOURCE_KIND_LABELS,
+  type DataSource,
+  type PostgresConnectionInput,
+  type SourceKind,
+  type SourceTable,
+} from "@/lib/domain/sources";
 
-export type DatasetKind = "demo" | "csv" | "xlsx" | "postgresql";
-
-export type Dataset = {
-  id: string;
-  name: string;
-  description: string;
-  kind: DatasetKind;
-  createdAt: number;
-  updatedAt: number;
-};
-
-export const DATASET_KIND_LABELS: Record<DatasetKind, string> = {
-  demo: "Demonstração",
-  csv: "CSV",
-  xlsx: "Excel",
-  postgresql: "PostgreSQL",
-};
-
-const STORAGE_KEY = "sigdata.datasets.v1";
-
-type Persisted = {
-  datasets?: Dataset[];
-  selectedId?: string | null;
-};
-
-const uid = (): string =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `ds-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
-
-const isValidDataset = (value: unknown): value is Dataset => {
-  if (typeof value !== "object" || value === null) return false;
-  const candidate = value as Record<string, unknown>;
-  return (
-    typeof candidate.id === "string" &&
-    typeof candidate.name === "string" &&
-    typeof candidate.description === "string" &&
-    typeof candidate.createdAt === "number" &&
-    typeof candidate.updatedAt === "number" &&
-    (candidate.kind === undefined ||
-      candidate.kind === "demo" ||
-      candidate.kind === "csv" ||
-      candidate.kind === "xlsx" ||
-      candidate.kind === "postgresql")
-  );
-};
-
-const coerceKind = (value: unknown): DatasetKind =>
-  value === "demo" || value === "csv" || value === "xlsx" || value === "postgresql"
-    ? value
-    : "demo";
-
-const seedDatasets = (): Dataset[] => {
-  const now = Date.now();
-  return [
-    {
-      id: uid(),
-      name: "Dados de demonstração",
-      description: "Indicadores municipais fictícios usados nas análises de demonstração.",
-      kind: "demo",
-      createdAt: now,
-      updatedAt: now,
-    },
-    {
-      id: uid(),
-      name: "Análises salvas",
-      description: "Análises geradas nas conversas e salvas neste navegador.",
-      kind: "demo",
-      createdAt: now,
-      updatedAt: now,
-    },
-  ];
-};
-
-const readPersisted = (): Persisted => {
-  if (typeof window === "undefined") return {};
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Persisted) : {};
-  } catch {
-    return {};
-  }
-};
-
-const persist = (data: Persisted) => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-  } catch {
-    /* modo privado / storage indisponível */
-  }
-};
+export type Dataset = DataSource;
+export type DatasetKind = SourceKind;
+export const DATASET_KIND_LABELS = SOURCE_KIND_LABELS;
 
 type DatasetsStore = {
   hydrated: boolean;
-  datasets: Dataset[];
-  selectedId: string | null;
+  error: string | null;
+  datasets: DataSource[];
 
   hydrate: () => void;
-  addDataset: (name: string, description?: string, kind?: DatasetKind) => string;
-  removeDataset: (id: string) => void;
-  setSelected: (id: string) => void;
+  reload: () => Promise<void>;
+  uploadFile: (input: { file: File; name: string; description: string }) => Promise<DataSource>;
+  testPostgres: (connection: PostgresConnectionInput) => Promise<{ tables: number }>;
+  connectPostgres: (input: {
+    name: string;
+    description: string;
+    connection: PostgresConnectionInput;
+  }) => Promise<DataSource>;
+  refreshSchema: (id: string) => Promise<DataSource>;
+  profileTable: (id: string, table: string) => Promise<SourceTable>;
+  removeDataset: (id: string) => Promise<void>;
 };
 
-export const useDatasetsStore = create<DatasetsStore>((set, get) => ({
-  hydrated: false,
-  datasets: [],
-  selectedId: null,
+let hydrating: Promise<void> | null = null;
 
-  hydrate: () => {
-    if (get().hydrated) return;
-    const persisted = readPersisted();
-    const stored = Array.isArray(persisted.datasets)
-      ? persisted.datasets
-          .filter(isValidDataset)
-          .map((dataset) => ({ ...dataset, kind: coerceKind(dataset.kind) }))
-      : null;
-    const datasets = stored ?? seedDatasets();
-    const selectedId =
-      persisted.selectedId && datasets.some((dataset) => dataset.id === persisted.selectedId)
-        ? persisted.selectedId
-        : (datasets[0]?.id ?? null);
-    set({ hydrated: true, datasets, selectedId });
-    if (!stored) persist({ datasets, selectedId });
-  },
+export const useDatasetsStore = create<DatasetsStore>((set, get) => {
+  const upsert = (source: DataSource) => {
+    const exists = get().datasets.some((entry) => entry.id === source.id);
+    set({
+      datasets: exists
+        ? get().datasets.map((entry) => (entry.id === source.id ? source : entry))
+        : [source, ...get().datasets],
+    });
+    return source;
+  };
 
-  addDataset: (name, description = "", kind: DatasetKind = "demo") => {
-    const now = Date.now();
-    const dataset: Dataset = {
-      id: uid(),
-      name: name.trim(),
-      description: description.trim(),
-      kind,
-      createdAt: now,
-      updatedAt: now,
-    };
-    const datasets = [dataset, ...get().datasets];
-    const selectedId = get().selectedId ?? dataset.id;
-    set({ datasets, selectedId });
-    persist({ datasets, selectedId });
-    return dataset.id;
-  },
+  return {
+    hydrated: false,
+    error: null,
+    datasets: [],
 
-  removeDataset: (id) => {
-    const datasets = get().datasets.filter((dataset) => dataset.id !== id);
-    const selectedId =
-      get().selectedId === id ? (datasets[0]?.id ?? null) : get().selectedId;
-    set({ datasets, selectedId });
-    persist({ datasets, selectedId });
-  },
+    hydrate: () => {
+      if (get().hydrated || hydrating) return;
+      hydrating = get()
+        .reload()
+        .finally(() => {
+          hydrating = null;
+        });
+    },
 
-  setSelected: (id) => {
-    if (!get().datasets.some((dataset) => dataset.id === id)) return;
-    const { datasets } = get();
-    set({ selectedId: id });
-    persist({ datasets, selectedId: id });
-  },
-}));
+    reload: async () => {
+      try {
+        const datasets = await api<DataSource[]>("/api/sources");
+        set({ hydrated: true, datasets, error: null });
+      } catch (error) {
+        set({ hydrated: true, error: (error as Error).message });
+      }
+    },
+
+    uploadFile: async ({ file, name, description }) => {
+      const form = new FormData();
+      form.set("file", file);
+      form.set("name", name);
+      form.set("description", description);
+      return upsert(await api<DataSource>("/api/sources", { method: "POST", body: form }));
+    },
+
+    testPostgres: (connection) =>
+      api<{ tables: number }>("/api/sources/test", { method: "POST", json: connection }),
+
+    connectPostgres: async (input) =>
+      upsert(
+        await api<DataSource>("/api/sources", {
+          method: "POST",
+          json: { kind: "postgresql", ...input },
+        }),
+      ),
+
+    refreshSchema: async (id) =>
+      upsert(await api<DataSource>(`/api/sources/${id}/refresh`, { method: "POST" })),
+
+    profileTable: async (id, table) => {
+      const profiled = await api<SourceTable>(
+        `/api/sources/${id}/profile?table=${encodeURIComponent(table)}`,
+      );
+      const source = get().datasets.find((entry) => entry.id === id);
+      if (source) {
+        upsert({
+          ...source,
+          tables: source.tables.map((entry) => (entry.name === table ? profiled : entry)),
+        });
+      }
+      return profiled;
+    },
+
+    removeDataset: async (id) => {
+      await api(`/api/sources/${id}`, { method: "DELETE" });
+      set({ datasets: get().datasets.filter((entry) => entry.id !== id) });
+    },
+  };
+});

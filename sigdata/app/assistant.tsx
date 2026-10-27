@@ -2,44 +2,33 @@
 
 import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport, useAISDKChat } from "@assistant-ui/ai-sdk";
-import { lastAssistantMessageIsCompleteWithToolCalls } from "ai";
+import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
+import { Loader2 } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { AppShell } from "@/components/sigdata/app-shell";
 import { VisualizationTools } from "@/components/sigdata/create-visualization-tool";
 import { WelcomeScreen } from "@/components/sigdata/welcome-screen";
+import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/lib/chat/store";
 import { DEFAULT_NOTEBOOK_TITLE, useNotebooksStore } from "@/lib/notebooks/store";
-import { usePanelStore } from "@/lib/panel/store";
 
-const NotebookBinder = ({ notebookId }: { notebookId: string | null }) => {
+/** Dá ao projeto o título da primeira pergunta. As mensagens são salvas pelo servidor. */
+const NotebookTitleBinder = ({ notebookId }: { notebookId: string }) => {
   const chat = useAISDKChat();
-  const hydrated = useNotebooksStore((state) => state.hydrated);
-  const hydrate = useNotebooksStore((state) => state.hydrate);
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const touchNotebook = useNotebooksStore((state) => state.touchNotebook);
-  const saveMessages = useChatStore((state) => state.saveMessages);
   const lastCount = useRef(0);
 
   useEffect(() => {
-    hydrate();
-  }, [hydrate]);
-
-  useEffect(() => {
-    if (!notebookId || !hydrated) return;
     const messages = chat?.messages ?? [];
-    if (messages.length === 0) return;
-
-    saveMessages(notebookId, messages);
-
-    if (messages.length === lastCount.current) return;
+    if (messages.length === 0 || messages.length === lastCount.current) return;
     lastCount.current = messages.length;
 
     const notebook = notebooks.find((entry) => entry.id === notebookId);
     if (!notebook) return;
 
-    const patch: { title?: string } = {};
     if (notebook.title === DEFAULT_NOTEBOOK_TITLE) {
       const firstUser = messages.find((message) => message.role === "user");
       const text = firstUser?.parts
@@ -47,45 +36,78 @@ const NotebookBinder = ({ notebookId }: { notebookId: string | null }) => {
         .map((part) => ("text" in part ? part.text : ""))
         .join(" ")
         .trim();
-      if (text) patch.title = text.slice(0, 80);
+      if (text) touchNotebook(notebookId, { title: text.slice(0, 80) });
+      return;
     }
-    touchNotebook(notebookId, Object.keys(patch).length > 0 ? patch : undefined);
-  }, [chat, chat?.messages, notebookId, hydrated, notebooks, touchNotebook, saveMessages]);
+    touchNotebook(notebookId);
+  }, [chat, chat?.messages, notebookId, notebooks, touchNotebook]);
 
   return null;
 };
 
-const EMPTY_MESSAGES: never[] = [];
-
-const AssistantRuntimeInner = ({ notebookId }: { notebookId: string }) => {
-  const hydratedChat = useChatStore((state) => state.hydrated);
-  const hydrateChat = useChatStore((state) => state.hydrate);
-  const hydratePanel = usePanelStore((state) => state.hydrate);
-  const messagesByNotebook = useChatStore((state) => state.messagesByNotebook);
-  const initialMessages = messagesByNotebook[notebookId] ?? EMPTY_MESSAGES;
-
-  useEffect(() => {
-    hydrateChat();
-    hydratePanel();
-  }, [hydrateChat, hydratePanel]);
+const AssistantRuntimeInner = ({
+  notebookId,
+  initialMessages,
+}: {
+  notebookId: string;
+  initialMessages: UIMessage[];
+}) => {
+  const transport = useMemo(
+    () => new AssistantChatTransport({ api: "/api/chat", body: { projectId: notebookId } }),
+    [notebookId],
+  );
 
   const runtime = useChatRuntime({
-    messages: hydratedChat ? initialMessages : [],
+    messages: initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
-    transport: new AssistantChatTransport({
-      api: "/api/chat",
-    }),
+    transport,
   });
 
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <VisualizationTools />
-      <NotebookBinder notebookId={notebookId} />
+      <NotebookTitleBinder notebookId={notebookId} />
       <AppShell>
         <Thread components={{ Welcome: WelcomeScreen }} />
       </AppShell>
     </AssistantRuntimeProvider>
   );
+};
+
+const EMPTY_MESSAGES: UIMessage[] = [];
+
+/** Carrega o histórico do servidor antes de montar o runtime do chat. */
+const NotebookLoader = ({ notebookId }: { notebookId: string }) => {
+  const load = useChatStore((state) => state.load);
+  const loadState = useChatStore((state) => state.loadState[notebookId]);
+  const messages = useChatStore((state) => state.messagesByNotebook[notebookId]) ?? EMPTY_MESSAGES;
+
+  useEffect(() => {
+    void load(notebookId);
+  }, [load, notebookId]);
+
+  if (loadState?.status === "error") {
+    return (
+      <div className="flex h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
+        <p className="text-sm font-medium text-foreground">Não foi possível abrir a conversa</p>
+        <p className="max-w-sm text-xs text-muted-foreground">{loadState.error}</p>
+        <Button size="sm" variant="outline" onClick={() => void load(notebookId)}>
+          Tentar novamente
+        </Button>
+      </div>
+    );
+  }
+
+  if (loadState?.status !== "ready") {
+    return (
+      <div className="flex h-dvh items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Carregando conversa…
+      </div>
+    );
+  }
+
+  return <AssistantRuntimeInner notebookId={notebookId} initialMessages={messages} />;
 };
 
 export const Assistant = () => {
@@ -110,5 +132,5 @@ export const Assistant = () => {
 
   if (!notebookId) return null;
 
-  return <AssistantRuntimeInner key={notebookId} notebookId={notebookId} />;
+  return <NotebookLoader key={notebookId} notebookId={notebookId} />;
 };

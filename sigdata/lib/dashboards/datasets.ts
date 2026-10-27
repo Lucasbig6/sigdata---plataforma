@@ -87,6 +87,28 @@ export const resolveSeries = (dataset: DatasetRef): SeriesPoint[] => {
 export const resolveTableRows = (dataset: DatasetRef): Municipio[] =>
   snapshotFor(dataset).municipios;
 
+/**
+ * Tabela com colunas arbitrárias: usa o resultado real salvo na análise quando
+ * existir; senão converte as linhas de demonstração.
+ */
+export const resolveTable = (dataset: DatasetRef): { columns: string[]; rows: Record<string, unknown>[] } => {
+  const snapshot = snapshotFor(dataset);
+  if (snapshot.tabela && snapshot.tabela.columns.length > 0) return snapshot.tabela;
+  return {
+    columns: ["Município", "Índice", "Receita (R$ mi)", "Variação (%)"],
+    rows: snapshot.municipios.map((row) => ({
+      "Município": row.nome,
+      "Índice": row.indice,
+      "Receita (R$ mi)": row.receita,
+      "Variação (%)": row.variacao,
+    })),
+  };
+};
+
+/** Indica se o elemento usa dados reais (análise salva) ou de demonstração. */
+export const isDemoDataset = (dataset: DatasetRef) =>
+  dataset.source !== "analysis" || !getAnalysis(dataset.ref);
+
 export const resolveKpis = (dataset: DatasetRef) => snapshotFor(dataset).kpis;
 
 export type SourceOption = {

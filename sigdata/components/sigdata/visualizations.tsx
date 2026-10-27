@@ -276,3 +276,52 @@ export const DataTable = ({ rows }: { rows: Municipio[] }) => (
     </table>
   </div>
 );
+
+const formatCell = (value: unknown) =>
+  typeof value === "number" ? nf.format(value) : value == null ? "—" : String(value);
+
+/** Tabela com colunas arbitrárias (resultado de consulta). */
+export const ResultTable = ({
+  columns,
+  rows,
+}: {
+  columns: string[];
+  rows: Record<string, unknown>[];
+}) => (
+  <div className="overflow-x-auto rounded-xl border border-border">
+    <table className="w-full text-sm">
+      <thead>
+        <tr className="bg-muted/60 text-muted-foreground">
+          {columns.map((column) => (
+            <th key={column} className="whitespace-nowrap px-3 py-2.5 text-left font-medium">
+              {column}
+            </th>
+          ))}
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((row, index) => (
+          <tr
+            key={index}
+            className={cn(
+              "border-t border-border transition-colors hover:bg-muted/50",
+              index % 2 === 1 && "bg-muted/20",
+            )}
+          >
+            {columns.map((column) => (
+              <td
+                key={column}
+                className={cn(
+                  "whitespace-nowrap px-3 py-2 text-foreground",
+                  typeof row[column] === "number" && "text-right tabular-nums",
+                )}
+              >
+                {formatCell(row[column])}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);

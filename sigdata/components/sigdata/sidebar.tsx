@@ -9,6 +9,7 @@ import {
   Database,
   FolderKanban,
   LayoutDashboard,
+  LogOut,
   MessageSquarePlus,
   Search,
   UserRound,
@@ -33,6 +34,7 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
+import { signOut, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
@@ -69,8 +71,11 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const datasetsHydrated = useDatasetsStore((state) => state.hydrated);
   const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
   const datasets = useDatasetsStore((state) => state.datasets);
-  const selectedId = useDatasetsStore((state) => state.selectedId);
-  const setSelected = useDatasetsStore((state) => state.setSelected);
+  const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
+  const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId) ?? null;
+  const selectedId = activeNotebook?.sourceId ?? null;
+  const readyDatasets = datasets.filter((dataset) => dataset.status === "pronta");
+  const { data: session } = useSession();
 
   useEffect(() => {
     hydrateDatasets();
@@ -116,15 +121,22 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                 <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-64">
-                {!datasetsHydrated || datasets.length === 0 ? (
+                {!activeNotebook ? (
+                  <DropdownMenuItem disabled>Abra um projeto para escolher a fonte</DropdownMenuItem>
+                ) : !datasetsHydrated || readyDatasets.length === 0 ? (
                   <DropdownMenuItem disabled>
                     Nenhum dataset disponível
                   </DropdownMenuItem>
                 ) : (
-                  datasets.map((dataset) => (
+                  readyDatasets.map((dataset) => (
                     <DropdownMenuItem
                       key={dataset.id}
-                      onClick={() => setSelected(dataset.id)}
+                      onClick={() =>
+                        setNotebookSource(
+                          activeNotebook.id,
+                          dataset.id === selectedId ? null : dataset.id,
+                        )
+                      }
                       className="gap-2.5"
                     >
                       <Check
@@ -251,22 +263,43 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
       </SidebarContent>
 
       <SidebarFooter className="border-t border-border px-3 py-3">
-        <button
-          type="button"
-          onClick={() => setSection("conversa")}
-          className={cn(
-            "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-start",
-            "transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 outline-none",
-          )}
-        >
-          <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border">
-            <UserRound className="size-4" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm text-foreground">Você</span>
-            <span className="block truncate text-[11px] text-muted-foreground">sessão local</span>
-          </span>
-        </button>
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              "flex w-full items-center gap-2.5 rounded-lg px-2 py-2 text-start",
+              "transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 outline-none",
+            )}
+          >
+            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border">
+              <UserRound className="size-4" aria-hidden />
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm text-foreground">
+                {session?.user.name ?? "Você"}
+              </span>
+              <span className="block truncate text-[11px] text-muted-foreground">
+                {session?.user.email ?? "carregando sessão…"}
+              </span>
+            </span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="start" side="top" className="w-56">
+            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
+              <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              Fontes de dados
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem
+              onClick={() =>
+                void signOut().then(() => {
+                  window.location.assign("/login");
+                })
+              }
+            >
+              <LogOut className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              Sair
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </SidebarFooter>
 
       <SidebarRail />

@@ -1,19 +1,20 @@
 /**
  * Estado do editor de dashboards SIGDATA.
  *
- * - Coleção de dashboards persistida em localStorage (validada na leitura).
+ * - Coleção de dashboards persistida no servidor (/api/dashboards).
  * - Editor com histórico (desfazer/refazer) por snapshots.
- * - Alterações só vão para o storage no `save()` (daí o indicador de
+ * - Alterações só vão para o servidor no `save()` (daí o indicador de
  *   "alterações não salvas"). Criar/remover dashboards persiste na hora.
+ * - Links públicos de leitura: `share()` / `unshare()`.
  */
 import { create } from "zustand";
-import { createDemoDashboards } from "./demo-dashboards";
+import { api, background } from "@/lib/api/client";
+import { useAnalysesStore, type SavedAnalysis } from "./analyses";
 import { createElement, type LibraryItem } from "./presets";
 import {
   ELEMENT_MIN,
   clamp,
   clampPosition,
-  migrateDashboard,
   reindexLayers,
   topLevelZ,
   uid,
@@ -21,7 +22,6 @@ import {
   type DashboardElement,
 } from "./types";
 
-const STORAGE_KEY = "sigdata.dashboards.v1";
 const HISTORY_LIMIT = 80;
 const HISTORY_COALESCE_MS = 700;
 
@@ -29,49 +29,35 @@ type HistoryKey = string | null;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-type Collection = { order: string[]; byId: Record<string, Dashboard> };
+type ServerDashboard = Dashboard & { shareToken: string | null };
 
-const readCollection = (): Collection | null => {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as unknown;
-    if (typeof parsed !== "object" || parsed === null) return null;
-    const { order, byId } = parsed as { order?: unknown; byId?: unknown };
-    if (!Array.isArray(order) || typeof byId !== "object" || byId === null) return null;
+/** POSTs de criação em andamento: o primeiro PUT/DELETE espera por eles. */
+const pendingCreates = new Map<string, Promise<unknown>>();
+const afterCreate = (id: string, fn: () => Promise<unknown>) =>
+  (pendingCreates.get(id) ?? Promise.resolve()).then(fn);
 
-    const validOrder: string[] = [];
-    const validById: Record<string, Dashboard> = {};
-    const source = byId as Record<string, unknown>;
-    for (const id of order) {
-      if (typeof id !== "string") continue;
-      const dashboard = migrateDashboard(source[id]);
-      if (!dashboard) continue;
-      validOrder.push(dashboard.id);
-      validById[dashboard.id] = dashboard;
-    }
-    return validOrder.length > 0 ? { order: validOrder, byId: validById } : null;
-  } catch {
-    return null;
-  }
-};
-
-const writeCollection = (collection: Collection): void => {
-  if (typeof window === "undefined") return;
-  try {
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(collection));
-  } catch {
-    /* modo privado / storage indisponível */
-  }
-};
+const toPayload = (doc: Dashboard) => ({
+  id: doc.id,
+  schemaVersion: doc.schemaVersion,
+  name: doc.name,
+  description: doc.description,
+  origin: doc.origin,
+  createdAt: doc.createdAt,
+  updatedAt: doc.updatedAt,
+  canvas: doc.canvas,
+  elements: doc.elements,
+});
 
 const byZ = (a: DashboardElement, b: DashboardElement) => a.z - b.z;
 
 type SigdataDashboardsStore = {
   hydrated: boolean;
+  loadError: string | null;
   order: string[];
   dashboards: Record<string, Dashboard>;
+  shareTokens: Record<string, string | null>;
+  saving: boolean;
+  saveError: string | null;
 
   currentId: string | null;
   selectedId: string | null;
@@ -97,7 +83,11 @@ type SigdataDashboardsStore = {
   endTransaction: () => void;
   undo: () => void;
   redo: () => void;
-  save: () => void;
+  save: () => Promise<void>;
+  share: (id: string) => Promise<string>;
+  unshare: (id: string) => Promise<void>;
+  /** Abre um dashboard recebido por link público (somente leitura). */
+  loadPublic: (dashboard: Dashboard, analyses: SavedAnalysis[]) => void;
 
   addElement: (item: LibraryItem, placement?: { x?: number; y?: number }) => string | null;
   updateProps: (id: string, patch: Record<string, unknown>, field?: string) => void;
@@ -115,13 +105,7 @@ type SigdataDashboardsStore = {
   moveLayer: (id: string, direction: "front" | "back" | "up" | "down") => void;
 };
 
-const emptyCollection = (): Collection => {
-  const demos = createDemoDashboards();
-  return {
-    order: demos.map((dashboard) => dashboard.id),
-    byId: Object.fromEntries(demos.map((dashboard) => [dashboard.id, dashboard])),
-  };
-};
+let hydrating: Promise<void> | null = null;
 
 export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
   const mutateCurrent = (transform: (doc: Dashboard) => Dashboard | null, dirty = true) => {
@@ -156,8 +140,12 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
 
   return {
     hydrated: false,
+    loadError: null,
     order: [],
     dashboards: {},
+    shareTokens: {},
+    saving: false,
+    saveError: null,
 
     currentId: null,
     selectedId: null,
@@ -170,15 +158,24 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
     historyAt: 0,
 
     hydrate: () => {
-      if (get().hydrated) return;
-      const stored = readCollection();
-      const collection = stored ?? emptyCollection();
-      if (!stored) writeCollection(collection);
-      set({
-        hydrated: true,
-        order: collection.order,
-        dashboards: collection.byId,
-      });
+      if (get().hydrated || hydrating) return;
+      useAnalysesStore.getState().hydrate();
+      hydrating = api<ServerDashboard[]>("/api/dashboards")
+        .then((list) => {
+          set({
+            hydrated: true,
+            loadError: null,
+            order: list.map((dashboard) => dashboard.id),
+            dashboards: Object.fromEntries(
+              list.map(({ shareToken: _token, ...dashboard }) => [dashboard.id, dashboard]),
+            ),
+            shareTokens: Object.fromEntries(list.map((d) => [d.id, d.shareToken])),
+          });
+        })
+        .catch((error: Error) => set({ hydrated: true, loadError: error.message }))
+        .finally(() => {
+          hydrating = null;
+        });
     },
 
     list: () => {
@@ -239,7 +236,11 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
         future: [],
         historyKey: null,
       });
-      writeCollection({ order: next.order, byId: next.dashboards });
+      const request = api("/api/dashboards", { method: "POST", json: toPayload(dashboard) }).finally(
+        () => pendingCreates.delete(dashboard.id),
+      );
+      pendingCreates.set(dashboard.id, request);
+      background(request, "criar dashboard");
       return dashboard.id;
     },
 
@@ -253,7 +254,10 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
         dashboards: nextDashboards,
         currentId: currentId === id ? null : currentId,
       });
-      writeCollection({ order: nextOrder, byId: nextDashboards });
+      background(
+        afterCreate(id, () => api(`/api/dashboards/${id}`, { method: "DELETE" })),
+        "excluir dashboard",
+      );
     },
 
     rename: (name) => {
@@ -296,20 +300,55 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((set, get) => {
       });
     },
 
-    save: () => {
+    save: async () => {
       const doc = get().current();
       if (!doc) return;
       const updated: Dashboard = { ...doc, updatedAt: Date.now() };
-      const dashboards = { ...get().dashboards, [doc.id]: updated };
       set({
-        dashboards,
-        dirty: false,
-        savedAt: Date.now(),
-        past: [],
-        future: [],
-        historyKey: null,
+        dashboards: { ...get().dashboards, [doc.id]: updated },
+        saving: true,
+        saveError: null,
       });
-      writeCollection({ order: get().order, byId: dashboards });
+      try {
+        await afterCreate(doc.id, () =>
+          api(`/api/dashboards/${doc.id}`, { method: "PUT", json: toPayload(updated) }),
+        );
+        // só limpa o "não salvo" se nada mudou durante a requisição
+        const stillSame = get().dashboards[doc.id] === updated;
+        set({
+          saving: false,
+          savedAt: Date.now(),
+          ...(stillSame && { dirty: false, past: [], future: [], historyKey: null }),
+        });
+      } catch (error) {
+        set({ saving: false, saveError: (error as Error).message, dirty: true });
+      }
+    },
+
+    share: async (id) => {
+      const { token } = await afterCreate(id, () =>
+        api<{ token: string }>(`/api/dashboards/${id}/share`, { method: "POST" }),
+      ).then((out) => out as { token: string });
+      set({ shareTokens: { ...get().shareTokens, [id]: token } });
+      return token;
+    },
+
+    unshare: async (id) => {
+      await api(`/api/dashboards/${id}/share`, { method: "DELETE" });
+      set({ shareTokens: { ...get().shareTokens, [id]: null } });
+    },
+
+    loadPublic: (dashboard, analyses) => {
+      useAnalysesStore.getState().replace(analyses);
+      set({
+        hydrated: true,
+        order: [dashboard.id],
+        dashboards: { [dashboard.id]: dashboard },
+        currentId: dashboard.id,
+        selectedId: null,
+        preview: true,
+        dirty: false,
+      });
     },
 
     addElement: (item, placement) => {

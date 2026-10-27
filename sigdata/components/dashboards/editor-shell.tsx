@@ -3,6 +3,7 @@
 import { Minus, Plus, Scan } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { DashboardCanvas } from "./canvas";
 import { ElementLibrary } from "./element-library";
@@ -29,11 +30,11 @@ const EditorSkeleton = () => (
   </div>
 );
 
-const NotFound = () => (
+const NotFound = ({ message }: { message?: string }) => (
   <div className="flex h-dvh flex-col items-center justify-center gap-3 bg-background px-6 text-center">
     <p className="text-sm font-medium text-foreground">Painel não encontrado</p>
     <p className="max-w-sm text-xs text-muted-foreground">
-      Este dashboard não existe mais ou ainda não foi criado nesta sessão.
+      {message ?? "Este dashboard não existe ou não pertence à sua conta."}
     </p>
     <Link
       href="/dashboards"
@@ -45,7 +46,10 @@ const NotFound = () => (
 );
 
 export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
-  const hydrated = useDashboardsStore((state) => state.hydrated);
+  const dashboardsHydrated = useDashboardsStore((state) => state.hydrated);
+  // os gráficos resolvem as análises de forma síncrona: espera as duas coleções
+  const analysesHydrated = useAnalysesStore((state) => state.hydrated);
+  const hydrated = dashboardsHydrated && analysesHydrated;
   const hydrate = useDashboardsStore((state) => state.hydrate);
   const openDashboard = useDashboardsStore((state) => state.openDashboard);
   const doc = useDashboardsStore((state) =>
@@ -53,6 +57,9 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   );
   const dirty = useDashboardsStore((state) => state.dirty);
   const savedAt = useDashboardsStore((state) => state.savedAt);
+  const saving = useDashboardsStore((state) => state.saving);
+  const saveError = useDashboardsStore((state) => state.saveError);
+  const loadError = useDashboardsStore((state) => state.loadError);
   const pastLength = useDashboardsStore((state) => state.past.length);
   const futureLength = useDashboardsStore((state) => state.future.length);
   const preview = useDashboardsStore((state) => state.preview);
@@ -147,12 +154,16 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   });
 
   if (!hydrated) return <EditorSkeleton />;
+  if (loadError) return <NotFound message={loadError} />;
   if (!doc || doc.id !== dashboardId) return <NotFound />;
 
   return (
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <TopBar
+        dashboardId={doc.id}
         name={doc.name}
+        saving={saving}
+        saveError={saveError}
         dirty={dirty}
         savedAt={savedAt}
         canUndo={pastLength > 0}
@@ -175,7 +186,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
 
           {preview ? (
             <div className="pointer-events-none absolute right-3 top-3 rounded-full border border-border/70 bg-popover/90 px-3 py-1 text-[10px] font-medium text-muted-foreground shadow-sm backdrop-blur">
-              Pré-visualização · dados de demonstração
+              Pré-visualização
             </div>
           ) : (
             <div className="absolute bottom-3 right-3 flex items-center gap-1 rounded-md border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur">
