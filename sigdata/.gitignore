@@ -43,3 +43,6 @@ next-env.d.ts
 
 # Turborepo
 .turbo
+
+# arquivos enviados e bancos DuckDB das fontes
+/storage/

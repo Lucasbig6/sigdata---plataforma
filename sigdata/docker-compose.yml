@@ -1,0 +1,25 @@
+name: sigdata-dev
+
+# Banco de desenvolvimento do SIGDATA.
+# Porta 5434 no host para não colidir com instalações locais do Postgres (5432/5433).
+services:
+  db:
+    image: postgres:17-alpine
+    container_name: sigdata-dev-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-sigdata}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-sigdata}
+      POSTGRES_DB: ${POSTGRES_DB:-sigdata}
+    ports:
+      - "${POSTGRES_PORT:-5434}:5432"
+    volumes:
+      - sigdata-db:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+volumes:
+  sigdata-db:
