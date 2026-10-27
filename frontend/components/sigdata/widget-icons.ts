@@ -1,0 +1,36 @@
+import {
+  BarChart3,
+  ChartNoAxesCombined,
+  ChartScatter,
+  Donut,
+  Funnel,
+  Gauge,
+  Grid3x3,
+  Hash,
+  LayoutGrid,
+  LineChart,
+  PieChart,
+  Radar,
+  Table2,
+  TrendingUp,
+  type LucideIcon,
+} from "lucide-react";
+import type { WidgetKind } from "@/lib/panel/store";
+
+export const WIDGET_ICON: Record<WidgetKind, LucideIcon> = {
+  linha: LineChart,
+  barras: BarChart3,
+  barras_h: BarChart3,
+  area: TrendingUp,
+  combo: ChartNoAxesCombined,
+  pizza: PieChart,
+  rosca: Donut,
+  dispersao: ChartScatter,
+  radar: Radar,
+  funil: Funnel,
+  medidor: Gauge,
+  treemap: LayoutGrid,
+  calor: Grid3x3,
+  kpi: Hash,
+  tabela: Table2,
+};
