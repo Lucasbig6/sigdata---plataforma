@@ -12,7 +12,7 @@ Monorepo com dois serviços (ver `README.md` na raiz, tabela "Onde fica cada coi
 - `backend/` — Node + Hono na porta 4000: login (Better Auth + plugin admin), Postgres (Drizzle), fontes reais (CSV/XLSX via DuckDB, PostgreSQL externo), chat com a ferramenta `consultar_dados`, dashboards com link público.
 - `shared/` — tipos de domínio e dados de demonstração, TypeScript puro sem dependências (alias `@shared/*`).
 
-Perfis cumulativos (`shared/domain/roles.ts`): **usuário** (projetos, workspace, painéis), **analista** (+ fontes, editor SQL, datasets), **admin** (+ contas, em `/admin`). Fontes e datasets são um catálogo comum; projetos e painéis são de cada usuário. Rota restrita no backend: `handle(fn, { role: "analista" })`; no frontend, `useCan(...)` esconde e `RoleGate` bloqueia a página. Sem cadastro público — primeiro admin com `npm run admin:create`.
+Perfis cumulativos (`shared/domain/roles.ts`): **usuário** (projetos, workspace, painéis), **analista** (+ fontes, editor SQL, datasets), **admin** (+ contas, em `/admin`). Fontes e datasets são um catálogo comum; workspace e painéis só oferecem datasets (`isWorkspaceSource` / `panelSources` em `shared/domain/sources.ts`); projetos e painéis são de cada usuário. Rota restrita no backend: `handle(fn, { role: "analista" })`; no frontend, `useCan(...)` esconde e `RoleGate` bloqueia a página. Sem cadastro público — primeiro admin com `npm run admin:create`.
 
 Na raiz: `npm run db:up` (Postgres em Docker, porta 5434, projeto compose `sigdata-dev`) e `npm run dev` (sobe os dois).
 

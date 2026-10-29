@@ -19,6 +19,7 @@ import type { BindingData } from "@shared/dashboards/data";
 import { compileMeasure } from "@shared/dashboards/expr";
 import type { DashboardMeasure } from "@shared/dashboards/types";
 import { useDatasetsStore } from "@/lib/datasets/store";
+import { panelSources } from "@/lib/domain/sources";
 import { inputCls } from "./panel-ui";
 
 type Props = {
@@ -44,7 +45,7 @@ export const MeasureDialog = ({ open, onOpenChange, sourceId, table, initial, on
   const datasets = useDatasetsStore((state) => state.datasets);
   const addMeasure = useDashboardsStore((state) => state.addMeasure);
   const updateMeasure = useDashboardsStore((state) => state.updateMeasure);
-  const ready = datasets.filter((source) => source.status === "pronta" && source.tables.length > 0);
+  const ready = panelSources(datasets, sourceId);
 
   const [name, setName] = useState("");
   const [expr, setExpr] = useState("");

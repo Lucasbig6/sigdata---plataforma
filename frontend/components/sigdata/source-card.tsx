@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Database, Loader2, Upload } from "lucide-react";
+import { ChevronDown, Code2, Database, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
@@ -132,15 +132,15 @@ export const SourceCard = ({ source }: { source: DataSource | null }) => {
       <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-border bg-card/40 px-3 py-2.5">
         <Database className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
-          Nenhuma fonte neste projeto. Escolha um conjunto de dados na barra lateral.
+          Nenhum dataset neste projeto. Escolha um na barra lateral.
         </p>
         {canManageSources ? (
           <Link
-            href="/fontes-de-dados"
+            href="/fontes-de-dados/editor"
             className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
           >
-            <Upload className="size-3" aria-hidden />
-            Enviar dados
+            <Code2 className="size-3" aria-hidden />
+            Criar dataset
           </Link>
         ) : null}
       </div>

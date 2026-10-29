@@ -38,6 +38,7 @@ import {
 import { signOut, useCan, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
+import { isWorkspaceSource } from "@/lib/domain/sources";
 import { UserAvatar } from "./user-menu";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
@@ -79,7 +80,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
   const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId) ?? null;
   const selectedId = activeNotebook?.sourceId ?? null;
-  const readyDatasets = datasets.filter((dataset) => dataset.status === "pronta");
+  const readyDatasets = datasets.filter(isWorkspaceSource);
   const { data: session } = useSession();
   const canManageSources = useCan("analista");
   const isAdmin = useCan("admin");
@@ -89,7 +90,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
     hydrateNotebooks();
   }, [hydrateDatasets, hydrateNotebooks]);
 
-  const selectedDataset = datasets.find((dataset) => dataset.id === selectedId) ?? null;
+  const selectedDataset = readyDatasets.find((dataset) => dataset.id === selectedId) ?? null;
 
   const normalized = search.trim().toLowerCase();
   const visibleNotebooks = notebooks.filter((notebook) =>

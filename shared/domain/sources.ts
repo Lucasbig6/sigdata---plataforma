@@ -105,6 +105,29 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   dataset: "Dataset",
 };
 
+/**
+ * O workspace (chat) trabalha só com datasets prontos, preparados pelo analista
+ * no editor SQL; fontes brutas (arquivos, bancos, demonstração) ficam na área de
+ * Fontes de dados.
+ */
+export const isWorkspaceSource = (source: { kind: SourceKind; status: SourceStatus }) =>
+  source.kind === "dataset" && source.status === "pronta";
+
+/**
+ * Fontes oferecidas ao montar painéis: datasets prontos com tabelas. `keepId`
+ * mantém a fonte que um elemento já usa (ligações antigas a fontes brutas
+ * continuam editáveis, mas não são oferecidas para ligações novas).
+ */
+export const panelSources = <T extends { id: string; kind: SourceKind; status: SourceStatus; tables: unknown[] }>(
+  sources: T[],
+  keepId?: string | null,
+) =>
+  sources.filter(
+    (source) =>
+      source.tables.length > 0 &&
+      (isWorkspaceSource(source) || (source.id === keepId && source.status === "pronta")),
+  );
+
 /** Classifica um tipo nativo (DuckDB ou Postgres) em uma categoria da interface. */
 export const kindFromDbType = (dbType: string): ColumnKind => {
   const t = dbType.toUpperCase();

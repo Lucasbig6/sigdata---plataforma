@@ -2,7 +2,7 @@
  * Ligação inicial de elementos novos: escolhe uma fonte, tabela e colunas
  * plausíveis para que o elemento já nasça mostrando dados reais.
  */
-import type { DataSource, SourceTable } from "@/lib/domain/sources";
+import { panelSources, type DataSource, type SourceTable } from "@/lib/domain/sources";
 import type { Aggregation, DataBinding, ElementType } from "@/lib/dashboards/types";
 
 export const AGG_LABELS: Record<Aggregation, string> = {
@@ -16,10 +16,10 @@ export const AGG_LABELS: Record<Aggregation, string> = {
 const pickTable = (source: DataSource): SourceTable | undefined =>
   source.tables.find((t) => t.columns.some((c) => c.kind === "numero")) ?? source.tables[0];
 
-/** Fonte padrão: a mais recente pronta (fontes do usuário antes da demonstração). */
+/** Fonte padrão para elementos novos: o dataset preferido do editor ou o mais recente. */
 export const defaultSource = (sources: DataSource[], preferredId = "") => {
-  const ready = sources.filter((s) => s.status === "pronta" && s.tables.length > 0);
-  return ready.find((s) => s.id === preferredId) ?? ready.find((s) => s.kind !== "demo") ?? ready[0];
+  const ready = panelSources(sources);
+  return ready.find((s) => s.id === preferredId) ?? ready[0];
 };
 
 /** Monta um binding de construtor razoável para a tabela escolhida. */

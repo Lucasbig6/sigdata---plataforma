@@ -2,6 +2,7 @@ import { asc, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { UIMessage } from "ai";
+import { isWorkspaceSource } from "@shared/domain/sources";
 import { DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
 import { WIDGET_KINDS, type PanelWidget } from "@shared/panel";
 import { db, schema } from "../db";
@@ -64,7 +65,9 @@ projectsRoutes.patch(
   handle<{ id: string }>(async ({ req, user, params }) => {
     const project = await getProject(user.id, params.id);
     const body = await parseBody(req, patchSchema);
-    if (body.sourceId) await getSourceRow(body.sourceId);
+    if (body.sourceId && !isWorkspaceSource(await getSourceRow(body.sourceId))) {
+      throw new HttpError(400, "No workspace só é possível usar datasets prontos.");
+    }
     const [row] = await db
       .update(schema.projects)
       .set({

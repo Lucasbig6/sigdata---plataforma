@@ -32,7 +32,8 @@ Navegador ──► Next.js (3000) ──► Hono API (4000) ──► Postgres 
 
 - **Chat analítico com IA** usando Groq, com ferramenta `consultar_dados` e histórico persistido.
 - **Catálogo de fontes de dados**: upload de CSV/XLSX, conexão a PostgreSQL externo e datasets
-  tratados no editor SQL, disponíveis para todos; cada projeto escolhe a sua fonte ativa.
+  tratados no editor SQL. Workspace e painéis usam só os **datasets** preparados pelo analista;
+  cada projeto escolhe o seu dataset ativo.
 - **Perfis de acesso** (usuário, analista, administrador) e área de administração de contas.
 - **Visualizações salvas**: gráficos, KPIs, tabelas e indicadores gerados no chat.
 - **Editor de dashboards**: canvas livre, páginas, filtros, zoom, camadas e compartilhamento.

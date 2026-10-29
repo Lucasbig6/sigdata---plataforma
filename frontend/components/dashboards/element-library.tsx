@@ -8,6 +8,7 @@ import { ELEMENT_LIBRARY, ELEMENT_MIME, type LibraryItem } from "@/lib/dashboard
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useCan } from "@/lib/auth-client";
 import { useDatasetsStore } from "@/lib/datasets/store";
+import { panelSources } from "@/lib/domain/sources";
 import { WorkspaceLibrary } from "./workspace-library";
 
 /** Adiciona um item já ligado a uma fonte real, quando houver. */
@@ -43,7 +44,7 @@ export const ElementLibrary = () => {
   const [tab, setTab] = useState<Tab>("visualizacoes");
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
   const setPreferredSourceId = useDashboardsStore((state) => state.setPreferredSourceId);
-  const readySources = datasets.filter((s) => s.status === "pronta" && s.tables.length > 0);
+  const readySources = panelSources(datasets);
   const source = defaultSource(datasets, preferredSourceId);
   const normalized = query.trim().toLowerCase();
 
@@ -165,16 +166,16 @@ export const ElementLibrary = () => {
           </label>
         ) : (
           <p className="text-[10px] leading-snug text-muted-foreground">
-            Nenhuma fonte de dados.{" "}
+            Nenhum dataset.{" "}
             {canManageSources ? (
               <>
-                <Link href="/fontes-de-dados" className="text-primary underline-offset-2 hover:underline">
-                  Conectar uma fonte
+                <Link href="/fontes-de-dados/editor" className="text-primary underline-offset-2 hover:underline">
+                  Criar um dataset
                 </Link>{" "}
                 para ver dados reais.
               </>
             ) : (
-              "Peça a um analista para publicar dados."
+              "Peça a um analista para criar um."
             )}
           </p>
         )}

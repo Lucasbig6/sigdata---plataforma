@@ -19,7 +19,7 @@ import {
   type PeriodUnit,
 } from "@/lib/dashboards/types";
 import { useDatasetsStore } from "@/lib/datasets/store";
-import type { ResultColumn, SourceTable } from "@/lib/domain/sources";
+import { panelSources, type ResultColumn, type SourceTable } from "@/lib/domain/sources";
 
 export const inputCls =
   "w-full rounded-md border border-border/70 bg-background px-2 py-1.5 text-xs text-foreground outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-primary/60 focus-visible:ring-2 focus-visible:ring-ring/50";
@@ -89,8 +89,7 @@ type RecentResult = {
   createdAt: string;
 };
 
-const useReadySources = () =>
-  useDatasetsStore((state) => state.datasets).filter((s) => s.status === "pronta" && s.tables.length > 0);
+const useReadySources = (keepId?: string) => panelSources(useDatasetsStore((state) => state.datasets), keepId);
 
 /** Status da consulta do elemento + botão de atualizar. */
 const BindingStatus = ({ elementId, binding }: { elementId: string; binding: DataBinding }) => {
@@ -565,7 +564,7 @@ export const BindingEditor = ({
   binding: DataBinding | undefined;
   onChange: (binding: DataBinding | undefined) => void;
 }) => {
-  const sources = useReadySources();
+  const sources = useReadySources(binding?.sourceId);
   const canManageSources = useCan("analista");
   const source = sources.find((s) => s.id === binding?.sourceId);
   const table = source?.tables.find((t) => t.name === binding?.table);
@@ -583,21 +582,21 @@ export const BindingEditor = ({
     <div className="flex flex-col gap-2.5">
       {sources.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-2 py-2 text-[11px] leading-snug text-muted-foreground">
-          Nenhuma fonte pronta.{" "}
+          Nenhum dataset pronto.{" "}
           {canManageSources ? (
             <>
-              <Link href="/fontes-de-dados" className="text-primary hover:underline">
-                Conecte uma fonte
+              <Link href="/fontes-de-dados/editor" className="text-primary hover:underline">
+                Crie um dataset
               </Link>{" "}
               para usar dados reais.
             </>
           ) : (
-            "Peça a um analista para publicar dados."
+            "Peça a um analista para criar um."
           )}
         </p>
       ) : null}
 
-      <Field label="Fonte de dados">
+      <Field label="Dataset">
         <Select value={binding?.sourceId ?? ""} onChange={pickSource}>
           <option value="">Demonstração (dados fictícios)</option>
           {sources.map((s) => (
@@ -689,7 +688,7 @@ export const FilterBindingEditor = ({
     global?: boolean;
   }) => void;
 }) => {
-  const sources = useReadySources();
+  const sources = useReadySources(binding?.sourceId);
   const source = sources.find((s) => s.id === binding?.sourceId);
   const table = source?.tables.find((t) => t.name === binding?.table);
   const [options, setOptions] = useState<string[]>([]);
@@ -716,7 +715,7 @@ export const FilterBindingEditor = ({
 
   return (
     <div className="flex flex-col gap-2.5">
-      <Field label="Fonte de dados">
+      <Field label="Dataset">
         <Select value={binding?.sourceId ?? ""} onChange={setSource}>
           {!binding ? <option value="">Escolher…</option> : null}
           {sources.map((s) => (

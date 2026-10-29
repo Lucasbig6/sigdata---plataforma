@@ -1,7 +1,7 @@
 import { tool, type UIMessage } from "ai";
 import { eq } from "drizzle-orm";
 import { z } from "zod";
-import type { SourceTable } from "@shared/domain/sources";
+import { isWorkspaceSource, type SourceTable } from "@shared/domain/sources";
 import { db, schema } from "./db";
 import { HttpError } from "./http";
 import { getSourceRow, runQuery } from "./sources/service";
@@ -75,7 +75,7 @@ export const loadActiveSource = async (sourceId: string | null) => {
   if (!sourceId) return null;
   try {
     const row = await getSourceRow(sourceId);
-    return row.status === "pronta" ? row : null;
+    return isWorkspaceSource(row) ? row : null;
   } catch {
     return null;
   }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useAISDKChat } from "@assistant-ui/ai-sdk";
-import { ArrowUpRight, Database, Upload } from "lucide-react";
+import { ArrowUpRight, Code2, Database } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useCan } from "@/lib/auth-client";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
+import { isWorkspaceSource } from "@/lib/domain/sources";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
 import { cn } from "@/lib/utils";
@@ -42,20 +43,20 @@ const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   );
 };
 
-/** Sem fonte no projeto: o primeiro passo é escolher (ou enviar) os dados. */
+/** Sem dataset no projeto: o primeiro passo é escolher um (ou, para o analista, criar). */
 const PickSource = ({ notebookId }: { notebookId: string | null }) => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
   const canManageSources = useCan("analista");
-  const ready = datasets.filter((dataset) => dataset.status === "pronta");
+  const ready = datasets.filter(isWorkspaceSource);
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-4 text-start">
       <p className="text-sm font-medium text-foreground">Escolha os dados para começar</p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente só responde com números das fontes de dados. Selecione uma para este
-        projeto{canManageSources ? " ou envie um arquivo novo" : ""}.
+        O assistente responde com números dos datasets preparados pelos analistas. Selecione
+        um para este projeto.
       </p>
       {hydrated && ready.length > 0 && notebookId ? (
         <ul className="flex flex-col gap-1.5">
@@ -78,15 +79,15 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
       ) : null}
       {canManageSources ? (
         <Link
-          href="/fontes-de-dados"
+          href="/fontes-de-dados/editor"
           className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
         >
-          <Upload className="size-3.5" aria-hidden />
-          Enviar CSV/XLSX ou conectar um banco
+          <Code2 className="size-3.5" aria-hidden />
+          Criar um dataset no editor SQL
         </Link>
       ) : hydrated && ready.length === 0 ? (
         <p className="text-xs text-muted-foreground">
-          Ainda não há dados disponíveis. Peça a um analista para publicar uma fonte.
+          Ainda não há datasets disponíveis. Peça a um analista para criar um.
         </p>
       ) : null}
     </div>
@@ -100,7 +101,7 @@ export const WelcomeScreen = () => {
   );
   const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
   const datasets = useDatasetsStore((state) => state.datasets);
-  const source = datasets.find((dataset) => dataset.id === sourceId && dataset.status === "pronta") ?? null;
+  const source = datasets.find((dataset) => dataset.id === sourceId && isWorkspaceSource(dataset)) ?? null;
 
   useEffect(() => {
     hydrateDatasets();

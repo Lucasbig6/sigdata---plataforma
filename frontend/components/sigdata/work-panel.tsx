@@ -19,7 +19,7 @@ import { Button } from "@/components/ui/button";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { draftFromWidget, liveFromResult } from "@/lib/dashboards/from-workspace";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import type { ResultColumn } from "@/lib/domain/sources";
+import { isWorkspaceSource, type ResultColumn } from "@/lib/domain/sources";
 import { editWidget } from "@/lib/panel/edit";
 import {
   usePanelStore,
@@ -270,7 +270,8 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const notebook = notebooks.find((entry) => entry.id === notebookId);
   const datasets = useDatasetsStore((state) => state.datasets);
-  const activeSource = datasets.find((entry) => entry.id === notebook?.sourceId) ?? null;
+  const activeSource =
+    datasets.find((entry) => entry.id === notebook?.sourceId && isWorkspaceSource(entry)) ?? null;
   const renameDashboard = useDashboardsStore((state) => state.rename);
   const openDashboard = useDashboardsStore((state) => state.openDashboard);
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
