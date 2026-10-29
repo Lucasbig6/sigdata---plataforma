@@ -9,6 +9,11 @@ const nextConfig: NextConfig = {
   // raiz do monorepo: permite importar ../shared
   turbopack: { root: path.join(__dirname, "..") },
   outputFileTracingRoot: path.join(__dirname, ".."),
+  experimental: {
+    // O proxy dos rewrites derruba a conexão após 30 s sem dados (padrão). O chat
+    // fica mudo entre etapas enquanto espera o limite de tokens/minuto da Groq.
+    proxyTimeout: 5 * 60 * 1000,
+  },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${BACKEND_URL}/api/:path*` }];
   },
