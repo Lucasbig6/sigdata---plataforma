@@ -125,7 +125,7 @@ export const queryPg = async (
     const started = Date.now();
     try {
       const res = await client.query({
-        text: `SELECT * FROM (${sql}) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`,
+        text: `SELECT * FROM (${sql}\n) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`,
         rowMode: "array",
       });
       const names = await typeNames(client, res.fields);

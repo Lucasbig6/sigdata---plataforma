@@ -253,7 +253,7 @@ export const queryDuck = async (
   const started = Date.now();
   const timer = setTimeout(() => conn.interrupt(), QUERY_TIMEOUT_MS);
   try {
-    const result = await conn.runAndReadAll(`SELECT * FROM (${sql}) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`);
+    const result = await conn.runAndReadAll(`SELECT * FROM (${sql}\n) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`);
     const columns = toColumns(result.columnNames(), result.columnTypes().map(String));
     const raw = (await result.getRowsJson()) as unknown[][];
     return {

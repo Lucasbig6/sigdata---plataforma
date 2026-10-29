@@ -233,7 +233,7 @@ export const EDITOR_PAGE_SIZES = [25, 50, 100, 200, 500, 1000] as const;
 /** Total de linhas de uma consulta (para "página X de N"); falha de contagem não derruba a página. */
 const countRows = async (row: SourceRow, sql: string): Promise<number | null> => {
   try {
-    const out = await execute(row, `SELECT COUNT(*) AS total FROM (${sql}) AS sigdata_c`, 1);
+    const out = await execute(row, `SELECT COUNT(*) AS total FROM (${sql}\n) AS sigdata_c`, 1);
     const total = Number(Object.values(out.rows[0] ?? {})[0]);
     return Number.isFinite(total) ? total : null;
   } catch {
