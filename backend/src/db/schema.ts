@@ -23,7 +23,13 @@ import type { UIMessage } from "ai";
 import type { AnalysisSnapshot } from "@shared/analyses";
 import type { DashboardElement, DashboardMeasure, DashboardPage } from "@shared/dashboards/types";
 import type { PanelWidget } from "@shared/panel";
-import type { ResultColumn, SourceKind, SourceStatus, SourceTable } from "@shared/domain/sources";
+import type {
+  DatasetDefinition,
+  ResultColumn,
+  SourceKind,
+  SourceStatus,
+  SourceTable,
+} from "@shared/domain/sources";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () =>
@@ -114,6 +120,8 @@ export const dataSources = pgTable(
     fileSize: integer("file_size"),
     /** Credenciais de conexão externa, criptografadas (AES-256-GCM). */
     connection: text("connection"),
+    /** Consulta de origem, quando a fonte é um dataset criado no editor SQL. */
+    definition: jsonb("definition").$type<DatasetDefinition>(),
     /** Cache do schema + perfil das colunas. */
     tables: jsonb("tables").$type<SourceTable[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: createdAt(),

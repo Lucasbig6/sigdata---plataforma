@@ -285,7 +285,7 @@ export const useFilterOptions = (element: FilterElement) => {
   const binding = element.props.binding;
   let key: string | null = null;
   let load: () => Promise<FilterOptions> = () => Promise.resolve({ options: [] });
-  if (binding?.sourceId && binding.table && binding.column && element.props.mode !== "range") {
+  if (binding?.sourceId && binding.table && binding.column && (element.props.mode !== "range" || element.props.rangeDisplay === "deslizante")) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
       key = JSON.stringify(["pub-opt", token, element.id, ctx.refreshKey]);

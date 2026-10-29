@@ -398,3 +398,60 @@
     animation: none !important;
   }
 }
+
+/* Cores de sintaxe do editor SQL (components/fontes/sql). */
+:root {
+  --sql-keyword: oklch(0.45 0.19 285);
+  --sql-string: oklch(0.48 0.13 150);
+  --sql-number: oklch(0.55 0.16 50);
+  --sql-comment: oklch(0.62 0.02 250);
+  --sql-func: oklch(0.5 0.13 235);
+  --sql-type: oklch(0.5 0.15 330);
+  --sql-op: oklch(0.5 0.03 250);
+}
+.dark {
+  --sql-keyword: oklch(0.76 0.14 290);
+  --sql-string: oklch(0.8 0.13 150);
+  --sql-number: oklch(0.8 0.13 65);
+  --sql-comment: oklch(0.58 0.02 250);
+  --sql-func: oklch(0.8 0.1 230);
+  --sql-type: oklch(0.78 0.12 340);
+  --sql-op: oklch(0.72 0.03 250);
+}
+
+/* Controle deslizante de duas pontas do filtro de período (components/dashboards/slicers.tsx). */
+.sd-dual input[type="range"] {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  background: transparent;
+  pointer-events: none;
+  appearance: none;
+}
+.sd-dual input[type="range"]::-webkit-slider-runnable-track {
+  background: transparent;
+}
+.sd-dual input[type="range"]::-moz-range-track {
+  background: transparent;
+}
+.sd-dual input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  pointer-events: auto;
+  width: 14px;
+  height: 14px;
+  border-radius: 9999px;
+  border: 2px solid var(--sd-accent, var(--primary));
+  background: var(--card);
+  cursor: grab;
+}
+.sd-dual input[type="range"]::-moz-range-thumb {
+  pointer-events: auto;
+  width: 10px;
+  height: 10px;
+  border-radius: 9999px;
+  border: 2px solid var(--sd-accent, var(--primary));
+  background: var(--card);
+  cursor: grab;
+}

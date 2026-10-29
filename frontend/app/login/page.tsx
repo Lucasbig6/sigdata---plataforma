@@ -18,6 +18,18 @@ const ERROR_MESSAGES: Record<string, string> = {
   USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Já existe uma conta com este e-mail.",
   PASSWORD_TOO_SHORT: "A senha precisa ter pelo menos 8 caracteres.",
   INVALID_EMAIL: "E-mail inválido.",
+  TOO_MANY_REQUESTS: "Muitas tentativas. Aguarde um minuto e tente de novo.",
+};
+
+/** Mensagens cruas (rede, limite de requisições) que não chegam com um código conhecido. */
+const friendlyError = (error: { code?: string; message?: string; status?: number }) => {
+  if (error.code && ERROR_MESSAGES[error.code]) return ERROR_MESSAGES[error.code];
+  if (error.status === 429) return ERROR_MESSAGES.TOO_MANY_REQUESTS;
+  if (error.status && error.status >= 500) return "Servidor indisponível no momento. Tente novamente em instantes.";
+  if (!error.status || /failed to fetch|network|load failed/i.test(error.message ?? "")) {
+    return "Não foi possível conectar ao servidor. Verifique sua conexão e tente novamente.";
+  }
+  return error.message || "Não foi possível entrar.";
 };
 
 /** Só aceita caminhos internos como destino após o login. */
@@ -42,11 +54,7 @@ const LoginForm = () => {
         ? await signIn.email({ email, password })
         : await signUp.email({ name: name.trim() || email.split("@")[0], email, password });
     if (result.error) {
-      setError(
-        (result.error.code && ERROR_MESSAGES[result.error.code]) ||
-          result.error.message ||
-          "Não foi possível entrar.",
-      );
+      setError(friendlyError(result.error));
       setBusy(false);
       return;
     }
@@ -55,13 +63,9 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-sm rounded-2xl border border-border/70 bg-card/80 p-8 shadow-sm">
-      <div className="mb-5 flex items-center gap-3.5">
-        <Logo className="h-10 w-auto shrink-0" />
-        <span className="h-9 w-px shrink-0 bg-border" aria-hidden />
-        <p className="text-[12px] leading-snug text-muted-foreground">
-          Explore seus dados, encontre padrões e transforme perguntas em análises.
-        </p>
+    <div className="w-full max-w-[500px] rounded-2xl border border-border/70 bg-card/80 p-8 shadow-sm">
+      <div className="mb-5 flex justify-center gap-5">
+        <Logo className="h-18 w-auto shrink-0 mx-auto block" />
       </div>
 
       <div

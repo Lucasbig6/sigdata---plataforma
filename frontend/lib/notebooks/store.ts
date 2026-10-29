@@ -45,7 +45,9 @@ export const useNotebooksStore = create<NotebooksStore>((set, get) => {
     notebooks: [],
 
     hydrate: () => {
-      if (get().hydrated || hydrating) return;
+      // após uma falha (error) a próxima chamada tenta de novo
+      if ((get().hydrated && !get().error) || hydrating) return;
+      set({ error: null });
       hydrating = api<Notebook[]>("/api/projects")
         .then((notebooks) => set({ hydrated: true, notebooks, error: null }))
         .catch((error: Error) => set({ hydrated: true, error: error.message }))

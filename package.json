@@ -6,12 +6,13 @@
     "dev": "concurrently -k -n backend,frontend -c blue,green \"npm:dev:backend\" \"npm:dev:frontend\"",
     "dev:backend": "npm --prefix backend run dev",
     "dev:frontend": "npm --prefix frontend run dev",
-    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend exec tsc -- --noEmit",
+    "typecheck": "npm --prefix backend run typecheck && npm --prefix frontend run typecheck",
     "db:up": "docker compose up -d",
     "db:down": "docker compose down",
     "db:generate": "npm --prefix backend run db:generate",
     "db:migrate": "npm --prefix backend run db:migrate",
-    "db:studio": "npm --prefix backend run db:studio"
+    "db:studio": "npm --prefix backend run db:studio",
+    "test": "npm --prefix backend test && npm --prefix frontend test"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"

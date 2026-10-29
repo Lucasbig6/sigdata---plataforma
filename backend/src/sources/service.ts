@@ -16,7 +16,7 @@ import { db, schema } from "../db";
 import { HttpError, notFound } from "../http";
 import { ingestCsv, ingestRows, ingestXlsx, queryDuck, removeDuckFiles, sourceDir } from "./duck";
 import { introspectPg, profilePgTable, queryPg } from "./pg";
-import { assertReadOnlySql, quoteQualified } from "./sql";
+import { assertReadOnlySql, quoteQualified, toTableName } from "./sql";
 
 type SourceRow = typeof schema.dataSources.$inferSelect;
 
@@ -50,6 +50,7 @@ export const toDataSource = (row: SourceRow): DataSource => {
     fileName: row.fileName,
     fileSize: row.fileSize,
     connectionLabel,
+    definition: row.definition ?? null,
     tables: row.tables,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
@@ -190,8 +191,10 @@ export const assertReady = (row: SourceRow) => {
   }
 };
 
-export const execute = (row: SourceRow, sql: string, limit?: number) =>
-  row.kind === "postgresql" ? queryPg(connectionOf(row), sql, limit) : queryDuck(row.id, sql, limit);
+export const execute = (row: SourceRow, sql: string, limit?: number, offset?: number) =>
+  row.kind === "postgresql"
+    ? queryPg(connectionOf(row), sql, limit, offset)
+    : queryDuck(row.id, sql, limit, offset);
 
 export const previewTable = async (userId: string, id: string, table: string): Promise<TablePreview> => {
   const row = await getSourceRow(userId, id);
@@ -224,6 +227,90 @@ export const toAnalyticResult = (row: typeof schema.results.$inferSelect): Analy
   durationMs: row.durationMs,
   createdAt: row.createdAt.toISOString(),
 });
+
+export const EDITOR_PAGE_SIZES = [25, 50, 100, 200, 500, 1000] as const;
+
+/** Total de linhas de uma consulta (para "página X de N"); falha de contagem não derruba a página. */
+const countRows = async (row: SourceRow, sql: string): Promise<number | null> => {
+  try {
+    const out = await execute(row, `SELECT COUNT(*) AS total FROM (${sql}\n) AS sigdata_c`, 1);
+    const total = Number(Object.values(out.rows[0] ?? {})[0]);
+    return Number.isFinite(total) ? total : null;
+  } catch {
+    return null;
+  }
+};
+
+/**
+ * Editor SQL do analista: devolve uma página do resultado, sem gravar nada.
+ * `count` pede também o total de linhas (a primeira página faz; as seguintes reaproveitam).
+ */
+export const runEditorQuery = async (
+  userId: string,
+  input: { sourceId: string; sql: string; page: number; pageSize: number; count: boolean },
+) => {
+  const row = await getSourceRow(userId, input.sourceId);
+  assertReady(row);
+  const sql = assertReadOnlySql(input.sql);
+  const offset = (input.page - 1) * input.pageSize;
+  const [out, total] = await Promise.all([
+    execute(row, sql, input.pageSize, offset),
+    input.count ? countRows(row, sql) : Promise.resolve(null),
+  ]);
+  return {
+    columns: out.columns,
+    rows: out.rows,
+    hasMore: out.truncated,
+    durationMs: out.durationMs,
+    page: input.page,
+    pageSize: input.pageSize,
+    total,
+  };
+};
+
+/** Teto de linhas de um dataset (fica inteiro em memória durante a criação). */
+export const DATASET_ROW_LIMIT = 50_000;
+
+/**
+ * Cria um dataset: roda a consulta do analista e grava o resultado como uma fonte
+ * própria (tabela no DuckDB), que o chat e os dashboards usam como qualquer outra.
+ */
+export const createDataset = async (
+  userId: string,
+  input: { sourceId: string; sql: string; name: string; description: string },
+) => {
+  const origin = await getSourceRow(userId, input.sourceId);
+  assertReady(origin);
+  const sql = assertReadOnlySql(input.sql);
+  const out = await execute(origin, sql, DATASET_ROW_LIMIT);
+  if (out.rows.length === 0) throw new HttpError(422, "A consulta não retornou linhas: não há o que salvar.");
+  if (out.truncated) {
+    throw new HttpError(
+      413,
+      `A consulta tem mais de ${DATASET_ROW_LIMIT.toLocaleString("pt-BR")} linhas. Filtre ou agregue antes de salvar.`,
+    );
+  }
+  const id = randomUUID();
+  const name = input.name.trim();
+  await db.insert(schema.dataSources).values({
+    id,
+    userId,
+    name,
+    description: input.description.trim(),
+    kind: "dataset",
+    status: "processando",
+    definition: { sourceId: origin.id, sourceName: origin.name, sql, rowCount: out.rows.length },
+  });
+  try {
+    const tables = await ingestRows(id, [{ name: toTableName(name, new Set()), rows: out.rows }]);
+    return await finish(id, { status: "pronta", tables, error: null });
+  } catch (error) {
+    console.error("[sigdata] criar dataset", error);
+    await db.delete(schema.dataSources).where(eq(schema.dataSources.id, id));
+    await removeDuckFiles(id).catch(() => undefined);
+    throw new HttpError(500, "Não foi possível salvar o dataset.");
+  }
+};
 
 /** Executa SQL de leitura numa fonte e grava o resultado (é o que a IA usa). */
 export const runQuery = async (

@@ -81,6 +81,8 @@ const byZ = (a: DashboardElement, b: DashboardElement) => a.z - b.z;
 
 type SigdataDashboardsStore = {
   hydrated: boolean;
+  /** O store só tem o dashboard de um link público: a lista da conta ainda precisa ser carregada. */
+  publicOnly: boolean;
   loadError: string | null;
   order: string[];
   dashboards: Record<string, Dashboard>;
@@ -291,6 +293,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
 
   return {
     hydrated: false,
+    publicOnly: false,
     loadError: null,
     order: [],
     dashboards: {},
@@ -331,12 +334,14 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     historyAt: 0,
 
     hydrate: () => {
-      if (get().hydrated || hydrating) return;
+      if ((get().hydrated && !get().loadError && !get().publicOnly) || hydrating) return;
+      set({ loadError: null });
       useAnalysesStore.getState().hydrate();
       hydrating = api<ServerDashboard[]>("/api/dashboards")
         .then((list) => {
           set({
             hydrated: true,
+            publicOnly: false,
             loadError: null,
             order: list.map((dashboard) => dashboard.id),
             dashboards: Object.fromEntries(
@@ -527,6 +532,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       useAnalysesStore.getState().replace(analyses);
       set({
         hydrated: true,
+        publicOnly: true,
         order: [dashboard.id],
         dashboards: { [dashboard.id]: dashboard },
         activePageId: firstPageId(dashboard),

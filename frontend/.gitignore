@@ -46,3 +46,6 @@ next-env.d.ts
 
 # arquivos enviados e bancos DuckDB das fontes
 /storage/
+
+# regras de agente geradas pelo `next dev` (recriado a cada execução; não versionar)
+/AGENTS.md

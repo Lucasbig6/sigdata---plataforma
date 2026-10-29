@@ -15,5 +15,5 @@
       "@shared/*": ["../shared/*"]
     }
   },
-  "include": ["src", "../shared", "drizzle.config.ts"]
+  "include": ["src", "test", "../shared", "drizzle.config.ts"]
 }

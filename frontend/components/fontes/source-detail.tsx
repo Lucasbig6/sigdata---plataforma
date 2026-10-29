@@ -215,6 +215,18 @@ export const SourceDetail = ({ source, onClose }: { source: DataSource; onClose:
         </div>
       )}
 
+      {source.definition ? (
+        <div className="mt-4 space-y-1.5 rounded-xl border border-border bg-muted/30 p-3">
+          <p className="text-xs text-muted-foreground">
+            Dataset criado a partir de <strong className="text-foreground">{source.definition.sourceName}</strong> ·{" "}
+            {nf.format(source.definition.rowCount)} linhas
+          </p>
+          <pre className="max-h-40 overflow-auto font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
+            {source.definition.sql}
+          </pre>
+        </div>
+      ) : null}
+
       <div className="mt-5 space-y-2 border-t border-border/60 pt-4">
         <label htmlFor="sql-console" className="text-xs font-medium text-muted-foreground">
           Consulta SQL (somente leitura · {source.kind === "postgresql" ? "PostgreSQL" : "DuckDB"})

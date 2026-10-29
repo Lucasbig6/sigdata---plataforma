@@ -18,6 +18,8 @@ export type { AnalysisSnapshot, SavedAnalysis } from "@shared/analyses";
 
 type AnalysesStore = {
   hydrated: boolean;
+  /** Última carga falhou: a próxima chamada de hydrate tenta de novo. */
+  failed: boolean;
   analyses: SavedAnalysis[];
   hydrate: () => void;
   /** Carrega um conjunto já conhecido (ex.: página pública de compartilhamento). */
@@ -28,21 +30,22 @@ let hydrating = false;
 
 export const useAnalysesStore = create<AnalysesStore>((set, get) => ({
   hydrated: false,
+  failed: false,
   analyses: [],
   hydrate: () => {
-    if (get().hydrated || hydrating) return;
+    if ((get().hydrated && !get().failed) || hydrating) return;
     hydrating = true;
     api<SavedAnalysis[]>("/api/analyses")
-      .then((analyses) => set({ hydrated: true, analyses }))
+      .then((analyses) => set({ hydrated: true, failed: false, analyses }))
       .catch((error: unknown) => {
         console.error("[sigdata] carregar análises:", error);
-        set({ hydrated: true });
+        set({ hydrated: true, failed: true });
       })
       .finally(() => {
         hydrating = false;
       });
   },
-  replace: (analyses) => set({ hydrated: true, analyses }),
+  replace: (analyses) => set({ hydrated: true, failed: false, analyses }),
 }));
 
 export const listAnalyses = (): SavedAnalysis[] => useAnalysesStore.getState().analyses;

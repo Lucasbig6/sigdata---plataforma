@@ -9,7 +9,7 @@
  * do chat.
  */
 import type { ActiveFilter, BindingData, FilterOptions } from "@shared/dashboards/data";
-import { FILTER_OPTIONS_LIMIT, FILTER_VALUE_MAX, parseRange } from "@shared/dashboards/data";
+import { FILTER_MULTI_MAX, FILTER_OPTIONS_LIMIT, FILTER_VALUE_MAX, parseRange, splitMulti } from "@shared/dashboards/data";
 import { compileMeasure } from "@shared/dashboards/expr";
 import {
   BINDING_LIMIT_MAX,
@@ -82,7 +82,13 @@ export const filterConditions = (sourceId: string, table: SourceTable, filters: 
         ].filter(Boolean);
         return parts.join(" AND ");
       }
-      return `CAST(${quoteIdent(f.column)} AS VARCHAR) = ${literal(f.value)}`;
+      // seleção múltipla: vários valores marcados viram IN (...)
+      const values = splitMulti(f.value);
+      if (values.length > FILTER_MULTI_MAX) throw new HttpError(400, "Valores demais marcados no filtro.");
+      const column = `CAST(${quoteIdent(f.column)} AS VARCHAR)`;
+      return values.length > 1
+        ? `${column} IN (${values.map(literal).join(", ")})`
+        : `${column} = ${literal(values[0] ?? f.value)}`;
     });
 
 const whereOf = (conditions: string[]) => (conditions.length > 0 ? ` WHERE ${conditions.join(" AND ")}` : "");
@@ -279,5 +285,18 @@ export const filterOptions = async (ownerId: string, binding: FilterBinding): Pr
     FILTER_OPTIONS_LIMIT,
     false,
   );
-  return { options: out.rows.map((row) => String(row.v)) };
+  const options = out.rows.map((row) => String(row.v));
+
+  // colunas de data: limites para o controle deslizante do filtro de período
+  const kind = table.columns.find((c) => c.name === binding.column)?.kind;
+  if (kind !== "data") return { options };
+  const bounds = await cachedExecute(
+    source,
+    `SELECT CAST(MIN(CAST(${column} AS DATE)) AS VARCHAR) AS lo, CAST(MAX(CAST(${column} AS DATE)) AS VARCHAR) AS hi FROM ${quoteQualified(table.name)}`,
+    1,
+    false,
+  );
+  const row = bounds.rows[0];
+  if (!row?.lo || !row?.hi) return { options };
+  return { options, min: String(row.lo).slice(0, 10), max: String(row.hi).slice(0, 10) };
 };

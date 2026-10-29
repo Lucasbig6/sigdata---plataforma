@@ -4,6 +4,8 @@ import { handle, HttpError, parseBody } from "../http";
 import { getProject } from "../projects";
 import { createPostgresSchema, postgresConnectionSchema } from "../sources/schemas";
 import {
+  createDataset,
+  EDITOR_PAGE_SIZES,
   createFromUpload,
   createPostgres,
   deleteSource,
@@ -14,6 +16,7 @@ import {
   previewTable,
   profileTable,
   refreshSource,
+  runEditorQuery,
   runQuery,
   testPostgres,
   toDataSource,
@@ -41,6 +44,19 @@ sourcesRoutes.post(
     }
     return createPostgres(user.id, await parseBody(req, createPostgresSchema));
   }),
+);
+
+const datasetSchema = z.object({
+  sourceId: z.string().min(1),
+  sql: z.string().min(1).max(20_000),
+  name: z.string().trim().min(1, "Dê um nome ao dataset.").max(120),
+  description: z.string().max(500).default(""),
+});
+
+/** Cria um dataset a partir de uma consulta SQL sobre uma fonte existente. */
+sourcesRoutes.post(
+  "/dataset",
+  handle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
 );
 
 sourcesRoutes.post(
@@ -99,6 +115,27 @@ const querySchema = z.object({
   title: z.string().max(160).default("Consulta manual"),
   projectId: z.string().nullable().optional(),
 });
+
+/** Editor SQL do analista: prévia da consulta, sem gravar o resultado. */
+sourcesRoutes.post(
+  "/:id/run",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const body = await parseBody(
+      req,
+      z.object({
+        sql: z.string().min(1).max(20_000),
+        page: z.number().int().min(1).max(100_000).default(1),
+        pageSize: z
+          .number()
+          .int()
+          .refine((size) => (EDITOR_PAGE_SIZES as readonly number[]).includes(size), "Tamanho de página inválido.")
+          .default(100),
+        count: z.boolean().default(false),
+      }),
+    );
+    return runEditorQuery(user.id, { sourceId: params.id, ...body });
+  }),
+);
 
 sourcesRoutes.post(
   "/:id/query",

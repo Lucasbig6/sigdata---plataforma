@@ -19,6 +19,7 @@ import { NotebooksHeader } from "./notebooks-header";
 export const NotebooksHome = () => {
   const hydrated = useNotebooksStore((state) => state.hydrated);
   const hydrate = useNotebooksStore((state) => state.hydrate);
+  const loadError = useNotebooksStore((state) => state.error);
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const createNotebook = useNotebooksStore((state) => state.createNotebook);
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
@@ -82,6 +83,17 @@ export const NotebooksHome = () => {
                 )}
               />
             ))}
+          </div>
+        ) : loadError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/40 px-6 py-20 text-center"
+          >
+            <p className="text-sm font-medium text-foreground">Não foi possível carregar seus projetos</p>
+            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{loadError}</p>
+            <Button variant="outline" onClick={hydrate} className="mt-1 cursor-pointer">
+              Tentar novamente
+            </Button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">

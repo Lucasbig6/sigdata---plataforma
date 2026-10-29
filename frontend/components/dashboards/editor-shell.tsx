@@ -8,7 +8,6 @@ import { useDatasetsStore } from "@/lib/datasets/store";
 import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { CANVAS } from "@/lib/dashboards/types";
-import { TEMPLATES, applyTemplate } from "@/lib/dashboards/templates";
 import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
 import { DashboardCanvas } from "./canvas";
 import { ElementLibrary } from "./element-library";
@@ -57,25 +56,6 @@ const PageMenu = ({ width, height }: { width: number; height: number }) => {
         >
           <p className="mb-2 text-xs font-semibold text-foreground">Página</p>
           <PageSettings />
-          <div className="mt-3 border-t border-border/60 pt-2.5">
-            <p className="mb-1.5 text-[11px] text-muted-foreground">Adicionar modelo de página</p>
-            <div className="flex flex-col gap-1">
-              {TEMPLATES.map((template) => (
-                <button
-                  key={template.id}
-                  type="button"
-                  title={template.description}
-                  onClick={() => {
-                    applyTemplate(template.id);
-                    setOpen(false);
-                  }}
-                  className="rounded-md border border-border/70 px-2 py-1.5 text-left text-[11px] text-foreground transition-colors hover:bg-muted/60"
-                >
-                  {template.label}
-                </button>
-              ))}
-            </div>
-          </div>
         </div>
       ) : null}
       <button
