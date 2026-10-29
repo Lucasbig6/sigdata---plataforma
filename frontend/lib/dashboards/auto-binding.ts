@@ -59,12 +59,25 @@ export const autoProps = (
   type: ElementType,
   sources: DataSource[],
   preferredSourceId = "",
+  filterMode: "list" | "range" = "list",
 ): Record<string, unknown> | undefined => {
   const source = defaultSource(sources, preferredSourceId);
   const table = source ? pickTable(source) : undefined;
   if (!source || !table) return undefined;
 
   if (type === "filter") {
+    if (filterMode === "range") {
+      // filtro de período: precisa de uma coluna de data (em qualquer tabela da fonte)
+      const dateTable = source.tables.find((t) => t.columns.some((c) => c.kind === "data"));
+      const date = dateTable?.columns.find((c) => c.kind === "data");
+      if (!dateTable || !date) return undefined;
+      return {
+        label: "Período",
+        binding: { sourceId: source.id, table: dateTable.name, column: date.name },
+        options: [],
+        value: "",
+      };
+    }
     const column = table.columns.find((c) => c.kind === "texto") ?? table.columns[0];
     if (!column) return undefined;
     return {
@@ -82,37 +95,4 @@ export const autoProps = (
   const binding = builderFor(type, source.id, table);
   if (type === "table") return { binding, title: table.name };
   return { binding, title: describeBinding(binding), ...(type !== "chart" && { description: source.name }) };
-};
-
-/**
- * Elemento a partir de um clique no painel Dados: tabela inteira, coluna
- * numérica (soma → indicador) ou coluna de categoria/data (contagem → gráfico).
- */
-export const draftFromColumn = (
-  source: DataSource,
-  table: SourceTable,
-  column?: SourceTable["columns"][number],
-): { itemKey: string; props: Record<string, unknown> } => {
-  const base = { sourceId: source.id, mode: "builder" as const, table: table.name };
-  if (!column) {
-    const binding = builderFor("table", source.id, table);
-    return { itemKey: "table", props: { binding, title: table.name } };
-  }
-  if (column.kind === "numero") {
-    const binding: DataBinding = { ...base, measure: column.name, agg: "sum" };
-    return {
-      itemKey: "kpi",
-      props: { binding, title: describeBinding(binding), description: `${source.name} · ${table.name}` },
-    };
-  }
-  const measure = table.columns.find((c) => c.kind === "numero")?.name;
-  const binding: DataBinding = {
-    ...base,
-    dimension: column.name,
-    measure,
-    agg: measure ? "sum" : "count",
-    sort: column.kind === "data" ? "label_asc" : "valor_desc",
-    limit: 20,
-  };
-  return { itemKey: column.kind === "data" ? "line" : "bar", props: { binding, title: describeBinding(binding) } };
 };

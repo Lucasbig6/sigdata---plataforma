@@ -170,7 +170,31 @@ export type FilterBinding = {
 
 export const BINDING_LIMIT_MAX = 500;
 
+/**
+ * Moldura de um elemento de dados (gráfico, tabela, indicador): borda, cantos,
+ * fundo, espaçamento e sombra. Tudo opcional; ausente = moldura padrão do tema
+ * (borda visível), então dashboards antigos também ganham o contorno.
+ */
+export type FrameStyle = {
+  /** false = sem moldura (sem borda, fundo nem sombra). */
+  enabled?: boolean;
+  borderWidth?: number;
+  /** Hexadecimal; ausente = cor de contorno do tema. */
+  borderColor?: string;
+  borderStyle?: "solid" | "dashed" | "dotted" | "double";
+  radius?: number;
+  /** Hexadecimal ou "transparent"; ausente = fundo de cartão do tema. */
+  background?: string;
+  /** Espaço interno em px; ausente = padrão do tipo de elemento. */
+  padding?: number;
+  shadow?: "none" | "sm" | "md" | "lg";
+};
+
+export const FRAME_LIMITS = { borderWidth: { min: 0, max: 12 }, radius: { min: 0, max: 48 }, padding: { min: 0, max: 48 } } as const;
+
 export type ChartProps = ChartStyle & {
+  /** Moldura (borda, fundo, cantos, sombra). */
+  frame?: FrameStyle;
   /** Clicar numa categoria filtra os outros elementos (padrão: sim). */
   crossFilter?: boolean;
   /** Não aplica os filtros do painel a este elemento. */
@@ -187,6 +211,7 @@ export type ChartProps = ChartStyle & {
 };
 
 export type TableProps = {
+  frame?: FrameStyle;
   ignoreFilters?: boolean;
   title: string;
   showTitle: boolean;
@@ -196,6 +221,7 @@ export type TableProps = {
 };
 
 export type IndicatorProps = {
+  frame?: FrameStyle;
   ignoreFilters?: boolean;
   title: string;
   value: string;
@@ -241,7 +267,34 @@ export type ShapeProps = {
 
 export type FilterKind = "periodo" | "categoria" | "municipio";
 
-export type FilterProps = {
+/**
+ * Aparência de um filtro (segmentação, como no Power BI). Tudo opcional: ausente
+ * = comportamento antigo (lista suspensa simples, campos de data).
+ */
+export type FilterStyle = {
+  /** Filtro de lista: menu suspenso, lista com caixas de seleção ou blocos (botões). */
+  display?: "suspenso" | "lista" | "blocos";
+  /** Filtro de período: campos de data, campos + controle deslizante ou só atalhos. */
+  rangeDisplay?: "campos" | "deslizante" | "atalhos";
+  /** Permite marcar vários valores (nada marcado = todos). */
+  multi?: boolean;
+  /** Caixa de busca (lista e suspenso). */
+  search?: boolean;
+  /** Linha "Selecionar tudo" (só com seleção múltipla). */
+  selectAll?: boolean;
+  /** Título do filtro (padrão: sim). */
+  showTitle?: boolean;
+  /** Botão de limpar a seleção (padrão: sim). */
+  showClear?: boolean;
+  orientation?: "vertical" | "horizontal";
+  fontSize?: number;
+  textColor?: string;
+  /** Cor da seleção (caixa marcada, bloco ativo, controle deslizante). */
+  accent?: string;
+  frame?: FrameStyle;
+};
+
+export type FilterProps = FilterStyle & {
   /** Vale para todas as páginas e para qualquer tabela que tenha uma coluna com o mesmo nome. */
   global?: boolean;
   /** "range" = intervalo de datas (valor `AAAA-MM-DD..AAAA-MM-DD`, qualquer ponta pode faltar). */

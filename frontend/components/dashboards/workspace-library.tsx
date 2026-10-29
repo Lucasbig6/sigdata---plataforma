@@ -1,6 +1,6 @@
 "use client";
 
-import { Loader2, RefreshCw, Zap } from "lucide-react";
+import { Loader2, RefreshCw, Search, Zap } from "lucide-react";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
@@ -40,6 +40,7 @@ export const WorkspaceLibrary = () => {
   const addVisual = useAddVisual();
   const [state, setState] = useState<State>({ status: "loading" });
   const [note, setNote] = useState<string | null>(null);
+  const [query, setQuery] = useState("");
 
   const load = useCallback(() => {
     setState({ status: "loading" });
@@ -96,11 +97,36 @@ export const WorkspaceLibrary = () => {
     );
   }
 
+  const term = query.trim().toLowerCase();
+  const projects = state.projects
+    .map((project) => ({
+      ...project,
+      visuals: project.visuals.filter(
+        (visual) => !term || visual.widget.title.toLowerCase().includes(term) || project.title.toLowerCase().includes(term),
+      ),
+    }))
+    .filter((project) => project.visuals.length > 0);
+
   return (
     <div className="space-y-4 p-3">
+      <div className="relative">
+        <Search
+          className="pointer-events-none absolute start-2 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
+          aria-hidden
+        />
+        <input
+          type="search"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          placeholder="Buscar visualização ou projeto"
+          aria-label="Buscar visualização"
+          className="h-8 w-full rounded-md border border-border/70 bg-background ps-7 pe-2 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
+      </div>
       <div className="flex items-center justify-between gap-2">
         <p className="text-[10px] leading-snug text-muted-foreground">
-          Clique ou arraste. <Zap className="inline size-3 text-primary" aria-hidden /> = ao vivo na fonte.
+          Visualizações salvas nas suas análises. Clique ou arraste para a página.{" "}
+          <Zap className="inline size-3 text-primary" aria-hidden /> = ao vivo na fonte.
         </p>
         <button
           type="button"
@@ -113,7 +139,8 @@ export const WorkspaceLibrary = () => {
         </button>
       </div>
       {note ? <p className="rounded-md bg-muted/50 px-2 py-1 text-[10px] text-foreground">{note}</p> : null}
-      {state.projects.map((project) => (
+      {projects.length === 0 ? <p className="text-[11px] text-muted-foreground">Nenhuma visualização encontrada.</p> : null}
+      {projects.map((project) => (
         <section key={project.id}>
           <p className="mb-1.5 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
             {project.title}

@@ -1,15 +1,10 @@
 "use client";
 
-import { LayoutTemplate } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { draftFromColumn } from "@/lib/dashboards/auto-binding";
-import { FIELD_MIME, applyFieldToElement, elementAt, type DraggedField } from "@/lib/dashboards/field-drop";
 import { ELEMENT_MIME, findLibraryItem } from "@/lib/dashboards/presets";
 import { toMobileLayout } from "@/lib/dashboards/mobile-layout";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { TEMPLATES, applyTemplate } from "@/lib/dashboards/templates";
 import { ELEMENT_SIZES } from "@/lib/dashboards/types";
-import { useDatasetsStore } from "@/lib/datasets/store";
 import { CanvasContextMenu, type MenuState } from "./context-menu";
 import { CanvasElement } from "./canvas-element";
 import { useAddLibraryItem } from "./element-library";
@@ -36,8 +31,6 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
   const guides = useDashboardsStore((state) => state.guides);
   const select = useDashboardsStore((state) => state.select);
   const selectMany = useDashboardsStore((state) => state.selectMany);
-  const updateProps = useDashboardsStore((state) => state.updateProps);
-  const addElement = useDashboardsStore((state) => state.addElement);
   const addItem = useAddLibraryItem();
   const addVisual = useAddVisual();
   const showGrid = useDashboardsStore((state) => state.showGrid);
@@ -136,35 +129,6 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
     const visualKey = event.dataTransfer.getData(VISUAL_MIME);
     if (visualKey) {
       addVisual(visualKey, { x: Math.round(px / grid) * grid, y: Math.round(py / grid) * grid });
-      return;
-    }
-
-    const fieldRaw = event.dataTransfer.getData(FIELD_MIME);
-    if (fieldRaw) {
-      const field = JSON.parse(fieldRaw) as DraggedField;
-      const sources = useDatasetsStore.getState().datasets;
-      const target = elementAt(doc.elements, px, py);
-      const patch = target ? applyFieldToElement(target, field, sources, event.altKey) : null;
-      if (target && patch) {
-        select(target.id);
-        updateProps(target.id, patch, "binding");
-        return;
-      }
-      // fora de qualquer elemento (ou elemento que não aceita): cria um novo a partir do campo
-      const source = sources.find((entry) => entry.id === field.sourceId);
-      const table = source?.tables.find((entry) => entry.name === field.table);
-      const column = table?.columns.find((entry) => entry.name === field.column);
-      if (!source || !table || !column) return;
-      const draft = draftFromColumn(source, table, column);
-      const item = findLibraryItem(draft.itemKey);
-      if (item) {
-        const size = item.size ?? ELEMENT_SIZES[item.type];
-        addElement(
-          item,
-          { x: Math.round((px - size.w / 2) / grid) * grid, y: Math.round((py - size.h / 2) / grid) * grid },
-          draft.props,
-        );
-      }
       return;
     }
 
@@ -268,29 +232,9 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
                 <p className="text-xs text-muted-foreground">
                   {preview
                     ? "Este painel ainda não tem elementos."
-                    : "Arraste elementos da biblioteca ou comece por um modelo."}
+                    : "Arraste visualizações salvas, filtros, textos e formas da biblioteca."}
                 </p>
               </div>
-              {!preview ? (
-                <div className="flex flex-wrap items-stretch justify-center gap-2">
-                  {TEMPLATES.map((template) => (
-                    <button
-                      key={template.id}
-                      type="button"
-                      onPointerDown={(event) => event.stopPropagation()}
-                      onClick={() => applyTemplate(template.id)}
-                      className="flex w-44 flex-col items-start gap-1 rounded-lg border border-border/70 bg-card/70 p-3 text-left transition-colors hover:border-primary/50 hover:bg-muted/50"
-                      style={{ transform: `scale(${1 / Math.max(zoom, 0.5)})`, transformOrigin: "center" }}
-                    >
-                      <span className="flex items-center gap-1.5 text-xs font-medium text-foreground">
-                        <LayoutTemplate className="size-3.5 text-primary" aria-hidden />
-                        {template.label}
-                      </span>
-                      <span className="text-[10px] leading-snug text-muted-foreground">{template.description}</span>
-                    </button>
-                  ))}
-                </div>
-              ) : null}
             </div>
           ) : null}
         </div>

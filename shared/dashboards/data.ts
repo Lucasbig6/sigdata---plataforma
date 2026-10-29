@@ -35,7 +35,18 @@ export type BindingData = {
   compare?: { previous: number | null; unit: string; currentLabel: string; previousLabel: string };
 };
 
-export type FilterOptions = { options: string[] };
+export type FilterOptions = {
+  options: string[];
+  /** Colunas de data: menor e maior data (AAAA-MM-DD), para o controle deslizante. */
+  min?: string;
+  max?: string;
+};
 
-export const FILTER_VALUE_MAX = 200;
+/** Separador dos valores marcados num filtro de seleção múltipla (caractere de controle: não aparece em dados). */
+export const FILTER_MULTI_SEP = "\u001f";
+export const FILTER_MULTI_MAX = 50;
+export const splitMulti = (value: string): string[] => (value ? value.split(FILTER_MULTI_SEP) : []);
+export const joinMulti = (values: string[]): string => values.join(FILTER_MULTI_SEP);
+
+export const FILTER_VALUE_MAX = 1000;
 export const FILTER_OPTIONS_LIMIT = 200;

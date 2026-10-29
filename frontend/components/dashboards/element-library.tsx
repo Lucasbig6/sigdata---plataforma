@@ -7,7 +7,6 @@ import { autoProps, defaultSource } from "@/lib/dashboards/auto-binding";
 import { ELEMENT_LIBRARY, ELEMENT_MIME, type LibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useDatasetsStore } from "@/lib/datasets/store";
-import { DataLibrary } from "./data-library";
 import { WorkspaceLibrary } from "./workspace-library";
 
 /** Adiciona um item já ligado a uma fonte real, quando houver. */
@@ -16,29 +15,38 @@ export const useAddLibraryItem = () => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
   return (item: LibraryItem, placement?: { x?: number; y?: number }) =>
-    addElement(item, placement, autoProps(item.type, datasets, preferredSourceId));
+    addElement(
+      item,
+      placement,
+      autoProps(
+        item.type,
+        datasets,
+        preferredSourceId,
+        item.defaultProps().mode === "range" ? "range" : "list",
+      ),
+    );
 };
 
-type Tab = "elementos" | "dados" | "workspace";
+type Tab = "visualizacoes" | "elementos";
 
 const TABS: { id: Tab; label: string }[] = [
+  { id: "visualizacoes", label: "Visualizações" },
   { id: "elementos", label: "Elementos" },
-  { id: "dados", label: "Dados" },
-  { id: "workspace", label: "Workspace" },
 ];
 
 export const ElementLibrary = () => {
   const add = useAddLibraryItem();
   const datasets = useDatasetsStore((state) => state.datasets);
   const [query, setQuery] = useState("");
-  const [tab, setTab] = useState<Tab>("elementos");
+  const [tab, setTab] = useState<Tab>("visualizacoes");
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
   const setPreferredSourceId = useDashboardsStore((state) => state.setPreferredSourceId);
   const readySources = datasets.filter((s) => s.status === "pronta" && s.tables.length > 0);
   const source = defaultSource(datasets, preferredSourceId);
   const normalized = query.trim().toLowerCase();
 
-  const groups = ELEMENT_LIBRARY.map((group) => ({
+  // gráficos, tabelas e indicadores vêm só das visualizações salvas (aba Visualizações)
+  const groups = ELEMENT_LIBRARY.filter((group) => !group.fromAnalysis).map((group) => ({
     ...group,
     items: group.items.filter(
       (item) =>
@@ -69,12 +77,7 @@ export const ElementLibrary = () => {
         ))}
       </div>
 
-      {tab === "dados" ? (
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <DataLibrary />
-        </div>
-      ) : null}
-      {tab === "workspace" ? (
+      {tab === "visualizacoes" ? (
         <div className="min-h-0 flex-1 overflow-y-auto">
           <WorkspaceLibrary />
         </div>
@@ -97,7 +100,7 @@ export const ElementLibrary = () => {
             className="h-8 w-full rounded-md border border-border/70 bg-background ps-7 pe-2 text-xs outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
           />
         </div>
-        <p className="text-[10px] text-muted-foreground">Clique ou arraste para a página</p>
+        <p className="text-[10px] text-muted-foreground">Filtros, textos e formas. Clique ou arraste para a página.</p>
       </div>
 
       <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-3">
@@ -138,12 +141,13 @@ export const ElementLibrary = () => {
       </>
       ) : null}
 
+      {tab === "elementos" ? (
       <div className="border-t border-border/60 px-3 py-2.5">
         {source ? (
           <label className="flex flex-col gap-1">
             <span className="flex items-center gap-1.5 text-[10px] text-muted-foreground">
               <Database className="size-3 shrink-0 text-primary" aria-hidden />
-              Fonte dos novos elementos
+              Fonte dos filtros
             </span>
             <select
               value={source.id}
@@ -167,6 +171,7 @@ export const ElementLibrary = () => {
           </p>
         )}
       </div>
+      ) : null}
     </aside>
   );
 };

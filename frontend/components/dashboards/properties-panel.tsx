@@ -11,25 +11,21 @@ import {
   Trash2,
 } from "lucide-react";
 import { useTheme } from "next-themes";
-import { useEffect, useState, type ReactNode } from "react";
-import { listAnalyses } from "@/lib/dashboards/analyses";
-import {
-  CATEGORY_LABELS,
-  VALUE_LABELS,
-  datasetSourceOptions,
-  valueOptionsFor,
-} from "@/lib/dashboards/datasets";
+import { useState, type ReactNode } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import {
   ELEMENT_MIN,
-  clamp,
   type ChartColor,
   type ChartProps,
-  type DatasetRef,
   type DashboardElement,
+  type FilterProps,
+  type FrameStyle,
 } from "@/lib/dashboards/types";
 import type { DataBinding, FilterBinding, NumberFormat } from "@/lib/dashboards/types";
 import { ChartFields } from "./chart-fields";
+import { DataSummary, NoDataNote } from "./data-summary";
+import { FilterStyleFields } from "./filter-fields";
+import { FrameFields } from "./frame-fields";
 import { LayersPanel } from "./layers-panel";
 import { MeasuresPanel } from "./measures-panel";
 import { BindingEditor, FilterBindingEditor } from "./binding-editor";
@@ -55,9 +51,6 @@ const COLOR_OPTIONS: { value: ChartColor; label: string }[] = [
   { value: 4, label: "Verde" },
   { value: 5, label: "Coral" },
 ];
-
-const datasetValue = (dataset: DatasetRef): string =>
-  dataset.source === "analysis" ? dataset.ref : "demo";
 
 const GeometryFields = ({
   element,
@@ -97,71 +90,7 @@ const GeometryFields = ({
   );
 };
 
-const DatasetFields = ({
-  dataset,
-  onChange,
-  analyses,
-}: {
-  dataset: DatasetRef;
-  onChange: (dataset: DatasetRef) => void;
-  analyses: { id: string; title: string }[];
-}) => (
-  <>
-    <Field label="Dados de exemplo / análises salvas">
-      <SelectField
-        value={datasetValue(dataset)}
-        options={datasetSourceOptions(analyses)}
-        onChange={(value) =>
-          onChange(
-            value === "demo"
-              ? { ...dataset, source: "demo", ref: "demo" }
-              : { ...dataset, source: "analysis", ref: value },
-          )
-        }
-      />
-    </Field>
-    <Grid2>
-      <Field label={CATEGORY_LABELS[dataset.categoryField]}>
-        <SelectField
-          value={dataset.categoryField}
-          options={[
-            { value: "periodo", label: CATEGORY_LABELS.periodo },
-            { value: "municipio", label: CATEGORY_LABELS.municipio },
-          ]}
-          onChange={(value) => {
-            const categoryField = value as DatasetRef["categoryField"];
-            onChange({
-              ...dataset,
-              categoryField,
-              valueField: valueOptionsFor(categoryField)[0],
-            });
-          }}
-        />
-      </Field>
-      {dataset.categoryField !== "periodo" ? (
-        <Field label={VALUE_LABELS[dataset.valueField]}>
-          <SelectField
-            value={dataset.valueField}
-            options={valueOptionsFor(dataset.categoryField).map((field) => ({
-              value: field,
-              label: VALUE_LABELS[field],
-            }))}
-            onChange={(value) =>
-              onChange({ ...dataset, valueField: value as DatasetRef["valueField"] })
-            }
-          />
-        </Field>
-      ) : null}
-    </Grid2>
-    <p className="text-[10px] leading-snug text-muted-foreground">
-      {dataset.source === "demo"
-        ? "Conjunto fictício de demonstração — nenhuma fonte real conectada."
-        : "Dados congelados de uma análise salva na conversa."}
-    </p>
-  </>
-);
-
-const TypeFields = ({
+const TypeFieldsBody = ({
   element,
   updateProps,
 }: {
@@ -594,6 +523,31 @@ const LayerActions = ({
   );
 };
 
+/** Tipos de dados que têm moldura (borda, fundo, cantos, sombra). */
+const FRAMED = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison", "filter"]);
+
+const TypeFields = ({
+  element,
+  updateProps,
+}: {
+  element: DashboardElement;
+  updateProps: (id: string, patch: Record<string, unknown>, field?: string) => void;
+}) => (
+  <>
+    <TypeFieldsBody element={element} updateProps={updateProps} />
+    {element.type === "filter" ? (
+      <FilterStyleFields props={element.props as FilterProps} set={(patch, field) => updateProps(element.id, patch, field)} />
+    ) : null}
+    {FRAMED.has(element.type) ? (
+      <FrameFields
+        frame={(element.props as { frame?: FrameStyle }).frame}
+        defaultPadding={element.type === "chart" ? 12 : element.type === "filter" ? 10 : 0}
+        set={(patch, field) => updateProps(element.id, patch, field)}
+      />
+    ) : null}
+  </>
+);
+
 export const PropertiesPanel = () => {
   const doc = useDashboardsStore((state) =>
     state.currentId ? (state.dashboards[state.currentId] ?? null) : null,
@@ -614,7 +568,6 @@ export const PropertiesPanel = () => {
   const select = useDashboardsStore((state) => state.select);
 
   const element = doc ? (doc.elements.find((entry) => entry.id === selectedId) ?? null) : null;
-  const analyses = listAnalyses();
   const [tab, setTab] = useState<PanelTab>("dados");
 
   if (!doc) return null;
@@ -760,24 +713,24 @@ export const PropertiesPanel = () => {
             />
           ) : (
             <>
-              <BindingEditor
-                elementId={element.id}
-                type={element.type}
-                binding={props.binding as DataBinding | undefined}
-                onChange={(binding) => updateProps(element.id, { binding }, "binding")}
-              />
+              {!props.binding ? (
+                <NoDataNote />
+              ) : (props.binding as DataBinding).mode === "sql" ? (
+                <DataSummary binding={props.binding as DataBinding} />
+              ) : (
+                // dashboards antigos com ligação do construtor continuam editáveis
+                <BindingEditor
+                  elementId={element.id}
+                  type={element.type}
+                  binding={props.binding as DataBinding | undefined}
+                  onChange={(binding) => updateProps(element.id, { binding }, "binding")}
+                />
+              )}
               {props.binding ? (
                 <SwitchRow
                   label="Ignorar filtros do painel"
                   checked={Boolean(props.ignoreFilters)}
                   onChange={(value) => updateProps(element.id, { ignoreFilters: value || undefined }, "ignoreFilters")}
-                />
-              ) : null}
-              {!props.binding && (element.type === "chart" || element.type === "table") ? (
-                <DatasetFields
-                  dataset={props.dataset as DatasetRef}
-                  onChange={(dataset) => updateProps(element.id, { dataset }, "dataset")}
-                  analyses={analyses}
                 />
               ) : null}
             </>

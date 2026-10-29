@@ -7,7 +7,10 @@ import { resolveSeries } from "@/lib/dashboards/datasets";
 import { isBindingReady, toChartData, useBindingData, useDashboardData } from "@/lib/dashboards/live-data";
 import type { ChartData } from "@shared/charts/types";
 import type { DashboardElement } from "@/lib/dashboards/types";
+import { frameCss } from "@/lib/dashboards/frame";
 import { DataError, DataSkeleton, RefreshingDot } from "./data-state";
+
+const CHART_PADDING = 12;
 
 export { useChartTheme } from "@/lib/charts/theme";
 
@@ -71,7 +74,7 @@ export const ChartView = ({ element }: { element: DashboardElement & { type: "ch
 
   if (isLive && !liveData) {
     return (
-      <div className="flex h-full w-full flex-col">
+      <div className="flex h-full w-full flex-col overflow-hidden" style={frameCss(props.frame, CHART_PADDING)}>
         <ChartTitle title={title} showTitle={showTitle} subtitle={subtitle} />
         <div className="min-h-0 flex-1">
           {live.status === "error" ? <DataError message={live.error} /> : <DataSkeleton />}
@@ -83,7 +86,7 @@ export const ChartView = ({ element }: { element: DashboardElement & { type: "ch
   const empty = chartData.categories.length === 0 || chartData.series.length === 0;
 
   return (
-    <div className="relative flex h-full w-full flex-col">
+    <div className="relative flex h-full w-full flex-col overflow-hidden" style={frameCss(props.frame, CHART_PADDING)}>
       <RefreshingDot state={live} />
       <ChartTitle title={title} showTitle={showTitle} subtitle={subtitle} />
       <div className="min-h-0 w-full flex-1">
