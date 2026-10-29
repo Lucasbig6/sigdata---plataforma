@@ -166,6 +166,7 @@ npm run db:studio    # abre o Drizzle Studio
 | `npm run db:migrate` | aplica migrações |
 | `npm run db:studio` | Drizzle Studio |
 | `npm run typecheck` | checa tipos do backend e frontend |
+| `npm test` | testes do backend e do frontend |
 
 ## Onde mexer
 
@@ -177,7 +178,9 @@ npm run db:studio    # abre o Drizzle Studio
 | Rotas da API | `backend/src/routes/*.ts` (montadas em `backend/src/server.ts`) |
 | Login / sessão | `backend/src/auth.ts` (Better Auth) |
 | Tabelas do banco e migrações | `backend/src/db/schema.ts`, `backend/drizzle/` |
-| Fontes de dados, DuckDB, Postgres externo | `backend/src/sources/` |
+| Fontes de dados, DuckDB, Postgres externo, datasets | `backend/src/sources/` |
+| Editor SQL (frontend) | `frontend/components/fontes/sql/`, `frontend/lib/sql-editor/` |
+| Testes automatizados | `backend/test/`, `frontend/test/` |
 | Chat: prompt, ferramenta `consultar_dados`, salvamento da conversa | `backend/src/chat.ts`, `backend/src/routes/chat.ts` |
 | Tipos usados nos dois lados | `shared/` (alias `@shared/*`) |
 

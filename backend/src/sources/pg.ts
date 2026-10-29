@@ -119,12 +119,13 @@ export const queryPg = async (
   cfg: PostgresConnectionInput,
   sql: string,
   limit = RESULT_ROW_LIMIT,
+  offset = 0,
 ): Promise<QueryOutput> =>
   readOnly(cfg, async (client) => {
     const started = Date.now();
     try {
       const res = await client.query({
-        text: `SELECT * FROM (${sql}) AS sigdata_q LIMIT ${limit + 1}`,
+        text: `SELECT * FROM (${sql}\n) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`,
         rowMode: "array",
       });
       const names = await typeNames(client, res.fields);

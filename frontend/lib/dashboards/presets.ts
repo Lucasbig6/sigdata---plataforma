@@ -5,6 +5,8 @@
 import {
   AreaChart as AreaChartIcon,
   BarChart3,
+  CalendarRange,
+  Columns3,
   ChartNoAxesCombined,
   ChartScatter,
   Donut,
@@ -16,6 +18,7 @@ import {
   Heading,
   Image as ImageIcon,
   LineChart as LineChartIcon,
+  ListChecks,
   ListFilter,
   Minus,
   Percent,
@@ -54,6 +57,11 @@ export type LibraryItem = {
 export type LibraryGroup = {
   id: string;
   label: string;
+  /**
+   * Itens que só nascem de uma visualização salva do workspace (gráficos, tabelas,
+   * indicadores): existem aqui para a conversão, mas não aparecem no seletor de elementos.
+   */
+  fromAnalysis?: boolean;
   items: LibraryItem[];
 };
 
@@ -92,6 +100,7 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
   {
     id: "visualizacoes",
     label: "Visualizações",
+    fromAnalysis: true,
     items: [
       chartItem("bar", "Gráfico de barras", "bar", "Comparação entre categorias.", BarChart3),
       chartItem("line", "Gráfico de linhas", "line", "Evolução ao longo do tempo.", LineChartIcon),
@@ -124,6 +133,7 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
   {
     id: "indicadores",
     label: "Indicadores",
+    fromAnalysis: true,
     items: [
       {
         key: "kpi",
@@ -250,16 +260,69 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
     label: "Filtros",
     items: [
       {
+        key: "filter-periodo",
+        label: "Período (data)",
+        description: "Intervalo de datas com campos, controle deslizante e atalhos.",
+        icon: CalendarRange,
+        type: "filter",
+        size: { w: 340, h: 140 },
+        defaultProps: () => ({
+          label: "Período",
+          kind: "periodo",
+          mode: "range",
+          rangeDisplay: "deslizante",
+          options: [],
+          value: "",
+        }),
+      },
+      {
         key: "filter-categoria",
-        label: "Filtro por coluna",
-        description: "Filtra os elementos da mesma tabela pelo valor escolhido.",
+        label: "Lista suspensa",
+        description: "Menu suspenso com busca para escolher valores de uma coluna.",
         icon: ListFilter,
         type: "filter",
+        size: { w: 260, h: 96 },
         defaultProps: () => ({
           label: "Filtro",
           kind: "categoria",
+          mode: "list",
+          display: "suspenso",
           options: FILTER_OPTIONS.categoria,
           value: FILTER_OPTIONS.categoria[0],
+        }),
+      },
+      {
+        key: "filter-lista",
+        label: "Lista de seleção",
+        description: "Lista com caixas de seleção, busca e seleção múltipla.",
+        icon: ListChecks,
+        type: "filter",
+        size: { w: 240, h: 280 },
+        defaultProps: () => ({
+          label: "Filtro",
+          kind: "categoria",
+          mode: "list",
+          display: "lista",
+          multi: true,
+          options: FILTER_OPTIONS.categoria,
+          value: "",
+        }),
+      },
+      {
+        key: "filter-blocos",
+        label: "Blocos (botões)",
+        description: "Botões lado a lado para escolher um valor com um clique.",
+        icon: Columns3,
+        type: "filter",
+        size: { w: 380, h: 120 },
+        defaultProps: () => ({
+          label: "Filtro",
+          kind: "categoria",
+          mode: "list",
+          display: "blocos",
+          orientation: "horizontal",
+          options: FILTER_OPTIONS.categoria,
+          value: "",
         }),
       },
     ],

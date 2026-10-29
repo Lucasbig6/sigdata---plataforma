@@ -184,6 +184,8 @@ const CreateVisualizationUI = (
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [data, setData] = useState<WidgetData | null>(null);
+  const [showQuery, setShowQuery] = useState(false);
+  const [queryInfo, setQueryInfo] = useState<{ sql: string; rows: number; ms: number } | null>(null);
 
   const kind: WidgetKind = isWidgetKind(args?.kind) ? args.kind : "linha";
   const Icon = WIDGET_ICON[kind];
@@ -203,6 +205,19 @@ const CreateVisualizationUI = (
       cancelled = true;
     };
   }, [ready, args, kind]);
+
+  // consulta de origem do gráfico (transparência: de onde vieram os números)
+  const resultId = args?.resultId;
+  useEffect(() => {
+    if (!ready || !resultId) return;
+    let cancelled = false;
+    fetchResult(resultId)
+      .then((res) => !cancelled && setQueryInfo({ sql: res.sql, rows: res.rowCount, ms: res.durationMs }))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [ready, resultId]);
 
   const isSaved =
     clicked ||
@@ -294,6 +309,28 @@ const CreateVisualizationUI = (
         <p className="mt-3 flex items-center gap-1.5 text-xs text-muted-foreground">
           <Loader2 className="size-3 animate-spin" aria-hidden /> Montando visualização…
         </p>
+      ) : null}
+
+      {queryInfo ? (
+        <div className="mt-2">
+          <button
+            type="button"
+            onClick={() => setShowQuery((value) => !value)}
+            aria-expanded={showQuery}
+            className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ChevronDown className={cn("size-3 transition-transform", showQuery && "rotate-180")} aria-hidden />
+            {showQuery ? "Ocultar consulta" : "Ver consulta"}
+            <span className="font-normal">
+              · {queryInfo.rows.toLocaleString("pt-BR")} linha(s) · {queryInfo.ms} ms
+            </span>
+          </button>
+          {showQuery ? (
+            <pre className="mt-1.5 max-h-40 overflow-auto rounded-lg bg-muted/50 p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
+              {queryInfo.sql}
+            </pre>
+          ) : null}
+        </div>
       ) : null}
     </div>
   );

@@ -2,18 +2,17 @@
 
 import { isDemoDataset, resolveTable } from "@/lib/dashboards/datasets";
 import {
-  filterValueOf,
   formatNumber,
   isBindingReady,
   toKpiValue,
   useBindingData,
-  useDashboardData,
-  useFilterOptions,
 } from "@/lib/dashboards/live-data";
 import { DataError, DataSkeleton, RefreshingDot } from "./data-state";
-import type { ChartColor, DashboardElement } from "@/lib/dashboards/types";
+import { frameCss } from "@/lib/dashboards/frame";
+import type { ChartColor, DashboardElement, FrameStyle } from "@/lib/dashboards/types";
 import { useTheme } from "next-themes";
 import { ChartView, useChartTheme } from "./charts";
+import { ListSlicer, RangeSlicer } from "./slicers";
 
 /** Rótulos curtos de cada tipo (usados no editor e no painel de propriedades). */
 export const ELEMENT_LABELS: Record<DashboardElement["type"], string> = {
@@ -59,10 +58,16 @@ const LEGACY_DARK_TEXT = new Set(["#E8ECEF", "#9FB0B4"]);
 const LIGHT_TEXT_DEFAULT = "oklch(0.28 0.045 250)";
 const DARK_TEXT_DEFAULT = "oklch(0.96 0.005 250)";
 
-const Panel = ({ children, className = "" }: { children: React.ReactNode; className?: string }) => (
-  <div
-    className={`flex h-full w-full flex-col overflow-hidden rounded-xl border border-border/70 bg-panel/60 ${className}`}
-  >
+const Panel = ({
+  children,
+  className = "",
+  frame,
+}: {
+  children: React.ReactNode;
+  className?: string;
+  frame?: FrameStyle;
+}) => (
+  <div className={`flex h-full w-full flex-col overflow-hidden ${className}`} style={frameCss(frame)}>
     {children}
   </div>
 );
@@ -96,7 +101,7 @@ const TableElement = ({ element }: { element: DashboardElement & { type: "table"
       : `${rows.length} linha(s) da análise salva.`;
 
   return (
-    <Panel className="relative">
+    <Panel className="relative" frame={element.props.frame}>
       <RefreshingDot state={live} />
       <ElementHeader title={title} showTitle={showTitle} />
       <div className="min-h-0 flex-1 overflow-auto">
@@ -197,7 +202,7 @@ const IndicatorElement = ({
       : null;
 
   return (
-    <Panel className="relative justify-between p-4">
+    <Panel className="relative justify-between p-4" frame={props.frame}>
       <RefreshingDot state={live} />
       <p className="truncate text-xs text-muted-foreground">{props.title}</p>
       {isLive && !liveData ? (
@@ -338,104 +343,8 @@ const ShapeElement = ({ element }: { element: DashboardElement & { type: "shape"
   );
 };
 
-const toIsoDate = (date: Date) => date.toISOString().slice(0, 10);
-
-const RANGE_PRESETS: { label: string; days: number | "ano" | "tudo" }[] = [
-  { label: "Últimos 7 dias", days: 7 },
-  { label: "Últimos 30 dias", days: 30 },
-  { label: "Últimos 90 dias", days: 90 },
-  { label: "Este ano", days: "ano" },
-  { label: "Tudo", days: "tudo" },
-];
-
-const presetRange = (days: number | "ano" | "tudo"): string => {
-  if (days === "tudo") return "";
-  const end = new Date();
-  const start = new Date();
-  if (days === "ano") start.setMonth(0, 1);
-  else start.setDate(start.getDate() - days + 1);
-  return `${toIsoDate(start)}..${toIsoDate(end)}`;
-};
-
-/** Filtro de período: data inicial, data final e atalhos. */
-const RangeFilter = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
-  const ctx = useDashboardData();
-  const value = filterValueOf(ctx, element);
-  const [from = "", to = ""] = value.split("..");
-  const set = (nextFrom: string, nextTo: string) =>
-    ctx.setValue(element.id, nextFrom || nextTo ? `${nextFrom}..${nextTo}` : "");
-  const inputCls =
-    "min-w-0 flex-1 rounded-md border border-border/70 bg-background px-1.5 py-1 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/60";
-
-  return (
-    <div className="no-drag flex h-full w-full flex-col justify-center gap-1.5 rounded-xl border border-border/70 bg-panel/60 px-3">
-      <div className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-        <span className="truncate">{element.props.label}</span>
-        <select
-          aria-label="Atalhos de período"
-          value=""
-          onChange={(event) => {
-            const preset = RANGE_PRESETS.find((entry) => entry.label === event.target.value);
-            if (preset) ctx.setValue(element.id, presetRange(preset.days));
-          }}
-          className="max-w-28 cursor-pointer bg-transparent text-[10px] text-primary outline-none"
-        >
-          <option value="">Atalhos…</option>
-          {RANGE_PRESETS.map((preset) => (
-            <option key={preset.label} value={preset.label}>
-              {preset.label}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="flex items-center gap-1.5">
-        <input type="date" aria-label="Data inicial" value={from} max={to || undefined} onChange={(event) => set(event.target.value, to)} className={inputCls} />
-        <span className="text-[10px] text-muted-foreground">até</span>
-        <input type="date" aria-label="Data final" value={to} min={from || undefined} onChange={(event) => set(from, event.target.value)} className={inputCls} />
-      </div>
-    </div>
-  );
-};
-
-const FilterElement = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
-  if (element.props.mode === "range") return <RangeFilter element={element} />;
-  return <ListFilter element={element} />;
-};
-
-const ListFilter = ({ element }: { element: DashboardElement & { type: "filter" } }) => {
-  const { label, options: staticOptions, binding } = element.props;
-  const ctx = useDashboardData();
-  const live = useFilterOptions(element);
-  const value = filterValueOf(ctx, element);
-  const options = binding ? (live.status === "ready" ? live.data.options : []) : staticOptions;
-
-  return (
-    <div className="no-drag flex h-full w-full flex-col justify-center gap-1 rounded-xl border border-border/70 bg-panel/60 px-3">
-      <label className="flex items-center justify-between gap-2 text-[11px] text-muted-foreground">
-        <span className="truncate">{label}</span>
-        {binding && live.status === "loading" ? <span className="text-[10px]">carregando…</span> : null}
-        {binding && live.status === "error" ? (
-          <span className="truncate text-[10px] text-destructive" title={live.error}>
-            erro
-          </span>
-        ) : null}
-      </label>
-      <select
-        value={value}
-        onChange={(event) => ctx.setValue(element.id, event.target.value)}
-        className="w-full cursor-pointer truncate rounded-md bg-transparent text-sm text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/60"
-      >
-        {binding ? <option value="">Todos</option> : null}
-        {binding && value && !options.includes(value) ? <option value={value}>{value}</option> : null}
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-    </div>
-  );
-};
+const FilterElement = ({ element }: { element: DashboardElement & { type: "filter" } }) =>
+  element.props.mode === "range" ? <RangeSlicer element={element} /> : <ListSlicer element={element} />;
 
 export const ElementView = ({ element }: { element: DashboardElement }) => {
   switch (element.type) {

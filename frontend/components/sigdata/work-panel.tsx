@@ -32,6 +32,7 @@ import { fetchResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
 import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
+import { SourceCard } from "./source-card";
 import { WidgetView } from "./widget-view";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
@@ -78,9 +79,6 @@ const WidgetEditor = ({
   const [x, setX] = useState(widget.xCol ?? "");
   const [y, setY] = useState(widget.yCol ?? "");
   const [splitBy, setSplitBy] = useState(widget.splitBy ?? "");
-  const [borderWidth, setBorderWidth] = useState(widget.border?.width ?? "");
-  const [borderColor, setBorderColor] = useState(widget.border?.color ?? "");
-  const [borderStyle, setBorderStyle] = useState<"solid" | "dashed" | "dotted">(widget.border?.style ?? "solid");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -110,9 +108,6 @@ const WidgetEditor = ({
       x: columnsChanged && x ? x : undefined,
       y: columnsChanged && y ? y : undefined,
       splitBy: splitChanged ? splitBy : undefined,
-      border: borderWidth || borderColor || borderStyle !== "solid"
-        ? { width: Number(borderWidth) || undefined, color: borderColor || undefined, style: borderStyle }
-        : undefined,
     });
     setBusy(false);
     if (outcome.ok) onClose();
@@ -170,36 +165,6 @@ const WidgetEditor = ({
                   ))}
               </select>
             </label>
-          ) : null}
-          {isChart ? (
-            <div className="mt-2">
-              <span className="text-[11px] text-muted-foreground">Borda do gráfico</span>
-              <div className="grid grid-cols-3 gap-2 mt-1">
-                <input
-                  type="number"
-                  value={borderWidth}
-                  onChange={(event) => setBorderWidth(event.target.value)}
-                  className="border rounded-md py-1 px-2 text-xs w-full"
-                  min="0"
-                  placeholder="Largura"
-                />
-                <input
-                  type="color"
-                  value={borderColor}
-                  onChange={(event) => setBorderColor(event.target.value ?? "")}
-                  className="border rounded-md py-1 px-2"
-                />
-                <select
-                  value={borderStyle}
-                  onChange={(event) => setBorderStyle(event.target.value as "solid" | "dashed" | "dotted")}
-                  className="border rounded-md py-1 px-2 text-xs w-full"
-                >
-                  <option value="solid">Sólida</option>
-                  <option value="dashed">Tracejada</option>
-                  <option value="dotted">Pontilhada</option>
-                </select>
-              </div>
-            </div>
           ) : null}
         </div>
       ) : null}
@@ -301,6 +266,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const widgets = (notebookId ? widgetsByNotebook[notebookId] : undefined) ?? EMPTY_WIDGETS;
   const loadPanel = usePanelStore((state) => state.load);
   const panelSaveError = usePanelStore((state) => state.saveError);
+  const panelLoadError = usePanelStore((state) => (notebookId ? state.loadErrors[notebookId] : undefined));
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const notebook = notebooks.find((entry) => entry.id === notebookId);
   const datasets = useDatasetsStore((state) => state.datasets);
@@ -360,9 +326,14 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       if (draft) addElement(draft.item, { x: widget.x, y: widget.y }, draft.props);
     }
     endTransaction();
-    void saveDashboard();
     savePreferences();
-    setNote(`Dashboard "${title}" salvo — abra em Dashboards.`);
+    await saveDashboard();
+    const { saveError } = useDashboardsStore.getState();
+    setNote(
+      saveError
+        ? `Não foi possível salvar o dashboard: ${saveError}`
+        : `Dashboard "${title}" salvo — abra em Dashboards.`,
+    );
   };
 
   return (
@@ -452,8 +423,22 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         </div>
       </header>
 
-      <div className="min-h-0 flex-1 overflow-y-auto">
-        {!panelVisible ? null : widgets.length === 0 || !notebookId ? (
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
+        {panelVisible ? (
+          <div className="shrink-0 p-3 pb-0">
+            <SourceCard source={activeSource} />
+          </div>
+        ) : null}
+        <div className="flex min-h-48 flex-1 flex-col">
+        {!panelVisible ? null : panelLoadError && notebookId ? (
+          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+            <p className="text-sm font-medium text-foreground">Não foi possível carregar as visualizações</p>
+            <p className="text-xs text-muted-foreground">{panelLoadError}</p>
+            <Button size="xs" variant="outline" onClick={() => void loadPanel(notebookId)}>
+              Tentar novamente
+            </Button>
+          </div>
+        ) : widgets.length === 0 || !notebookId ? (
           <EmptyState />
         ) : filtered.length === 0 ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
@@ -469,6 +454,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             ))}
           </div>
         )}
+        </div>
       </div>
 
       <p className="border-t border-border/60 px-4 py-2 text-[10px] text-muted-foreground/80">

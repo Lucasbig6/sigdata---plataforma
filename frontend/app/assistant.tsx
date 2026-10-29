@@ -118,6 +118,7 @@ export const Assistant = () => {
   const notebookId = searchParams.get("notebook");
   const hydrated = useNotebooksStore((state) => state.hydrated);
   const hydrate = useNotebooksStore((state) => state.hydrate);
+  const loadError = useNotebooksStore((state) => state.error);
   const createNotebook = useNotebooksStore((state) => state.createNotebook);
   const autoCreated = useRef(false);
 
@@ -132,7 +133,25 @@ export const Assistant = () => {
     router.replace(`/workspace?notebook=${id}`);
   }, [hydrated, notebookId, createNotebook, router]);
 
-  if (!notebookId) return null;
+  if (!notebookId) {
+    if (loadError) {
+      return (
+        <div className="flex h-dvh flex-col items-center justify-center gap-3 px-6 text-center">
+          <p className="text-sm font-medium text-foreground">Não foi possível abrir o workspace</p>
+          <p className="max-w-sm text-xs text-muted-foreground">{loadError}</p>
+          <Button size="sm" variant="outline" onClick={hydrate}>
+            Tentar novamente
+          </Button>
+        </div>
+      );
+    }
+    return (
+      <div className="flex h-dvh items-center justify-center gap-2 text-sm text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Preparando o projeto…
+      </div>
+    );
+  }
 
   return <NotebookLoader key={notebookId} notebookId={notebookId} />;
 };

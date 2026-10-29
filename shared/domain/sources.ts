@@ -3,7 +3,15 @@
  * Compartilhados entre cliente e servidor (sem dependências de React ou Node).
  */
 
-export type SourceKind = "demo" | "csv" | "xlsx" | "postgresql";
+export type SourceKind = "demo" | "csv" | "xlsx" | "postgresql" | "dataset";
+
+/** Como um dataset foi criado: a consulta feita pelo analista sobre uma fonte. */
+export type DatasetDefinition = {
+  sourceId: string;
+  sourceName: string;
+  sql: string;
+  rowCount: number;
+};
 
 export type SourceStatus = "processando" | "pronta" | "erro";
 
@@ -46,6 +54,8 @@ export type DataSource = {
   fileSize: number | null;
   /** Host/banco da conexão externa, sem senha. */
   connectionLabel: string | null;
+  /** Só em datasets (kind "dataset"). */
+  definition: DatasetDefinition | null;
   tables: SourceTable[];
   createdAt: string;
   updatedAt: string;
@@ -92,6 +102,7 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   csv: "CSV",
   xlsx: "Excel",
   postgresql: "PostgreSQL",
+  dataset: "Dataset",
 };
 
 /** Classifica um tipo nativo (DuckDB ou Postgres) em uma categoria da interface. */
