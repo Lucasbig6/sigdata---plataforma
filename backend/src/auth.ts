@@ -1,5 +1,8 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
+import { admin } from "better-auth/plugins/admin";
+import { adminAc, defaultAc } from "better-auth/plugins/admin/access";
+import { DEFAULT_ROLE } from "@shared/domain/roles";
 import { db, schema } from "./db";
 import { seedNewUser } from "./seed";
 
@@ -23,6 +26,8 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
+    // Contas são criadas pelo admin (plugin admin → /auth/admin/create-user).
+    disableSignUp: true,
     minPasswordLength: 8,
     maxPasswordLength: 128,
     autoSignIn: true,
@@ -31,11 +36,24 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
   },
+  plugins: [
+    admin({
+      // Só o admin gere contas; analista e usuário não têm permissões no plugin.
+      roles: {
+        admin: adminAc,
+        analista: defaultAc.newRole({ user: [], session: [] }),
+        usuario: defaultAc.newRole({ user: [], session: [] }),
+      },
+      adminRoles: ["admin"],
+      defaultRole: DEFAULT_ROLE,
+      bannedUserMessage: "Esta conta foi desativada. Fale com o administrador.",
+    }),
+  ],
   rateLimit: { enabled: true, window: 60, max: 30 },
   databaseHooks: {
     user: {
       create: {
-        // Conteúdo inicial: fonte de demonstração consultável + dashboards de exemplo.
+        // Conteúdo inicial: dashboards de exemplo (e a fonte de demonstração do catálogo, se faltar).
         after: async (created) => {
           try {
             await seedNewUser(created.id);

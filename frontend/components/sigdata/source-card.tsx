@@ -4,6 +4,7 @@ import { ChevronDown, Database, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
+import { useCan } from "@/lib/auth-client";
 import { DATASET_KIND_LABELS } from "@/lib/datasets/store";
 import type { DataSource, SourceColumn, TablePreview } from "@/lib/domain/sources";
 import { sourceSummary } from "@/lib/workspace/suggestions";
@@ -124,6 +125,7 @@ const TableBlock = ({ source, tableName }: { source: DataSource; tableName: stri
 /** Fonte ativa do projeto: o que existe nela, para o usuário saber o que perguntar. */
 export const SourceCard = ({ source }: { source: DataSource | null }) => {
   const [open, setOpen] = useState(true);
+  const canManageSources = useCan("analista");
 
   if (!source) {
     return (
@@ -132,13 +134,15 @@ export const SourceCard = ({ source }: { source: DataSource | null }) => {
         <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
           Nenhuma fonte neste projeto. Escolha um conjunto de dados na barra lateral.
         </p>
-        <Link
-          href="/fontes-de-dados"
-          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-        >
-          <Upload className="size-3" aria-hidden />
-          Enviar dados
-        </Link>
+        {canManageSources ? (
+          <Link
+            href="/fontes-de-dados"
+            className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          >
+            <Upload className="size-3" aria-hidden />
+            Enviar dados
+          </Link>
+        ) : null}
       </div>
     );
   }

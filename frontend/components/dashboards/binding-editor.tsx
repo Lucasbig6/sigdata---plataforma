@@ -4,6 +4,7 @@ import { Loader2, MessageSquareText, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState, type ReactNode } from "react";
 import { api } from "@/lib/api/client";
+import { useCan } from "@/lib/auth-client";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { MeasureDialog } from "./measure-dialog";
 import { AGG_LABELS, builderFor } from "@/lib/dashboards/auto-binding";
@@ -565,6 +566,7 @@ export const BindingEditor = ({
   onChange: (binding: DataBinding | undefined) => void;
 }) => {
   const sources = useReadySources();
+  const canManageSources = useCan("analista");
   const source = sources.find((s) => s.id === binding?.sourceId);
   const table = source?.tables.find((t) => t.name === binding?.table);
   const patch = (next: Partial<DataBinding>) => binding && onChange({ ...binding, ...next });
@@ -582,10 +584,16 @@ export const BindingEditor = ({
       {sources.length === 0 ? (
         <p className="rounded-md border border-dashed border-border px-2 py-2 text-[11px] leading-snug text-muted-foreground">
           Nenhuma fonte pronta.{" "}
-          <Link href="/fontes-de-dados" className="text-primary hover:underline">
-            Conecte uma fonte
-          </Link>{" "}
-          para usar dados reais.
+          {canManageSources ? (
+            <>
+              <Link href="/fontes-de-dados" className="text-primary hover:underline">
+                Conecte uma fonte
+              </Link>{" "}
+              para usar dados reais.
+            </>
+          ) : (
+            "Peça a um analista para publicar dados."
+          )}
         </p>
       ) : null}
 

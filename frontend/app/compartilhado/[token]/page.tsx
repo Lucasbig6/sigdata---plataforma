@@ -11,6 +11,8 @@ import { PageTabs } from "@/components/dashboards/page-tabs";
 import { ViewControls } from "@/components/dashboards/view-controls";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { UserMenu } from "@/components/sigdata/user-menu";
+import { useSession } from "@/lib/auth-client";
 import type { SavedAnalysis } from "@/lib/dashboards/analyses";
 import { DashboardDataProvider } from "@/lib/dashboards/live-data";
 import { useDashboardsStore } from "@/lib/dashboards/store";
@@ -29,6 +31,8 @@ export default function SharedDashboardPage() {
   const { token } = useParams<{ token: string }>();
   // ?embed=1: sem cabeçalho, para incorporar em outra página
   const embed = useSearchParams().get("embed") === "1";
+  // página pública: o menu do usuário só aparece se houver sessão
+  const { data: session } = useSession();
   const loadPublic = useDashboardsStore((s) => s.loadPublic);
   const [state, setState] = useState<State>({ status: "loading" });
   const dashboard = state.status === "ready" ? state.dashboard : null;
@@ -123,6 +127,7 @@ export default function SharedDashboardPage() {
           <RefreshControl />
           <ExportMenu mobileSize={mobileCanvas ?? undefined} />
           <ThemeToggle />
+          {session ? <UserMenu /> : null}
         </div>
       </header>
       )}

@@ -13,7 +13,7 @@ import {
   LogOut,
   MessageSquarePlus,
   Search,
-  UserRound,
+  ShieldCheck,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -35,9 +35,10 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut, useCan, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
+import { UserAvatar } from "./user-menu";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
@@ -80,6 +81,8 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const selectedId = activeNotebook?.sourceId ?? null;
   const readyDatasets = datasets.filter((dataset) => dataset.status === "pronta");
   const { data: session } = useSession();
+  const canManageSources = useCan("analista");
+  const isAdmin = useCan("admin");
 
   useEffect(() => {
     hydrateDatasets();
@@ -156,11 +159,15 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                     </DropdownMenuItem>
                   ))
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
-                  <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  Gerenciar datasets
-                </DropdownMenuItem>
+                {canManageSources ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
+                      <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                      Gerenciar datasets
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarGroupContent>
@@ -272,9 +279,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
               "transition-colors hover:bg-muted focus-visible:ring-2 focus-visible:ring-ring/50 outline-none",
             )}
           >
-            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground ring-1 ring-border">
-              <UserRound className="size-4" aria-hidden />
-            </span>
+            <UserAvatar name={session?.user.name} email={session?.user.email} image={session?.user.image} size="sm" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm text-foreground">
                 {session?.user.name ?? "Você"}
@@ -285,15 +290,25 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-56">
-            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
-              <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              Fontes de dados
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
-              <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              Editor SQL
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
+            {canManageSources ? (
+              <>
+                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
+                  <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  Fontes de dados
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
+                  <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  Editor SQL
+                </DropdownMenuItem>
+              </>
+            ) : null}
+            {isAdmin ? (
+              <DropdownMenuItem onClick={() => router.push("/admin")}>
+                <ShieldCheck className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                Administração
+              </DropdownMenuItem>
+            ) : null}
+            {canManageSources ? <DropdownMenuSeparator /> : null}
             <DropdownMenuItem
               onClick={() =>
                 void signOut().then(() => {

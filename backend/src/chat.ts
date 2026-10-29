@@ -71,10 +71,10 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
     .join("\n");
 };
 
-export const loadActiveSource = async (userId: string, sourceId: string | null) => {
+export const loadActiveSource = async (sourceId: string | null) => {
   if (!sourceId) return null;
   try {
-    const row = await getSourceRow(userId, sourceId);
+    const row = await getSourceRow(sourceId);
     return row.status === "pronta" ? row : null;
   } catch {
     return null;

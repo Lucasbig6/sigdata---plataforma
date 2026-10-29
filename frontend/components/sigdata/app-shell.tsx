@@ -9,6 +9,7 @@ import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { SectionPlaceholder } from "./section-placeholder";
 import { SigdataSidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
 import { WorkPanel } from "./work-panel";
 import { WorkspaceTitle } from "./workspace-title";
 
@@ -125,6 +126,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             Visualizações
           </Button>
           <ThemeToggle />
+          <UserMenu />
         </header>
 
         <div className="relative flex min-h-0 flex-1">

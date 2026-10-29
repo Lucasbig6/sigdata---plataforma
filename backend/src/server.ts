@@ -4,6 +4,7 @@ import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { auth } from "./auth";
 import { errorResponse } from "./http";
+import { adminRoutes } from "./routes/admin";
 import { chatRoutes } from "./routes/chat";
 import { analysesRoutes, dashboardsRoutes, publicRoutes } from "./routes/dashboards";
 import { projectsRoutes } from "./routes/projects";
@@ -26,6 +27,7 @@ app.route("/analyses", analysesRoutes);
 app.route("/dashboards", dashboardsRoutes);
 app.route("/public", publicRoutes);
 app.route("/chat", chatRoutes);
+app.route("/admin", adminRoutes);
 
 app.get("/health", (c) => c.json({ ok: true }));
 

@@ -7,16 +7,11 @@ import { Logo } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { signIn, signUp } from "@/lib/auth-client";
-import { cn } from "@/lib/utils";
-
-type Mode = "entrar" | "cadastrar";
+import { signIn } from "@/lib/auth-client";
 
 const ERROR_MESSAGES: Record<string, string> = {
   INVALID_EMAIL_OR_PASSWORD: "E-mail ou senha incorretos.",
-  USER_ALREADY_EXISTS: "Já existe uma conta com este e-mail.",
-  USER_ALREADY_EXISTS_USE_ANOTHER_EMAIL: "Já existe uma conta com este e-mail.",
-  PASSWORD_TOO_SHORT: "A senha precisa ter pelo menos 8 caracteres.",
+  BANNED_USER: "Esta conta foi desativada. Fale com o administrador.",
   INVALID_EMAIL: "E-mail inválido.",
   TOO_MANY_REQUESTS: "Muitas tentativas. Aguarde um minuto e tente de novo.",
 };
@@ -38,8 +33,6 @@ const safeNext = (value: string | null) =>
 
 const LoginForm = () => {
   const next = safeNext(useSearchParams().get("next"));
-  const [mode, setMode] = useState<Mode>("entrar");
-  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -49,10 +42,7 @@ const LoginForm = () => {
     event.preventDefault();
     setBusy(true);
     setError(null);
-    const result =
-      mode === "entrar"
-        ? await signIn.email({ email, password })
-        : await signUp.email({ name: name.trim() || email.split("@")[0], email, password });
+    const result = await signIn.email({ email, password });
     if (result.error) {
       setError(friendlyError(result.error));
       setBusy(false);
@@ -68,52 +58,8 @@ const LoginForm = () => {
         <Logo className="h-18 w-auto shrink-0 mx-auto block" />
       </div>
 
-      <div
-        role="tablist"
-        aria-label="Acesso"
-        className="mb-5 flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
-      >
-        {(
-          [
-            { id: "entrar", label: "Entrar" },
-            { id: "cadastrar", label: "Criar conta" },
-          ] as const
-        ).map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={mode === tab.id}
-            onClick={() => {
-              setMode(tab.id);
-              setError(null);
-            }}
-            className={cn(
-              "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-              mode === tab.id
-                ? "bg-background text-foreground shadow-sm"
-                : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
-        {mode === "cadastrar" ? (
-          <div className="flex flex-col gap-1.5">
-            <label htmlFor="name" className="text-xs font-medium text-muted-foreground">
-              Nome
-            </label>
-            <Input
-              id="name"
-              autoComplete="name"
-              value={name}
-              onChange={(event) => setName(event.target.value)}
-            />
-          </div>
-        ) : null}
         <div className="flex flex-col gap-1.5">
           <label htmlFor="email" className="text-xs font-medium text-muted-foreground">
             E-mail
@@ -134,15 +80,12 @@ const LoginForm = () => {
           <Input
             id="password"
             type="password"
-            autoComplete={mode === "entrar" ? "current-password" : "new-password"}
+            autoComplete="current-password"
             required
             minLength={8}
             value={password}
             onChange={(event) => setPassword(event.target.value)}
           />
-          {mode === "cadastrar" ? (
-            <p className="text-[11px] text-muted-foreground">Mínimo de 8 caracteres.</p>
-          ) : null}
         </div>
         {error ? (
           <p role="alert" className="text-xs text-destructive">
@@ -151,9 +94,12 @@ const LoginForm = () => {
         ) : null}
         <Button type="submit" size="lg" disabled={busy} className="mt-1">
           {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          {mode === "entrar" ? "Entrar" : "Criar conta"}
+          Entrar
         </Button>
       </form>
+      <p className="mt-5 text-center text-xs text-muted-foreground">
+        Não tem acesso? As contas são criadas pelo administrador do SIGDATA.
+      </p>
     </div>
   );
 };

@@ -2,8 +2,9 @@
  * Schema Postgres do SIGDATA (Drizzle).
  *
  * - Tabelas `user`, `session`, `account`, `verification`: formato exigido pelo Better Auth.
- * - Demais tabelas: domínio do app. Tudo pertence a um usuário (`user_id`), e as
- *   rotas de API sempre filtram por ele.
+ * - Demais tabelas: domínio do app. Projetos, painéis e resultados pertencem a um
+ *   usuário (`user_id`) e as rotas filtram por ele. Fontes e datasets formam um
+ *   catálogo comum: `user_id` registra quem criou, e só analistas/admins alteram.
  * - Documentos com estrutura rica (mensagens do chat, widgets, dashboards) ficam em
  *   jsonb e são validados na borda (rotas), como já era feito na leitura do localStorage.
  */
@@ -30,6 +31,7 @@ import type {
   SourceStatus,
   SourceTable,
 } from "@shared/domain/sources";
+import type { Role } from "@shared/domain/roles";
 
 const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull().defaultNow();
 const updatedAt = () =>
@@ -46,6 +48,12 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  /** Papel de acesso (shared/domain/roles); gerido pelo plugin admin do Better Auth. */
+  role: text("role").$type<Role>().notNull().default("usuario"),
+  /** Conta desativada pelo admin: não entra e perde as sessões abertas. */
+  banned: boolean("banned").notNull().default(false),
+  banReason: text("ban_reason"),
+  banExpires: timestamp("ban_expires", { withTimezone: true }),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -60,6 +68,8 @@ export const session = pgTable(
     updatedAt: updatedAt(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
+    /** Preenchido pelo plugin admin quando um admin assume a sessão de outro usuário. */
+    impersonatedBy: text("impersonated_by"),
     userId: text("user_id")
       .notNull()
       .references(() => user.id, { onDelete: "cascade" }),
@@ -108,9 +118,8 @@ export const dataSources = pgTable(
   "data_sources",
   {
     id: text("id").primaryKey(),
-    userId: text("user_id")
-      .notNull()
-      .references(() => user.id, { onDelete: "cascade" }),
+    /** Quem criou (fica no catálogo mesmo se a conta for removida). */
+    userId: text("user_id").references(() => user.id, { onDelete: "set null" }),
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     kind: text("kind").$type<SourceKind>().notNull(),

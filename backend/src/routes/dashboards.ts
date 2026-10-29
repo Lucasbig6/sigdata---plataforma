@@ -65,20 +65,20 @@ const dataSchema = z.object({
 
 export const dashboardsRoutes = new Hono();
 
-/** Executa a ligação de um elemento (editor, fontes do próprio usuário). */
+/** Executa a ligação de um elemento (editor, fontes do catálogo). */
 dashboardsRoutes.post(
   "/data",
-  handle(async ({ req, user }) => {
+  handle(async ({ req }) => {
     const body = await parseBody(req, dataSchema);
-    return runBinding(user.id, body.binding as DataBinding, body.filters ?? [], { fresh: body.fresh });
+    return runBinding(body.binding as DataBinding, body.filters ?? [], { fresh: body.fresh });
   }),
 );
 
 dashboardsRoutes.post(
   "/filter-options",
-  handle(async ({ req, user }) => {
+  handle(async ({ req }) => {
     const body = await parseBody(req, z.object({ binding: filterBindingSchema }));
-    return filterOptions(user.id, body.binding);
+    return filterOptions(body.binding);
   }),
 );
 
@@ -426,7 +426,7 @@ publicRoutes.post("/dashboards/:token/data", async (c) => {
       }
       return [];
     });
-    return Response.json(await runBinding(row.userId, binding, filters));
+    return Response.json(await runBinding(binding, filters));
   } catch (error) {
     return errorResponse(error);
   }
@@ -440,7 +440,7 @@ publicRoutes.post("/dashboards/:token/filter-options", async (c) => {
     if (element.type !== "filter") throw new HttpError(400, "Elemento não é um filtro.");
     const binding = (element.props as FilterProps).binding;
     if (!binding) return Response.json({ options: [] });
-    return Response.json(await filterOptions(row.userId, binding));
+    return Response.json(await filterOptions(binding));
   } catch (error) {
     return errorResponse(error);
   }

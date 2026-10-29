@@ -23,9 +23,15 @@ import {
   updateSourceMeta,
 } from "../sources/service";
 
+/**
+ * Fontes e datasets: catálogo comum. Leitura (listar, inspecionar, consultar pelo
+ * chat) é de todos; criar, tratar no editor SQL e alterar é do analista para cima.
+ */
+const ANALISTA = { role: "analista" } as const;
+
 export const sourcesRoutes = new Hono();
 
-sourcesRoutes.get("/", handle(async ({ user }) => listSources(user.id)));
+sourcesRoutes.get("/", handle(async () => listSources()));
 
 /** multipart (arquivo CSV/XLSX) ou JSON (conexão Postgres). */
 sourcesRoutes.post(
@@ -43,7 +49,7 @@ sourcesRoutes.post(
       });
     }
     return createPostgres(user.id, await parseBody(req, createPostgresSchema));
-  }),
+  }, ANALISTA),
 );
 
 const datasetSchema = z.object({
@@ -56,17 +62,17 @@ const datasetSchema = z.object({
 /** Cria um dataset a partir de uma consulta SQL sobre uma fonte existente. */
 sourcesRoutes.post(
   "/dataset",
-  handle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
+  handle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema)), ANALISTA),
 );
 
 sourcesRoutes.post(
   "/test",
-  handle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema))),
+  handle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema)), ANALISTA),
 );
 
 sourcesRoutes.get(
   "/:id",
-  handle<{ id: string }>(async ({ user, params }) => toDataSource(await getSourceRow(user.id, params.id))),
+  handle<{ id: string }>(async ({ params }) => toDataSource(await getSourceRow(params.id))),
 );
 
 const patchSchema = z.object({
@@ -76,22 +82,23 @@ const patchSchema = z.object({
 
 sourcesRoutes.patch(
   "/:id",
-  handle<{ id: string }>(async ({ req, user, params }) =>
-    updateSourceMeta(user.id, params.id, await parseBody(req, patchSchema)),
+  handle<{ id: string }>(
+    async ({ req, params }) => updateSourceMeta(params.id, await parseBody(req, patchSchema)),
+    ANALISTA,
   ),
 );
 
 sourcesRoutes.delete(
   "/:id",
-  handle<{ id: string }>(async ({ user, params }) => {
-    await deleteSource(user.id, params.id);
+  handle<{ id: string }>(async ({ params }) => {
+    await deleteSource(params.id);
     return { ok: true };
-  }),
+  }, ANALISTA),
 );
 
 sourcesRoutes.post(
   "/:id/refresh",
-  handle<{ id: string }>(async ({ user, params }) => refreshSource(user.id, params.id)),
+  handle<{ id: string }>(async ({ params }) => refreshSource(params.id), ANALISTA),
 );
 
 const tableParam = (req: Request) => {
@@ -102,12 +109,12 @@ const tableParam = (req: Request) => {
 
 sourcesRoutes.get(
   "/:id/preview",
-  handle<{ id: string }>(async ({ req, user, params }) => previewTable(user.id, params.id, tableParam(req))),
+  handle<{ id: string }>(async ({ req, params }) => previewTable(params.id, tableParam(req))),
 );
 
 sourcesRoutes.get(
   "/:id/profile",
-  handle<{ id: string }>(async ({ req, user, params }) => profileTable(user.id, params.id, tableParam(req))),
+  handle<{ id: string }>(async ({ req, params }) => profileTable(params.id, tableParam(req))),
 );
 
 const querySchema = z.object({
@@ -119,7 +126,7 @@ const querySchema = z.object({
 /** Editor SQL do analista: prévia da consulta, sem gravar o resultado. */
 sourcesRoutes.post(
   "/:id/run",
-  handle<{ id: string }>(async ({ req, user, params }) => {
+  handle<{ id: string }>(async ({ req, params }) => {
     const body = await parseBody(
       req,
       z.object({
@@ -133,8 +140,8 @@ sourcesRoutes.post(
         count: z.boolean().default(false),
       }),
     );
-    return runEditorQuery(user.id, { sourceId: params.id, ...body });
-  }),
+    return runEditorQuery({ sourceId: params.id, ...body });
+  }, ANALISTA),
 );
 
 sourcesRoutes.post(

@@ -16,6 +16,8 @@ import {
 import { SourceTile } from "@/components/fontes/source-tile";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { RoleGate } from "@/components/sigdata/role-gate";
+import { UserMenu } from "@/components/sigdata/user-menu";
 import { useDatasetsStore, type Dataset } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
 
@@ -137,6 +139,7 @@ function FontesDeDadosContent() {
               Editor SQL
             </Link>
             <ThemeToggle />
+            <UserMenu />
           </div>
         </div>
       </header>
@@ -252,8 +255,10 @@ function FontesDeDadosContent() {
 /** Fontes de dados e datasets salvos, em abas (a aba ativa fica na URL: ?aba=datasets). */
 export default function FontesDeDadosPage() {
   return (
-    <Suspense>
-      <FontesDeDadosContent />
-    </Suspense>
+    <RoleGate role="analista">
+      <Suspense>
+        <FontesDeDadosContent />
+      </Suspense>
+    </RoleGate>
   );
 }

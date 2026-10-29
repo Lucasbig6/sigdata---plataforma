@@ -1,7 +1,8 @@
 /**
- * Fontes de dados do usuário (/api/sources): arquivos CSV/XLSX carregados no
- * motor analítico e conexões Postgres externas. A fonte ativa é escolhida por
- * projeto (ver `setNotebookSource` em lib/notebooks/store).
+ * Catálogo de fontes de dados (/api/sources): arquivos CSV/XLSX carregados no
+ * motor analítico, conexões Postgres externas e datasets. Todos leem; criar e
+ * alterar é do analista (o backend recusa os demais). A fonte ativa é escolhida
+ * por projeto (ver `setNotebookSource` em lib/notebooks/store).
  */
 import { create } from "zustand";
 import { api } from "@/lib/api/client";

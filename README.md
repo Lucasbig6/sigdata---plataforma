@@ -31,12 +31,14 @@ Navegador ──► Next.js (3000) ──► Hono API (4000) ──► Postgres 
 ## Principais funcionalidades
 
 - **Chat analítico com IA** usando Groq, com ferramenta `consultar_dados` e histórico persistido.
-- **Fontes de dados por projeto**: upload de CSV/XLSX e conexão a PostgreSQL externo.
+- **Catálogo de fontes de dados**: upload de CSV/XLSX, conexão a PostgreSQL externo e datasets
+  tratados no editor SQL, disponíveis para todos; cada projeto escolhe a sua fonte ativa.
+- **Perfis de acesso** (usuário, analista, administrador) e área de administração de contas.
 - **Visualizações salvas**: gráficos, KPIs, tabelas e indicadores gerados no chat.
 - **Editor de dashboards**: canvas livre, páginas, filtros, zoom, camadas e compartilhamento.
 - **Dashboards públicos** via link, com renderização protegida por token.
-- **Autenticação completa** com Better Auth (e-mail/senha e sessão por cookie).
-- **Seed automático** com fonte de demonstração e dashboards de exemplo para novas contas.
+- **Autenticação completa** com Better Auth (e-mail/senha e sessão por cookie); contas criadas pelo admin.
+- **Seed automático** com fonte de demonstração (no catálogo) e dashboards de exemplo para novas contas.
 
 ## Stack técnica
 
@@ -113,11 +115,27 @@ cp backend/.env.example backend/.env   # preencha os segredos e a GROQ_API_KEY
 cp frontend/.env.example frontend/.env.local
 npm run db:up                          # Postgres 17 (projeto compose "sigdata-dev")
 npm run db:migrate                     # cria as tabelas
+npm run admin:create -- voce@empresa.com umaSenhaForte "Seu Nome"   # primeiro administrador
 npm run dev                            # sobe backend (4000) e frontend (3000)
 ```
 
-Abra http://localhost:3000 e crie uma conta. Cada conta nova recebe uma fonte de
-demonstração consultável e três dashboards de exemplo.
+Abra http://localhost:3000 e entre com o administrador. Não há cadastro público: as demais
+contas são criadas em **Administração** (menu do usuário). Cada conta nova recebe três
+dashboards de exemplo, e a fonte de demonstração fica no catálogo para todos.
+
+### Perfis de acesso
+
+Os perfis são cumulativos: cada um faz tudo o que o anterior faz.
+
+| Perfil | Pode |
+|---|---|
+| Usuário | Criar e ver projetos, conversar no workspace, criar painéis e visualizações, usar as fontes do catálogo |
+| Analista | + criar fontes (CSV/XLSX, PostgreSQL), tratar dados no editor SQL e salvar datasets |
+| Administrador | + criar contas, mudar perfis, desativar/reativar, redefinir senha, remover contas e ver a visão geral |
+
+A regra vale no backend (`handle(..., { role })` em `backend/src/http.ts` e o plugin admin do
+Better Auth); o frontend só esconde o que o perfil não usa. Os perfis ficam em
+`shared/domain/roles.ts`. `npm run admin:create` também promove uma conta existente a admin.
 
 ### Variáveis de ambiente
 
@@ -165,6 +183,7 @@ npm run db:studio    # abre o Drizzle Studio
 | `npm run db:generate` | gera migração |
 | `npm run db:migrate` | aplica migrações |
 | `npm run db:studio` | Drizzle Studio |
+| `npm run admin:create -- <email> <senha> [nome]` | cria o primeiro admin (ou promove uma conta) |
 | `npm run typecheck` | checa tipos do backend e frontend |
 | `npm test` | testes do backend e do frontend |
 
@@ -176,7 +195,8 @@ npm run db:studio    # abre o Drizzle Studio
 | Estado da interface (stores Zustand) e chamadas à API | `frontend/lib/**/store.ts`, `frontend/lib/api/client.ts` |
 | Redirecionamento para login | `frontend/proxy.ts` |
 | Rotas da API | `backend/src/routes/*.ts` (montadas em `backend/src/server.ts`) |
-| Login / sessão | `backend/src/auth.ts` (Better Auth) |
+| Login / sessão / perfis | `backend/src/auth.ts` (Better Auth + plugin admin), `shared/domain/roles.ts` |
+| Área de administração | `frontend/app/admin`, `frontend/components/admin/`, `backend/src/routes/admin.ts` |
 | Tabelas do banco e migrações | `backend/src/db/schema.ts`, `backend/drizzle/` |
 | Fontes de dados, DuckDB, Postgres externo, datasets | `backend/src/sources/` |
 | Editor SQL (frontend) | `frontend/components/fontes/sql/`, `frontend/lib/sql-editor/` |

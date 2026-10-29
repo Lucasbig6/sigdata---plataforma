@@ -5,6 +5,7 @@ import { ArrowUpRight, Database, Upload } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
+import { useCan } from "@/lib/auth-client";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
@@ -46,14 +47,15 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
+  const canManageSources = useCan("analista");
   const ready = datasets.filter((dataset) => dataset.status === "pronta");
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-4 text-start">
       <p className="text-sm font-medium text-foreground">Escolha os dados para começar</p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente só responde com números das suas fontes. Selecione uma para este projeto
-        ou envie um arquivo novo.
+        O assistente só responde com números das fontes de dados. Selecione uma para este
+        projeto{canManageSources ? " ou envie um arquivo novo" : ""}.
       </p>
       {hydrated && ready.length > 0 && notebookId ? (
         <ul className="flex flex-col gap-1.5">
@@ -74,13 +76,19 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
           ))}
         </ul>
       ) : null}
-      <Link
-        href="/fontes-de-dados"
-        className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-      >
-        <Upload className="size-3.5" aria-hidden />
-        Enviar CSV/XLSX ou conectar um banco
-      </Link>
+      {canManageSources ? (
+        <Link
+          href="/fontes-de-dados"
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        >
+          <Upload className="size-3.5" aria-hidden />
+          Enviar CSV/XLSX ou conectar um banco
+        </Link>
+      ) : hydrated && ready.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          Ainda não há dados disponíveis. Peça a um analista para publicar uma fonte.
+        </p>
+      ) : null}
     </div>
   );
 };

@@ -64,7 +64,7 @@ projectsRoutes.patch(
   handle<{ id: string }>(async ({ req, user, params }) => {
     const project = await getProject(user.id, params.id);
     const body = await parseBody(req, patchSchema);
-    if (body.sourceId) await getSourceRow(user.id, body.sourceId);
+    if (body.sourceId) await getSourceRow(body.sourceId);
     const [row] = await db
       .update(schema.projects)
       .set({

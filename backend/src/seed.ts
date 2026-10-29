@@ -2,11 +2,11 @@ import { randomUUID } from "node:crypto";
 import type { DashboardDoc } from "./db/schema";
 import { db, schema } from "./db";
 import demoDashboards from "./seed/demo-dashboards.json" with { type: "json" };
-import { createDemoSource } from "./sources/service";
+import { ensureDemoSource } from "./sources/service";
 
 /** Conteúdo inicial de cada conta nova. */
 export const seedNewUser = async (userId: string) => {
-  await createDemoSource(userId);
+  await ensureDemoSource(userId);
   // fixture estática dos exemplos (elementos no formato de shared/dashboards/types)
   const demos = demoDashboards as unknown as (DashboardDoc & { name: string; description: string })[];
   if (demos.length === 0) return;

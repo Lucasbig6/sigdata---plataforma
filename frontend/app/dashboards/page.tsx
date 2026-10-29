@@ -7,6 +7,7 @@ import { useEffect, useMemo } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { UserMenu } from "@/components/sigdata/user-menu";
 
 const formatDate = (timestamp: number): string =>
   new Date(timestamp).toLocaleDateString("pt-BR", {
@@ -64,6 +65,7 @@ export default function DashboardsPage() {
           </div>
           <div className="ml-auto flex items-center gap-2">
             <ThemeToggle />
+            <UserMenu />
             <button
               type="button"
               onClick={handleCreate}

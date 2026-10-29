@@ -4,6 +4,7 @@ import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Undo2, Zap } f
 import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { UserMenu } from "@/components/sigdata/user-menu";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { ShareDialog } from "./share-dialog";
 import { VersionHistory } from "./version-history";
@@ -194,6 +195,7 @@ export const TopBar = ({
       </button>
 
       <ThemeToggle />
+      <UserMenu />
     </div>
   </header>
 );

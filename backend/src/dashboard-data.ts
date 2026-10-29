@@ -247,9 +247,8 @@ const cachedExecute = (source: SourceRow, sql: string, limit: number | undefined
     fresh,
   });
 
-/** Executa a ligação de um elemento na fonte do dono do painel. */
+/** Executa a ligação de um elemento numa fonte do catálogo. */
 export const runBinding = async (
-  ownerId: string,
   binding: DataBinding,
   filters: ActiveFilter[] = [],
   options: { fresh?: boolean } = {},
@@ -258,7 +257,7 @@ export const runBinding = async (
     throw new HttpError(400, "Ligação de dados inválida.");
   }
   const fresh = Boolean(options.fresh);
-  const source = await getSourceRow(ownerId, binding.sourceId);
+  const source = await getSourceRow(binding.sourceId);
   assertReady(source);
 
   if (binding.mode === "builder" && binding.compare && !binding.dimension) {
@@ -274,8 +273,8 @@ export const runBinding = async (
 };
 
 /** Valores distintos de uma coluna (opções do elemento de filtro). */
-export const filterOptions = async (ownerId: string, binding: FilterBinding): Promise<FilterOptions> => {
-  const source = await getSourceRow(ownerId, binding.sourceId);
+export const filterOptions = async (binding: FilterBinding): Promise<FilterOptions> => {
+  const source = await getSourceRow(binding.sourceId);
   assertReady(source);
   const table = findTable(source.tables, binding.table);
   const column = quoteIdent(assertColumn(table, binding.column, "filtro"));

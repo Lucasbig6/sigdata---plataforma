@@ -6,6 +6,7 @@ import { useState } from "react";
 import { autoProps, defaultSource } from "@/lib/dashboards/auto-binding";
 import { ELEMENT_LIBRARY, ELEMENT_MIME, type LibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { useCan } from "@/lib/auth-client";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { WorkspaceLibrary } from "./workspace-library";
 
@@ -37,6 +38,7 @@ const TABS: { id: Tab; label: string }[] = [
 export const ElementLibrary = () => {
   const add = useAddLibraryItem();
   const datasets = useDatasetsStore((state) => state.datasets);
+  const canManageSources = useCan("analista");
   const [query, setQuery] = useState("");
   const [tab, setTab] = useState<Tab>("visualizacoes");
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
@@ -164,10 +166,16 @@ export const ElementLibrary = () => {
         ) : (
           <p className="text-[10px] leading-snug text-muted-foreground">
             Nenhuma fonte de dados.{" "}
-            <Link href="/fontes-de-dados" className="text-primary underline-offset-2 hover:underline">
-              Conectar uma fonte
-            </Link>{" "}
-            para ver dados reais.
+            {canManageSources ? (
+              <>
+                <Link href="/fontes-de-dados" className="text-primary underline-offset-2 hover:underline">
+                  Conectar uma fonte
+                </Link>{" "}
+                para ver dados reais.
+              </>
+            ) : (
+              "Peça a um analista para publicar dados."
+            )}
           </p>
         )}
       </div>

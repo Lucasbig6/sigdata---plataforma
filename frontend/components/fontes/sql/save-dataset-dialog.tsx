@@ -14,7 +14,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 
-/** Salva o resultado da última consulta executada como dataset da conta. */
+/** Salva o resultado da última consulta executada como dataset do catálogo. */
 export const SaveDatasetDialog = ({
   open,
   onOpenChange,
@@ -54,8 +54,8 @@ export const SaveDatasetDialog = ({
         <DialogHeader>
           <DialogTitle>Salvar como dataset</DialogTitle>
           <DialogDescription>
-            O resultado vira uma fonte da sua conta, que você escolhe nos projetos e usa nos dashboards. Guarda uma
-            cópia dos dados de agora.
+            O resultado vira um dataset do catálogo: todos os usuários podem escolhê-lo nos projetos e usá-lo nos
+            dashboards. Guarda uma cópia dos dados de agora.
           </DialogDescription>
         </DialogHeader>
         <div className="flex flex-col gap-3">

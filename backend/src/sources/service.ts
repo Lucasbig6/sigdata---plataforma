@@ -57,20 +57,14 @@ export const toDataSource = (row: SourceRow): DataSource => {
   };
 };
 
-export const listSources = async (userId: string) => {
-  const rows = await db
-    .select()
-    .from(schema.dataSources)
-    .where(eq(schema.dataSources.userId, userId))
-    .orderBy(desc(schema.dataSources.createdAt));
+/** Catálogo comum: todo usuário enxerga todas as fontes (só analistas alteram, nas rotas). */
+export const listSources = async () => {
+  const rows = await db.select().from(schema.dataSources).orderBy(desc(schema.dataSources.createdAt));
   return rows.map(toDataSource);
 };
 
-export const getSourceRow = async (userId: string, id: string) => {
-  const [row] = await db
-    .select()
-    .from(schema.dataSources)
-    .where(and(eq(schema.dataSources.id, id), eq(schema.dataSources.userId, userId)));
+export const getSourceRow = async (id: string) => {
+  const [row] = await db.select().from(schema.dataSources).where(eq(schema.dataSources.id, id));
   if (!row) throw notFound("Fonte de dados", "a");
   return row;
 };
@@ -153,27 +147,23 @@ export const testPostgres = async (connection: PostgresConnectionInput) => {
 };
 
 /** Relê o schema (útil quando o banco externo mudou). */
-export const refreshSource = async (userId: string, id: string) => {
-  const row = await getSourceRow(userId, id);
+export const refreshSource = async (id: string) => {
+  const row = await getSourceRow(id);
   if (row.kind !== "postgresql") return toDataSource(row);
   const tables = await introspectPg(connectionOf(row));
   return finish(id, { tables, status: "pronta", error: null });
 };
 
-export const updateSourceMeta = async (
-  userId: string,
-  id: string,
-  patch: { name?: string; description?: string },
-) => {
-  await getSourceRow(userId, id);
+export const updateSourceMeta = async (id: string, patch: { name?: string; description?: string }) => {
+  await getSourceRow(id);
   return finish(id, {
     ...(patch.name !== undefined && { name: patch.name.trim() || "Fonte sem nome" }),
     ...(patch.description !== undefined && { description: patch.description.trim() }),
   });
 };
 
-export const deleteSource = async (userId: string, id: string) => {
-  const row = await getSourceRow(userId, id);
+export const deleteSource = async (id: string) => {
+  const row = await getSourceRow(id);
   await db.delete(schema.dataSources).where(eq(schema.dataSources.id, row.id));
   invalidateSourceCache(row.id);
   if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);
@@ -196,8 +186,8 @@ export const execute = (row: SourceRow, sql: string, limit?: number, offset?: nu
     ? queryPg(connectionOf(row), sql, limit, offset)
     : queryDuck(row.id, sql, limit, offset);
 
-export const previewTable = async (userId: string, id: string, table: string): Promise<TablePreview> => {
-  const row = await getSourceRow(userId, id);
+export const previewTable = async (id: string, table: string): Promise<TablePreview> => {
+  const row = await getSourceRow(id);
   assertReady(row);
   const found = findTable(row, table);
   const out = await execute(row, `SELECT * FROM ${quoteQualified(found.name)}`, PREVIEW_ROWS);
@@ -205,8 +195,8 @@ export const previewTable = async (userId: string, id: string, table: string): P
 };
 
 /** Perfil de colunas: arquivos já têm (calculado na ingestão); Postgres calcula e guarda no cache. */
-export const profileTable = async (userId: string, id: string, table: string): Promise<SourceTable> => {
-  const row = await getSourceRow(userId, id);
+export const profileTable = async (id: string, table: string): Promise<SourceTable> => {
+  const row = await getSourceRow(id);
   assertReady(row);
   const found = findTable(row, table);
   if (row.kind !== "postgresql" || found.columns.every((column) => column.profile)) return found;
@@ -245,11 +235,14 @@ const countRows = async (row: SourceRow, sql: string): Promise<number | null> =>
  * Editor SQL do analista: devolve uma página do resultado, sem gravar nada.
  * `count` pede também o total de linhas (a primeira página faz; as seguintes reaproveitam).
  */
-export const runEditorQuery = async (
-  userId: string,
-  input: { sourceId: string; sql: string; page: number; pageSize: number; count: boolean },
-) => {
-  const row = await getSourceRow(userId, input.sourceId);
+export const runEditorQuery = async (input: {
+  sourceId: string;
+  sql: string;
+  page: number;
+  pageSize: number;
+  count: boolean;
+}) => {
+  const row = await getSourceRow(input.sourceId);
   assertReady(row);
   const sql = assertReadOnlySql(input.sql);
   const offset = (input.page - 1) * input.pageSize;
@@ -279,7 +272,7 @@ export const createDataset = async (
   userId: string,
   input: { sourceId: string; sql: string; name: string; description: string },
 ) => {
-  const origin = await getSourceRow(userId, input.sourceId);
+  const origin = await getSourceRow(input.sourceId);
   assertReady(origin);
   const sql = assertReadOnlySql(input.sql);
   const out = await execute(origin, sql, DATASET_ROW_LIMIT);
@@ -317,7 +310,7 @@ export const runQuery = async (
   userId: string,
   input: { sourceId: string; sql: string; title: string; projectId?: string | null },
 ): Promise<AnalyticResult> => {
-  const row = await getSourceRow(userId, input.sourceId);
+  const row = await getSourceRow(input.sourceId);
   assertReady(row);
   const sql = assertReadOnlySql(input.sql);
   const out = await execute(row, sql);
@@ -367,8 +360,17 @@ export const getResult = async (userId: string, id: string) => {
   return toAnalyticResult(row);
 };
 
-/** Fonte de demonstração consultável, criada no cadastro do usuário. */
-export const createDemoSource = async (userId: string) => {
+/**
+ * Fonte de demonstração consultável: uma só no catálogo, criada no primeiro
+ * cadastro (ou de novo, se alguém a remover).
+ */
+export const ensureDemoSource = async (userId: string) => {
+  const [existing] = await db
+    .select({ id: schema.dataSources.id })
+    .from(schema.dataSources)
+    .where(eq(schema.dataSources.kind, "demo"))
+    .limit(1);
+  if (existing) return;
   const id = randomUUID();
   await db.insert(schema.dataSources).values({
     id,

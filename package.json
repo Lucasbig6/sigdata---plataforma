@@ -12,6 +12,7 @@
     "db:generate": "npm --prefix backend run db:generate",
     "db:migrate": "npm --prefix backend run db:migrate",
     "db:studio": "npm --prefix backend run db:studio",
+    "admin:create": "npm --prefix backend run admin:create --",
     "test": "npm --prefix backend test && npm --prefix frontend test"
   },
   "devDependencies": {

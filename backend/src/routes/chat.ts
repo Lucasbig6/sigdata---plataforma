@@ -59,7 +59,7 @@ chatRoutes.post("/", async (c) => {
     if (!projectId) throw new HttpError(400, "projectId é obrigatório.");
     if (!Array.isArray(messages)) throw new HttpError(400, "messages inválido.");
     const project = await getProject(user.id, projectId);
-    const source = await loadActiveSource(user.id, project.sourceId);
+    const source = await loadActiveSource(project.sourceId);
 
     const groq = createGroq({ apiKey });
     const aiTools = {
