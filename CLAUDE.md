@@ -28,7 +28,7 @@ Antes de alterar configurações (Next, Tailwind, cache, navegação), inspecion
 ## Áreas da aplicação
 
 - **Página inicial** — projetos em cards no estilo pasta/espaço de trabalho.
-- **Workspace do projeto** — chat à esquerda, área analítica redimensionável à direita.
+- **Workspace do projeto** — estilo NotebookLM: Fontes (datasets) à esquerda, notebook no centro (células de IA = mensagens do chat; células SQL em `notebook_cells`, intercaladas por `afterMessageId`; consultas do agente viram nós SQL), Estúdio redimensionável à direita. Código em `frontend/components/workspace/`.
 - **Fontes de dados** — conexões, CSV/XLSX, inspeção de tabelas, colunas e tipos.
 - **Painéis** — composição de visualizações, layout ajustável, salvar e compartilhar.
 

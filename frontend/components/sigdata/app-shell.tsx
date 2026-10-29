@@ -42,7 +42,7 @@ const PanelDivider = ({
   <div
     role="separator"
     aria-orientation="vertical"
-    aria-label="Redimensionar visualizações"
+    aria-label="Redimensionar Estúdio"
     onPointerDown={onPointerDown}
     className={cn(
       "group relative z-10 hidden w-2 shrink-0 cursor-col-resize touch-none bg-transparent lg:block",
@@ -123,7 +123,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
             onClick={() => (wide ? togglePanelCollapsed() : setPanelMobileOpen(true))}
           >
             <PanelRight className="size-4" aria-hidden />
-            Visualizações
+            Estúdio
           </Button>
           <ThemeToggle />
           <UserMenu />
@@ -157,8 +157,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
                 variant="ghost"
                 size="icon-sm"
                 onClick={togglePanelCollapsed}
-                aria-label="Expandir visualizações"
-                title="Expandir visualizações"
+                aria-label="Expandir Estúdio"
+                title="Expandir Estúdio"
               >
                 <PanelRightOpen className="size-4" aria-hidden />
               </Button>

@@ -345,16 +345,19 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         "border-s border-border",
         className,
       )}
-      aria-label="Visualizações salvas"
+      aria-label="Estúdio"
     >
       <header className="flex flex-col gap-2 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate pb-1 text-base font-medium text-foreground">Visualizações salvas</p>
+            <p className="truncate pb-0.5 text-base font-medium text-foreground">Estúdio</p>
+            <p className="truncate text-[11px] text-muted-foreground">
+              Visualizações salvas das células, prontas para virar dashboard
+            </p>
             <div className="mt-1 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-primary">
                 <BarChart3 className="size-3" aria-hidden />
-                {activeSource ? activeSource.name : "Sem fonte selecionada"}
+                {activeSource ? activeSource.name : "Sem dataset"}
               </span>
               {widgets.length > 0 ? (
                 <span className="text-[11px] text-muted-foreground">{widgets.length} salva(s)</span>
@@ -366,8 +369,8 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             variant="ghost"
             size="icon-sm"
             onClick={togglePanelCollapsed}
-            aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
-            title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
+            aria-label={panelCollapsed ? "Expandir Estúdio" : "Recolher Estúdio"}
+            title={panelCollapsed ? "Expandir Estúdio" : "Recolher Estúdio"}
           >
             {panelCollapsed ? <Plus className="size-4" aria-hidden /> : <Minus className="size-4" aria-hidden />}
           </Button>
@@ -377,8 +380,8 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             size="icon-sm"
             className="lg:hidden"
             onClick={() => setPanelMobileOpen(false)}
-            aria-label="Fechar visualizações"
-            title="Fechar visualizações"
+            aria-label="Fechar Estúdio"
+            title="Fechar Estúdio"
           >
             <ChevronRight className="size-4" aria-hidden />
           </Button>
@@ -468,7 +471,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
             </span>
           </>
         ) : (
-          "Escolha um conjunto de dados na barra lateral para o assistente consultar."
+          "Escolha um dataset em Fontes para o agente e as células SQL consultarem."
         )}
       </p>
     </section>

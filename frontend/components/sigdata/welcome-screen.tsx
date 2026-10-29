@@ -115,12 +115,12 @@ export const WelcomeScreen = () => {
 
       <div className="flex max-w-2xl flex-col gap-3">
         <h1 className="text-3xl font-medium tracking-tight text-balance text-foreground sm:text-4xl">
-          Inteligência de dados, em uma conversa.
+          Um notebook para analisar seus dados.
         </h1>
         <p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
           {source
-            ? "Pergunte sobre os seus dados ou comece por uma das sugestões abaixo."
-            : "Explore seus dados, encontre padrões e transforme perguntas em análises."}
+            ? "Pergunte ao agente ou escreva SQL: cada pergunta e cada consulta vira uma célula com o resultado."
+            : "Escolha um dataset e combine o agente de IA com células SQL, como num notebook."}
         </p>
       </div>
 
@@ -139,9 +139,22 @@ export const WelcomeScreen = () => {
       {source && prompts.length > 0 ? <SuggestedPrompts prompts={prompts} /> : null}
       {!source ? <PickSource notebookId={notebookId} /> : null}
 
-      <p className="text-xs text-muted-foreground/70">
-        As visualizações que você salvar das respostas ficam no painel lateral.
-      </p>
+      {source ? (
+        <ul className="grid w-full max-w-xl gap-2 text-start text-xs text-muted-foreground sm:grid-cols-3">
+          <li className="rounded-lg border border-border/70 px-3 py-2">
+            <span className="mb-0.5 block font-medium text-foreground">✦ Agente</span>
+            Pergunte em português; ele consulta e explica.
+          </li>
+          <li className="rounded-lg border border-border/70 px-3 py-2">
+            <span className="mb-0.5 block font-mono font-medium text-foreground">SQL</span>
+            Use “+ SQL” e Ctrl+Enter para executar.
+          </li>
+          <li className="rounded-lg border border-border/70 px-3 py-2">
+            <span className="mb-0.5 block font-medium text-foreground">Estúdio</span>
+            Salve tabelas e gráficos e monte dashboards.
+          </li>
+        </ul>
+      ) : null}
     </div>
   );
 };

@@ -28,8 +28,8 @@ const describeTables = (tables: SourceTable[]) => {
   return lines.join("\n");
 };
 
-/** Instruções do assistente, com o schema da fonte ativa do projeto. */
-export const buildSystemPrompt = (source: SourceRow | null) => {
+/** Instruções do assistente, com o schema da fonte ativa e as células SQL do notebook. */
+export const buildSystemPrompt = (source: SourceRow | null, notebookCells = "") => {
   const base = [
     "Você é o assistente analítico do SIGDATA. Responda em português do Brasil, de forma objetiva.",
     "Regras:",
@@ -54,8 +54,8 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
     return [
       ...base,
       "",
-      "Nenhuma fonte de dados está selecionada neste projeto. Se o usuário pedir números,",
-      "peça para escolher uma fonte em 'Conjuntos de dados' na barra lateral (ou criar uma em Fontes de dados).",
+      "Nenhum dataset está selecionado neste projeto. Se o usuário pedir números,",
+      "peça para escolher um dataset em 'Fontes' na barra lateral.",
     ].join("\n");
   }
   const dialect = source.kind === "postgresql" ? "PostgreSQL" : "DuckDB (sintaxe próxima do PostgreSQL)";
@@ -66,6 +66,7 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
     source.description ? `Descrição: ${source.description}` : "",
     "Tabelas e colunas (tipos: numero, texto, data, booleano, outro):",
     describeTables(source.tables),
+    notebookCells ? `\n${notebookCells}` : "",
   ]
     .filter(Boolean)
     .join("\n");

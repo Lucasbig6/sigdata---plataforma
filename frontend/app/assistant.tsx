@@ -11,6 +11,8 @@ import { AppShell } from "@/components/sigdata/app-shell";
 import { VisualizationTools } from "@/components/sigdata/create-visualization-tool";
 import { PanelTools } from "@/components/sigdata/panel-tools";
 import { WelcomeScreen } from "@/components/sigdata/welcome-screen";
+import { CellsAfterMessage, ComposerSqlButton, OrphanCells } from "@/components/workspace/notebook/cell-slots";
+import { QueryNodeTool } from "@/components/workspace/notebook/query-node";
 import { Button } from "@/components/ui/button";
 import { useChatStore } from "@/lib/chat/store";
 import { DEFAULT_NOTEBOOK_TITLE, useNotebooksStore } from "@/lib/notebooks/store";
@@ -72,16 +74,25 @@ const AssistantRuntimeInner = ({
   return (
     <AssistantRuntimeProvider runtime={runtime}>
       <VisualizationTools />
+      <QueryNodeTool />
       <PanelTools />
       <NotebookTitleBinder notebookId={notebookId} />
       <AppShell>
-        <Thread components={{ Welcome: WelcomeScreen }} />
+        <Thread components={NOTEBOOK_COMPONENTS} />
       </AppShell>
     </AssistantRuntimeProvider>
   );
 };
 
 const EMPTY_MESSAGES: UIMessage[] = [];
+
+/** O chat vira notebook: células SQL entre as mensagens e "+ SQL" no rodapé. */
+const NOTEBOOK_COMPONENTS = {
+  Welcome: WelcomeScreen,
+  MessageAppendix: CellsAfterMessage,
+  ThreadAppendix: OrphanCells,
+  ComposerExtra: ComposerSqlButton,
+};
 
 /** Follow-ups oferecidos após cada resposta, conforme o projeto tem (ou não) fonte. */
 const followupsFor = (hasSource: boolean) =>

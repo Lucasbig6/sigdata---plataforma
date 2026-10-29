@@ -11,6 +11,7 @@ import {
   type UIMessage,
 } from "ai";
 import { Hono } from "hono";
+import { describeCellsForPrompt } from "../cells";
 import { buildSystemPrompt, loadActiveSource, persistConversation, serverTools } from "../chat";
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, requireUser } from "../http";
@@ -72,7 +73,9 @@ chatRoutes.post("/", async (c) => {
       abortSignal: req.signal,
       model: groq(MODEL),
       messages: await convertToModelMessages(safeMessages, { tools: aiTools }),
-      system: [buildSystemPrompt(source), system].filter(Boolean).join("\n\n"),
+      system: [buildSystemPrompt(source, source ? await describeCellsForPrompt(project.id) : ""), system]
+        .filter(Boolean)
+        .join("\n\n"),
       tools: aiTools,
       stopWhen: isStepCount(MAX_STEPS),
       maxOutputTokens: MAX_OUTPUT_TOKENS,

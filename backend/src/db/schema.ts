@@ -204,6 +204,27 @@ export const results = pgTable(
   (table) => [index("results_project_idx").on(table.projectId, table.createdAt)],
 );
 
+/** Células SQL do notebook (intercaladas com as mensagens do chat). */
+export const notebookCells = pgTable(
+  "notebook_cells",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    afterMessageId: text("after_message_id"),
+    position: integer("position").notNull().default(0),
+    title: text("title").notNull().default(""),
+    sql: text("sql").notNull().default(""),
+    sourceId: text("source_id").references(() => dataSources.id, { onDelete: "set null" }),
+    resultId: text("result_id").references(() => results.id, { onDelete: "set null" }),
+    runNumber: integer("run_number"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("notebook_cells_project_idx").on(table.projectId, table.createdAt)],
+);
+
 export const analyses = pgTable(
   "analyses",
   {

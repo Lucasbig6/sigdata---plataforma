@@ -4,8 +4,6 @@ import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, type ComponentProps } from "react";
 import {
-  Check,
-  ChevronDown,
   Code2,
   Database,
   FolderKanban,
@@ -38,8 +36,8 @@ import {
 import { signOut, useCan, useSession } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
-import { isWorkspaceSource } from "@/lib/domain/sources";
 import { UserAvatar } from "./user-menu";
+import { SourcesList } from "@/components/workspace/sources-list";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
@@ -74,13 +72,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const createNotebook = useNotebooksStore((state) => state.createNotebook);
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
   const deleteNotebook = useNotebooksStore((state) => state.deleteNotebook);
-  const datasetsHydrated = useDatasetsStore((state) => state.hydrated);
   const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
-  const datasets = useDatasetsStore((state) => state.datasets);
-  const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
-  const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId) ?? null;
-  const selectedId = activeNotebook?.sourceId ?? null;
-  const readyDatasets = datasets.filter(isWorkspaceSource);
   const { data: session } = useSession();
   const canManageSources = useCan("analista");
   const isAdmin = useCan("admin");
@@ -89,8 +81,6 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
     hydrateDatasets();
     hydrateNotebooks();
   }, [hydrateDatasets, hydrateNotebooks]);
-
-  const selectedDataset = readyDatasets.find((dataset) => dataset.id === selectedId) ?? null;
 
   const normalized = search.trim().toLowerCase();
   const visibleNotebooks = notebooks.filter((notebook) =>
@@ -115,62 +105,9 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
       </SidebarHeader>
 
       <SidebarContent className="gap-5 px-3 py-3">
-        <SidebarGroup className="gap-2 p-0">
-          <SidebarGroupContent className="flex flex-col gap-2">
-            <h1 className="text-sm font-regular text-foreground">Conjuntos de dados</h1>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="flex h-9 w-full items-center gap-2 rounded-lg border border-border/70 bg-background px-2.5 text-start text-sm text-foreground transition-colors outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50">
-                <Database className="size-4 shrink-0 text-muted-foreground" aria-hidden />
-                <span className="min-w-0 flex-1 truncate">
-                  {datasetsHydrated && selectedDataset
-                    ? selectedDataset.name
-                    : "Selecionar dataset"}
-                </span>
-                <ChevronDown className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-64">
-                {!activeNotebook ? (
-                  <DropdownMenuItem disabled>Abra um projeto para escolher a fonte</DropdownMenuItem>
-                ) : !datasetsHydrated || readyDatasets.length === 0 ? (
-                  <DropdownMenuItem disabled>
-                    Nenhum dataset disponível
-                  </DropdownMenuItem>
-                ) : (
-                  readyDatasets.map((dataset) => (
-                    <DropdownMenuItem
-                      key={dataset.id}
-                      onClick={() =>
-                        setNotebookSource(
-                          activeNotebook.id,
-                          dataset.id === selectedId ? null : dataset.id,
-                        )
-                      }
-                      className="gap-2.5"
-                    >
-                      <Check
-                        className={cn(
-                          "size-3.5 shrink-0",
-                          dataset.id === selectedId
-                            ? "text-primary"
-                            : "invisible",
-                        )}
-                        aria-hidden
-                      />
-                      <span className="min-w-0 flex-1 truncate">{dataset.name}</span>
-                    </DropdownMenuItem>
-                  ))
-                )}
-                {canManageSources ? (
-                  <>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
-                      <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                      Gerenciar datasets
-                    </DropdownMenuItem>
-                  </>
-                ) : null}
-              </DropdownMenuContent>
-            </DropdownMenu>
+        <SidebarGroup className="p-0">
+          <SidebarGroupContent>
+            <SourcesList />
           </SidebarGroupContent>
         </SidebarGroup>
 

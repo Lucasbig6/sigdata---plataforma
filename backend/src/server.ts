@@ -5,6 +5,7 @@ import { logger } from "hono/logger";
 import { auth } from "./auth";
 import { errorResponse } from "./http";
 import { adminRoutes } from "./routes/admin";
+import { cellsRoutes } from "./routes/cells";
 import { chatRoutes } from "./routes/chat";
 import { analysesRoutes, dashboardsRoutes, publicRoutes } from "./routes/dashboards";
 import { projectsRoutes } from "./routes/projects";
@@ -20,6 +21,7 @@ app.use(logger());
 
 app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
 
+app.route("/projects/:id/cells", cellsRoutes);
 app.route("/projects", projectsRoutes);
 app.route("/sources", sourcesRoutes);
 app.route("/results", resultsRoutes);

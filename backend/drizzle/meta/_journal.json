@@ -36,6 +36,13 @@
       "when": 1793287363028,
       "tag": "0004_fontes_sem_dono",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793293824917,
+      "tag": "0005_celulas_sql",
+      "breakpoints": true
     }
   ]
 }

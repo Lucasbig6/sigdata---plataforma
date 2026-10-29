@@ -1,12 +1,11 @@
 "use client";
 
-import { BookmarkPlus, Check, ChevronDown, Database, Loader2 } from "lucide-react";
+import { BookmarkPlus, Check, ChevronDown, Loader2 } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { JSONSchema7 } from "ai";
 import {
   useAssistantTool,
-  useAssistantToolUI,
   type AssistantToolProps,
   type ToolCallMessagePartProps,
 } from "@assistant-ui/react";
@@ -349,102 +348,8 @@ const createVisualizationTool = {
   render: CreateVisualizationUI,
 } satisfies AssistantToolProps<CreateVisualizationArgs, CreateVisualizationResult>;
 
-/* ------------------------------------------------- consultar_dados (servidor) */
-
-type QueryArgs = { sql: string; titulo: string };
-type QueryOutput =
-  | {
-      resultId: string;
-      colunas: { nome: string; tipo: string }[];
-      totalLinhas: number;
-      truncado: boolean;
-      amostra: Record<string, unknown>[];
-    }
-  | { erro: string };
-
-const cellText = (value: unknown) =>
-  typeof value === "number"
-    ? value.toLocaleString("pt-BR", { maximumFractionDigits: 2 })
-    : value == null
-      ? "—"
-      : String(value);
-
-const QueryToolUI = ({ args, result, status }: ToolCallMessagePartProps<QueryArgs, QueryOutput>) => {
-  const [open, setOpen] = useState(false);
-  const running = status?.type === "running";
-  const failed = result != null && "erro" in result;
-  const ok = result != null && "resultId" in result ? result : null;
-
-  return (
-    <div className="my-2 max-w-xl rounded-xl border border-border bg-card/60 text-sm shadow-sm">
-      <button
-        type="button"
-        onClick={() => setOpen((value) => !value)}
-        className="flex w-full items-center gap-2.5 px-3.5 py-2.5 text-start"
-        aria-expanded={open}
-      >
-        <span className="grid size-7 shrink-0 place-items-center rounded-lg border border-border bg-muted/40 text-muted-foreground">
-          {running ? <Loader2 className="size-3.5 animate-spin" aria-hidden /> : <Database className="size-3.5" aria-hidden />}
-        </span>
-        <span className="min-w-0 flex-1">
-          <span className="block truncate text-xs font-medium text-foreground">
-            {args?.titulo || "Consulta aos dados"}
-          </span>
-          <span className={cn("block truncate text-[11px]", failed ? "text-destructive" : "text-muted-foreground")}>
-            {running
-              ? "Consultando a fonte de dados…"
-              : failed
-                ? result.erro
-                : ok
-                  ? `${ok.totalLinhas} linha(s)${ok.truncado ? " (truncado)" : ""} · ${ok.colunas.length} coluna(s)`
-                  : "Aguardando…"}
-          </span>
-        </span>
-        <ChevronDown
-          className={cn("size-3.5 shrink-0 text-muted-foreground transition-transform", open && "rotate-180")}
-          aria-hidden
-        />
-      </button>
-      {open ? (
-        <div className="space-y-2 border-t border-border px-3.5 py-3">
-          <pre className="max-h-48 overflow-auto rounded-lg bg-muted/50 p-2.5 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
-            {args?.sql}
-          </pre>
-          {ok && ok.amostra.length > 0 ? (
-            <div className="max-h-56 overflow-auto rounded-lg border border-border">
-              <table className="w-full text-[11px]">
-                <thead className="sticky top-0 bg-muted/80">
-                  <tr>
-                    {ok.colunas.map((column) => (
-                      <th key={column.nome} className="whitespace-nowrap px-2 py-1.5 text-left font-medium text-muted-foreground">
-                        {column.nome}
-                      </th>
-                    ))}
-                  </tr>
-                </thead>
-                <tbody>
-                  {ok.amostra.map((row, index) => (
-                    <tr key={index} className="border-t border-border/60">
-                      {ok.colunas.map((column) => (
-                        <td key={column.nome} className="whitespace-nowrap px-2 py-1 text-foreground">
-                          {cellText(row[column.nome])}
-                        </td>
-                      ))}
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
-  );
-};
-
-/** Registra create_visualization (frontend) e a UI de consultar_dados (executada no servidor). */
+/** Registra create_visualization (frontend). A UI de consultar_dados é o nó SQL do notebook. */
 export const VisualizationTools = () => {
   useAssistantTool(createVisualizationTool);
-  useAssistantToolUI({ toolName: "consultar_dados", render: QueryToolUI });
   return null;
 };
