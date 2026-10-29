@@ -10,6 +10,7 @@ import { SectionPlaceholder } from "./section-placeholder";
 import { SigdataSidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
 import { WorkPanel } from "./work-panel";
+import { WorkspaceTitle } from "./workspace-title";
 
 const PANEL_BREAKPOINT = "(min-width: 1024px)";
 
@@ -111,13 +112,8 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
       <SidebarInset className="min-h-0 min-w-0">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-border px-3 sm:px-4">
           <SidebarTrigger aria-label="Alternar barra lateral" />
-          <div className="flex min-w-0 flex-1 items-baseline gap-2">
-            <h1 className="truncate text-sm font-medium text-foreground">
-              {SECTION_TITLES[section]}
-            </h1>
-            <span className="hidden truncate text-xs text-muted-foreground sm:inline">
-              SIGDATA — inteligência de dados
-            </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <WorkspaceTitle fallback={SECTION_TITLES[section]} />
           </div>
           <Button
             variant="outline"

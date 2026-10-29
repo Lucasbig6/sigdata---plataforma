@@ -19,6 +19,7 @@ export default function DashboardsPage() {
   const router = useRouter();
   const hydrated = useDashboardsStore((state) => state.hydrated);
   const hydrate = useDashboardsStore((state) => state.hydrate);
+  const loadError = useDashboardsStore((state) => state.loadError);
   const order = useDashboardsStore((state) => state.order);
   const dashboards = useDashboardsStore((state) => state.dashboards);
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
@@ -84,6 +85,21 @@ export default function DashboardsPage() {
                 className="h-40 animate-pulse rounded-xl border border-border/60 bg-card/50"
               />
             ))}
+          </div>
+        ) : loadError ? (
+          <div
+            role="alert"
+            className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-destructive/40 px-6 py-16 text-center"
+          >
+            <p className="text-sm font-medium text-foreground">Não foi possível carregar os dashboards</p>
+            <p className="max-w-sm text-xs text-muted-foreground">{loadError}</p>
+            <button
+              type="button"
+              onClick={hydrate}
+              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/60"
+            >
+              Tentar novamente
+            </button>
           </div>
         ) : items.length === 0 ? (
           <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 px-6 py-16 text-center">

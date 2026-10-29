@@ -4,7 +4,7 @@
  * projeto no servidor (/api/projects/:id/panel). Origem: tool create_visualization.
  */
 import { create } from "zustand";
-import { api, ApiError, background } from "@/lib/api/client";
+import { api, ApiError } from "@/lib/api/client";
 import {
   MAX_WIDGETS_PER_NOTEBOOK,
   type PanelWidget,
@@ -78,6 +78,8 @@ const clamp = (value: number, min: number, max: number) =>
 type PanelStore = {
   widgetsByNotebook: Record<string, PanelWidget[]>;
   loaded: Record<string, boolean>;
+  /** Falha ao carregar o painel de cada projeto (limpa ao tentar de novo). */
+  loadErrors: Record<string, string>;
   saveError: string | null;
 
   /** Carrega o painel do projeto (uma vez); a promessa resolve quando os widgets estão disponíveis. */
@@ -126,13 +128,15 @@ export const usePanelStore = create<PanelStore>((set, get) => {
   return {
     widgetsByNotebook: {},
     loaded: {},
+    loadErrors: {},
     saveError: null,
 
     load: (notebookId) => {
       const pending = loading.get(notebookId);
       if (pending) return pending;
       if (get().loaded[notebookId]) return Promise.resolve();
-      set({ loaded: { ...get().loaded, [notebookId]: true } });
+      const { [notebookId]: _cleared, ...restErrors } = get().loadErrors;
+      set({ loadErrors: restErrors });
       const request = api<{ widgets: PanelWidget[] }>(`/api/projects/${notebookId}/panel`)
           .catch((error: unknown) => {
             // projeto recém-criado (POST ainda em andamento)
@@ -140,12 +144,18 @@ export const usePanelStore = create<PanelStore>((set, get) => {
             throw error;
           })
           .then(({ widgets }) => {
+            set({ loaded: { ...get().loaded, [notebookId]: true } });
             // não sobrescreve widgets adicionados enquanto a requisição estava em voo
             if (get().widgetsByNotebook[notebookId]?.length) return;
             set({ widgetsByNotebook: { ...get().widgetsByNotebook, [notebookId]: widgets } });
           });
-      loading.set(notebookId, request.catch(() => undefined).finally(() => loading.delete(notebookId)));
-      background(request, "carregar painel");
+      const settled = request
+        .catch((error: Error) => {
+          console.error("[sigdata] carregar painel:", error);
+          set({ loadErrors: { ...get().loadErrors, [notebookId]: error.message } });
+        })
+        .finally(() => loading.delete(notebookId));
+      loading.set(notebookId, settled);
       return loading.get(notebookId) ?? Promise.resolve();
     },
 
@@ -237,9 +247,11 @@ export const usePanelStore = create<PanelStore>((set, get) => {
       panelTimers.delete(notebookId);
       const widgetsByNotebook = { ...get().widgetsByNotebook };
       const loaded = { ...get().loaded };
+      const loadErrors = { ...get().loadErrors };
       delete widgetsByNotebook[notebookId];
       delete loaded[notebookId];
-      set({ widgetsByNotebook, loaded });
+      delete loadErrors[notebookId];
+      set({ widgetsByNotebook, loaded, loadErrors });
     },
   };
 });

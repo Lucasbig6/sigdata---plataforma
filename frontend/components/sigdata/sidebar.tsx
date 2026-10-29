@@ -2,17 +2,17 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { Fragment, useEffect, useState, type ComponentProps } from "react";
+import { useEffect, useState, type ComponentProps } from "react";
 import {
   Check,
   ChevronDown,
+  Code2,
   Database,
   FolderKanban,
   LayoutDashboard,
   LogOut,
   MessageSquarePlus,
   Search,
-  Trash2,
   UserRound,
 } from "lucide-react";
 import {
@@ -40,6 +40,7 @@ import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
+import { ChatListItem } from "./chat-list-item";
 import { Logo } from "./logo";
 
 type NavItem = {
@@ -69,6 +70,8 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
   const notebooks = useNotebooksStore((state) => state.notebooks);
   const createNotebook = useNotebooksStore((state) => state.createNotebook);
+  const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
+  const deleteNotebook = useNotebooksStore((state) => state.deleteNotebook);
   const datasetsHydrated = useDatasetsStore((state) => state.hydrated);
   const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
   const datasets = useDatasetsStore((state) => state.datasets);
@@ -231,37 +234,21 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                     const isActive =
                       notebook.id === activeNotebookId && pathname?.startsWith("/workspace");
                     return (
-                      <Fragment key={notebook.id}>
-                        <li>
-                          <button
-                            type="button"
-                            onClick={() => router.push(`/workspace?notebook=${notebook.id}`)}
-                            className={cn(
-                              "flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-start text-sm transition-colors outline-none",
-                              "focus-visible:ring-2 focus-visible:ring-ring/50",
-                              isActive
-                                ? "bg-muted text-foreground"
-                                : "text-muted-foreground hover:bg-muted/50 hover:text-foreground",
-                            )}
-                            title={notebook.title}
-                          >
-                            <MessageSquarePlus className="size-3.5 shrink-0 opacity-50" aria-hidden />
-                            <span className="min-w-0 flex-1 truncate">{notebook.title}</span>
-                          </button>
-                        </li>
-                        <li>
-                          <button
-                            type="button"
-                            onClick={() => useNotebooksStore.getState().deleteNotebook(notebook.id)}
-                            className="flex items-center gap-1 rounded-lg px-2 py-1 text-xs text-destructive hover:text-destructive focus-visible:ring-2 focus-visible:ring-destructive/50"
-                            title="Excluir projeto"
-                            aria-label={`Excluir projeto ${notebook.title}`}
-                          >
-                            <Trash2 className="size-3.5" aria-hidden />
-                            Excluir
-                          </button>
-                        </li>
-                      </Fragment>
+                      <li key={notebook.id}>
+                        <ChatListItem
+                          title={notebook.title}
+                          active={Boolean(isActive)}
+                          onOpen={() => router.push(`/workspace?notebook=${notebook.id}`)}
+                          onRename={(title) => renameNotebook(notebook.id, title)}
+                          onDelete={() => {
+                            deleteNotebook(notebook.id);
+                            if (!isActive) return;
+                            // excluiu a conversa aberta: abre outra, ou cria uma nova se não sobrou nenhuma
+                            const next = notebooks.find((entry) => entry.id !== notebook.id);
+                            router.push(`/workspace?notebook=${next ? next.id : createNotebook()}`);
+                          }}
+                        />
+                      </li>
                     );
                   })}
                 </ul>
@@ -301,6 +288,10 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
             <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
               <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               Fontes de dados
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
+              <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              Editor SQL
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
