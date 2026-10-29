@@ -175,16 +175,19 @@ export const ingestXlsx = async (id: string, file: string) => {
   });
 };
 
-/** Grava tabelas a partir de linhas em memória (usado pela fonte de demonstração). */
+const cellString = (value: unknown) =>
+  value == null ? "" : typeof value === "object" ? JSON.stringify(value) : String(value);
+
+/** Grava tabelas a partir de linhas em memória (fonte de demonstração e datasets). */
 export const ingestRows = async (
   id: string,
-  tables: { name: string; rows: Record<string, string | number>[] }[],
+  tables: { name: string; rows: Record<string, unknown>[] }[],
 ) => {
   await mkdir(sourceDir(id), { recursive: true });
   const files: { table: string; csv: string }[] = [];
   for (const [index, table] of tables.entries()) {
     const header = Object.keys(table.rows[0] ?? {});
-    const lines = [header.join(","), ...table.rows.map((row) => header.map((key) => csvCell(String(row[key] ?? ""))).join(","))];
+    const lines = [header.join(","), ...table.rows.map((row) => header.map((key) => csvCell(cellString(row[key]))).join(","))];
     const csv = path.join(sourceDir(id), `seed-${index}.csv`);
     await writeFile(csv, lines.join("\n"), "utf8");
     files.push({ table: table.name, csv });
@@ -240,12 +243,17 @@ export const removeDuckFiles = async (id: string) => {
   await rm(sourceDir(id), { recursive: true, force: true });
 };
 
-export const queryDuck = async (id: string, sql: string, limit = RESULT_ROW_LIMIT): Promise<QueryOutput> => {
+export const queryDuck = async (
+  id: string,
+  sql: string,
+  limit = RESULT_ROW_LIMIT,
+  offset = 0,
+): Promise<QueryOutput> => {
   const conn = await (await reader(id)).connect();
   const started = Date.now();
   const timer = setTimeout(() => conn.interrupt(), QUERY_TIMEOUT_MS);
   try {
-    const result = await conn.runAndReadAll(`SELECT * FROM (${sql}) AS sigdata_q LIMIT ${limit + 1}`);
+    const result = await conn.runAndReadAll(`SELECT * FROM (${sql}) AS sigdata_q LIMIT ${limit + 1} OFFSET ${offset}`);
     const columns = toColumns(result.columnNames(), result.columnTypes().map(String));
     const raw = (await result.getRowsJson()) as unknown[][];
     return {

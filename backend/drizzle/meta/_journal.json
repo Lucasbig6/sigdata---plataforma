@@ -15,6 +15,13 @@
       "when": 1793123376136,
       "tag": "0001_historico_versoes",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793244359905,
+      "tag": "0002_datasets",
+      "breakpoints": true
     }
   ]
 }
