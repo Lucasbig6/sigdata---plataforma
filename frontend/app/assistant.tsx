@@ -53,14 +53,19 @@ const AssistantRuntimeInner = ({
   notebookId: string;
   initialMessages: UIMessage[];
 }) => {
+  const notebooks = useNotebooksStore((state) => state.notebooks);
+  const hasSource = Boolean(notebooks.find((entry) => entry.id === notebookId)?.sourceId);
+
   const transport = useMemo(
     () => new AssistantChatTransport({ api: "/api/chat", body: { projectId: notebookId } }),
     [notebookId],
   );
+  const suggestions = useMemo(() => followupsFor(hasSource), [hasSource]);
 
   const runtime = useChatRuntime({
     messages: initialMessages,
     sendAutomaticallyWhen: lastAssistantMessageIsCompleteWithToolCalls,
+    suggestions,
     transport,
   });
 
@@ -77,6 +82,22 @@ const AssistantRuntimeInner = ({
 };
 
 const EMPTY_MESSAGES: UIMessage[] = [];
+
+/** Follow-ups oferecidos após cada resposta, conforme o projeto tem (ou não) fonte. */
+const followupsFor = (hasSource: boolean) =>
+  (hasSource
+    ? [
+        "Compare os dois melhores e os dois piores.",
+        "Mostre a evolução mês a mês.",
+        "Que valores fogem do padrão?",
+        "Salve isso como gráfico no painel.",
+      ]
+    : [
+        "Resuma os principais pontos.",
+        "Sugira três perguntas de aprofundamento.",
+        "Que dado eu deveria conectar para ir além?",
+      ]
+  ).map((prompt) => ({ prompt }));
 
 /** Carrega o histórico do servidor antes de montar o runtime do chat. */
 const NotebookLoader = ({ notebookId }: { notebookId: string }) => {

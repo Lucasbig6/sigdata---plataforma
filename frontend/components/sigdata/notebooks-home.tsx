@@ -56,9 +56,9 @@ export const NotebooksHome = () => {
       <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
 
       <main className="mx-auto px-30 py-6">
-        <div className="flex items-center justify-between gap-5 pb-10">
+        <div className="flex items-center justify-between gap-5 pb-5">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Projetos recentes
+            Projetos
           </h1>
           <Button onClick={openCreate} className="flex items-center gap-1.5 cursor-pointer">
             <Plus aria-hidden />
