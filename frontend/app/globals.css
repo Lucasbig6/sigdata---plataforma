@@ -398,3 +398,23 @@
     animation: none !important;
   }
 }
+
+/* Cores de sintaxe do editor SQL (components/fontes/sql). */
+:root {
+  --sql-keyword: oklch(0.45 0.19 285);
+  --sql-string: oklch(0.48 0.13 150);
+  --sql-number: oklch(0.55 0.16 50);
+  --sql-comment: oklch(0.62 0.02 250);
+  --sql-func: oklch(0.5 0.13 235);
+  --sql-type: oklch(0.5 0.15 330);
+  --sql-op: oklch(0.5 0.03 250);
+}
+.dark {
+  --sql-keyword: oklch(0.76 0.14 290);
+  --sql-string: oklch(0.8 0.13 150);
+  --sql-number: oklch(0.8 0.13 65);
+  --sql-comment: oklch(0.58 0.02 250);
+  --sql-func: oklch(0.8 0.1 230);
+  --sql-type: oklch(0.78 0.12 340);
+  --sql-op: oklch(0.72 0.03 250);
+}

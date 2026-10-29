@@ -86,12 +86,8 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
     setPg((current) => ({ ...current, [key]: value }));
 
   return (
-    <form
-      onSubmit={handleSubmit}
-      className="mb-6 flex flex-col gap-4 rounded-2xl border border-border/70 bg-card/60 p-4"
-    >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-3">
-        <h2 className="text-sm font-medium text-foreground">Nova fonte</h2>
         <div role="tablist" className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
           {(
             [

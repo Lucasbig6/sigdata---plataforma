@@ -31,6 +31,12 @@ type DatasetsStore = {
     description: string;
     connection: PostgresConnectionInput;
   }) => Promise<DataSource>;
+  createDataset: (input: {
+    sourceId: string;
+    sql: string;
+    name: string;
+    description: string;
+  }) => Promise<DataSource>;
   refreshSchema: (id: string) => Promise<DataSource>;
   profileTable: (id: string, table: string) => Promise<SourceTable>;
   removeDataset: (id: string) => Promise<void>;
@@ -55,7 +61,7 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
     datasets: [],
 
     hydrate: () => {
-      if (get().hydrated || hydrating) return;
+      if ((get().hydrated && !get().error) || hydrating) return;
       hydrating = get()
         .reload()
         .finally(() => {
@@ -90,6 +96,9 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
           json: { kind: "postgresql", ...input },
         }),
       ),
+
+    createDataset: async (input) =>
+      upsert(await api<DataSource>("/api/sources/dataset", { method: "POST", json: input })),
 
     refreshSchema: async (id) =>
       upsert(await api<DataSource>(`/api/sources/${id}/refresh`, { method: "POST" })),
