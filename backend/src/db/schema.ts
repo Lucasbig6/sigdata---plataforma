@@ -49,6 +49,8 @@ export const user = pgTable("user", {
   image: text("image"),
   /** Papel de acesso (ver shared/roles.ts). */
   role: text("role").$type<Role>().notNull().default("usuario"),
+  /** Conta desativada: não entra, mas o conteúdo é preservado. */
+  disabled: boolean("disabled").notNull().default(false),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -238,6 +240,8 @@ export const dashboards = pgTable(
     sharedAt: timestamp("shared_at", { withTimezone: true }),
     /** Fim da validade do link público (null = sem expiração). */
     sharedExpiresAt: timestamp("shared_expires_at", { withTimezone: true }),
+    /** Visível, somente leitura, para todos os usuários logados. */
+    sharedWithAll: boolean("shared_with_all").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
@@ -269,4 +273,34 @@ export const dashboardVersions = pgTable(
     createdAt: createdAt(),
   },
   (table) => [index("dashboard_versions_idx").on(table.dashboardId, table.createdAt)],
+);
+
+/** Dashboards compartilhados com pessoas específicas (somente leitura, exige login). */
+export const dashboardShares = pgTable(
+  "dashboard_shares",
+  {
+    dashboardId: text("dashboard_id")
+      .notNull()
+      .references(() => dashboards.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [primaryKey({ columns: [table.dashboardId, table.userId] }), index("dashboard_shares_user_idx").on(table.userId)],
+);
+
+/** Registro de atividades sensíveis. O autor fica denormalizado: sobrevive à remoção da conta. */
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: text("id").primaryKey(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+    actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+    actorName: text("actor_name").notNull(),
+    action: text("action").notNull(),
+    target: text("target").notNull().default(""),
+    detail: text("detail").notNull().default(""),
+  },
+  (table) => [index("audit_log_at_idx").on(table.at)],
 );

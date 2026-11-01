@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { audit } from "../audit";
 import { handle, HttpError, parseBody } from "../http";
 import { getProject } from "../projects";
 import { createPostgresSchema, postgresConnectionSchema } from "../sources/schemas";
@@ -17,6 +18,8 @@ import {
   profileTable,
   refreshSource,
   setPublished,
+  sourceUsage,
+  getManagedSource,
   runEditorQuery,
   runQuery,
   testPostgres,
@@ -42,13 +45,17 @@ sourcesRoutes.post(
       const form = await req.formData();
       const file = form.get("file");
       if (!(file instanceof File)) throw new HttpError(400, 'Envie um arquivo no campo "file".');
-      return createFromUpload(user.id, {
+      const created = await createFromUpload(user.id, {
         file,
         name: String(form.get("name") ?? ""),
         description: String(form.get("description") ?? ""),
       });
+      await audit(user, "fonte.importada", created.name, file.name);
+      return created;
     }
-    return createPostgres(user.id, await parseBody(req, createPostgresSchema));
+    const created = await createPostgres(user.id, await parseBody(req, createPostgresSchema));
+    await audit(user, "fonte.conectada", created.name, created.connectionLabel ?? "");
+    return created;
   }),
 );
 
@@ -62,7 +69,11 @@ const datasetSchema = z.object({
 /** Cria um dataset a partir de uma consulta SQL sobre uma fonte existente. */
 sourcesRoutes.post(
   "/dataset",
-  analystHandle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
+  analystHandle(async ({ req, user }) => {
+    const created = await createDataset(user.id, await parseBody(req, datasetSchema));
+    await audit(user, "dataset.criado", created.name);
+    return created;
+  }),
 );
 
 sourcesRoutes.post(
@@ -89,18 +100,28 @@ sourcesRoutes.patch(
 
 sourcesRoutes.delete(
   "/:id",
-  analystHandle<{ id: string }>(async ({ user, params }) => {
-    await deleteSource(user, params.id);
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
+    const name = (await getManagedSource(user, params.id)).name;
+    await deleteSource(user, params.id, new URL(req.url).searchParams.get("force") === "true");
+    await audit(user, "fonte.excluida", name);
     return { ok: true };
   }),
+);
+
+/** Onde a fonte/dataset está em uso: base para avisar antes de despublicar ou excluir. */
+sourcesRoutes.get(
+  "/:id/usage",
+  analystHandle<{ id: string }>(async ({ user, params }) => sourceUsage(user, params.id)),
 );
 
 /** Publica (ou retira) um dataset: usuários comuns só enxergam os publicados. */
 sourcesRoutes.post(
   "/:id/publish",
   analystHandle<{ id: string }>(async ({ req, user, params }) => {
-    const { published } = await parseBody(req, z.object({ published: z.boolean() }));
-    return setPublished(user, params.id, published);
+    const { published, force } = await parseBody(req, z.object({ published: z.boolean(), force: z.boolean().default(false) }));
+    const dataset = await setPublished(user, params.id, published, force);
+    await audit(user, published ? "dataset.publicado" : "dataset.despublicado", dataset.name);
+    return dataset;
   }),
 );
 

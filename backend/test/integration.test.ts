@@ -274,5 +274,101 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
         process.env.SIGDATA_OPEN_SIGNUP = "true";
       }
     });
+
+    test("admin desativa, reativa e remove contas; datasets publicados passam para ele", async () => {
+      const admin = await signUp("admin3@teste.dev");
+      await setRole("admin3@teste.dev", "admin");
+      const analista = await signUp("analista3@teste.dev");
+      await setRole("analista3@teste.dev", "analista");
+      const list = async () =>
+        (await (await request(admin, "GET", "/api/admin/users")).json()) as { id: string; email: string; disabled: boolean }[];
+      const target = (await list()).find((entry) => entry.email === "analista3@teste.dev")!;
+
+      // dataset publicado do analista sobrevive à remoção
+      const sources = (await (await request(analista, "GET", "/api/sources")).json()) as { id: string; kind: string }[];
+      const demo = sources.find((source) => source.kind === "demo")!;
+      const dataset = (await (
+        await request(analista, "POST", "/api/sources/dataset", { sourceId: demo.id, sql: "SELECT * FROM municipios", name: "Herdado" })
+      ).json()) as { id: string };
+      await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: true });
+
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${target.id}`, { disabled: true })).status, 200);
+      assert.ok([401, 403].includes((await request(analista, "GET", "/api/projects")).status), "sessão antiga deixa de valer");
+      const login = await request(null, "POST", "/api/auth/sign-in/email", { email: "analista3@teste.dev", password: "senha-de-teste-123" });
+      assert.notEqual(login.status, 200, "conta desativada não entra");
+
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${target.id}`, { disabled: false })).status, 200);
+      const again = await request(null, "POST", "/api/auth/sign-in/email", { email: "analista3@teste.dev", password: "senha-de-teste-123" });
+      assert.equal(again.status, 200, "reativada, volta a entrar");
+
+      const self = (await list()).find((entry) => entry.email === "admin3@teste.dev")!;
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${self.id}`, { disabled: true })).status, 409);
+      assert.equal((await request(admin, "DELETE", `/api/admin/users/${self.id}`)).status, 409);
+
+      assert.equal((await request(admin, "DELETE", `/api/admin/users/${target.id}`)).status, 200);
+      assert.ok(!(await list()).some((entry) => entry.email === "analista3@teste.dev"));
+      const adminSources = (await (await request(admin, "GET", "/api/sources")).json()) as { id: string }[];
+      assert.ok(adminSources.some((source) => source.id === dataset.id), "dataset publicado ficou com o admin");
+
+      const audit = (await (await request(admin, "GET", "/api/admin/audit")).json()) as { action: string }[];
+      for (const action of ["usuario.desativado", "usuario.reativado", "usuario.removido", "dataset.publicado"]) {
+        assert.ok(audit.some((entry) => entry.action === action), `registrou ${action}`);
+      }
+    });
+
+    test("despublicar ou excluir dataset em uso exige confirmação", async () => {
+      const analista = await signUp("analista4@teste.dev");
+      await setRole("analista4@teste.dev", "analista");
+      const sources = (await (await request(analista, "GET", "/api/sources")).json()) as { id: string; kind: string }[];
+      const demo = sources.find((source) => source.kind === "demo")!;
+      const dataset = (await (
+        await request(analista, "POST", "/api/sources/dataset", { sourceId: demo.id, sql: "SELECT * FROM municipios", name: "Em uso" })
+      ).json()) as { id: string };
+      await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: true });
+
+      const comum = await signUp("comum4@teste.dev");
+      const project = (await (await request(comum, "POST", "/api/projects", { title: "Usa o dataset" })).json()) as { id: string };
+      assert.equal((await request(comum, "PATCH", `/api/projects/${project.id}`, { sourceId: dataset.id })).status, 200);
+
+      const usage = (await (await request(analista, "GET", `/api/sources/${dataset.id}/usage`)).json()) as {
+        projects: number;
+        people: number;
+      };
+      assert.equal(usage.projects, 1);
+      assert.equal(usage.people, 1);
+
+      assert.equal((await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: false })).status, 409);
+      assert.equal((await request(analista, "DELETE", `/api/sources/${dataset.id}`)).status, 409);
+      assert.equal((await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: false, force: true })).status, 200);
+    });
+
+    test("dashboard compartilhado com pessoas logadas: só quem foi incluído vê", async () => {
+      const dona = await signUp("dona5@teste.dev");
+      const convidado = await signUp("convidado5@teste.dev");
+      const fora = await signUp("fora5@teste.dev");
+      const [dashboard] = (await (await request(dona, "GET", "/api/dashboards")).json()) as { id: string }[];
+      const id = dashboard!.id;
+
+      assert.equal((await request(convidado, "GET", `/api/dashboards/${id}/view`)).status, 404);
+      const bad = await request(dona, "PUT", `/api/dashboards/${id}/access`, { sharedWithAll: false, emails: ["ninguem@teste.dev"] });
+      assert.equal(bad.status, 422);
+
+      const ok = await request(dona, "PUT", `/api/dashboards/${id}/access`, { sharedWithAll: false, emails: ["convidado5@teste.dev"] });
+      assert.equal(ok.status, 200);
+
+      const shared = (await (await request(convidado, "GET", "/api/dashboards/shared")).json()) as { id: string; ownerName: string }[];
+      assert.ok(shared.some((entry) => entry.id === id));
+      const view = await request(convidado, "GET", `/api/dashboards/${id}/view`);
+      assert.equal(view.status, 200);
+      assert.ok(!JSON.stringify(await view.json()).includes("shareToken"));
+      assert.equal((await request(fora, "GET", `/api/dashboards/${id}/view`)).status, 404);
+      assert.equal((await request(null, "GET", `/api/dashboards/${id}/view`)).status, 401);
+      // quem só vê não consegue editar
+      assert.equal((await request(convidado, "PUT", `/api/dashboards/${id}`, {})).status, 404);
+      assert.equal((await request(convidado, "PUT", `/api/dashboards/${id}/access`, { sharedWithAll: true, emails: [] })).status, 404);
+
+      await request(dona, "PUT", `/api/dashboards/${id}/access`, { sharedWithAll: true, emails: [] });
+      assert.equal((await request(fora, "GET", `/api/dashboards/${id}/view`)).status, 200, "compartilhado com todos");
+    });
   });
 });

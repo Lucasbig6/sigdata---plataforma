@@ -86,7 +86,12 @@ autocadastro na tela de login fica aberto em desenvolvimento e **fechado em prod
 Projetos e dashboards são sempre privados de quem os criou (o admin vê só as contagens). Um dataset em
 rascunho só aparece para quem o criou e para o admin; ao publicar, todos o enxergam e podem usá-lo.
 Despublicar faz projetos e dashboards de outras pessoas que o usam deixarem de funcionar até nova publicação.
-As regras valem no backend (`handle(..., { roles })`); esconder menus no frontend é só conveniência.
+O admin também desativa/reativa e remove contas (datasets publicados de quem é removido passam para ele) e
+vê o registro de atividades em `/admin/atividades` (fontes, datasets, contas, links e compartilhamentos).
+Antes de despublicar ou excluir um dataset em uso, a tela mostra quantos dashboards e projetos serão afetados.
+Um dashboard pode ser compartilhado com pessoas logadas (por e-mail, ou com todos os usuários), em somente
+leitura, além do link público. Contas novas só recebem a fonte e os dashboards de demonstração fora de
+produção (`SIGDATA_SEED_DEMO`). As regras valem no backend (`handle(..., { roles })`); esconder menus no frontend é só conveniência.
 
 ## Produção
 

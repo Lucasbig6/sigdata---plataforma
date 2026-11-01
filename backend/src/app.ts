@@ -10,7 +10,7 @@ import { auth } from "./auth";
 import { errorResponse } from "./http";
 import { adminRoutes } from "./routes/admin";
 import { chatRoutes } from "./routes/chat";
-import { analysesRoutes, dashboardsRoutes, publicRoutes } from "./routes/dashboards";
+import { analysesRoutes, dashboardsRoutes, publicRoutes, viewerRoutes } from "./routes/dashboards";
 import { projectsRoutes } from "./routes/projects";
 import { resultsRoutes, sourcesRoutes } from "./routes/sources";
 
@@ -39,6 +39,8 @@ app.route("/projects", projectsRoutes);
 app.route("/sources", sourcesRoutes);
 app.route("/results", resultsRoutes);
 app.route("/analyses", analysesRoutes);
+// as rotas de leitura (/shared, /:id/view) vêm antes das do editor (/:id)
+app.route("/dashboards", viewerRoutes);
 app.route("/dashboards", dashboardsRoutes);
 app.route("/public", publicRoutes);
 app.route("/chat", chatRoutes);

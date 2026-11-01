@@ -21,6 +21,9 @@ export type CurrentUser = { id: string; name: string; email: string; role: Role 
 export const requireUser = async (headers: Headers): Promise<CurrentUser> => {
   const session = await auth.api.getSession({ headers });
   if (!session) throw new HttpError(401, "Sessão expirada. Entre novamente.");
+  if ((session.user as { disabled?: boolean }).disabled) {
+    throw new HttpError(403, "Conta desativada. Fale com um administrador.");
+  }
   const { id, name, email } = session.user;
   return { id, name, email, role: toRole((session.user as { role?: unknown }).role) };
 };

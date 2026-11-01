@@ -2,7 +2,7 @@ import { invalidateSourceCache } from "../query-cache";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { and, desc, eq, or } from "drizzle-orm";
+import { and, desc, eq, or, sql } from "drizzle-orm";
 import type {
   AnalyticResult,
   DataSource,
@@ -208,17 +208,53 @@ export const updateSourceMeta = async (
   });
 };
 
+export type SourceUsage = { dashboards: number; projects: number; people: number };
+
+/**
+ * Onde uma fonte/dataset está em uso: dashboards que a ligam (pelo `sourceId` nos elementos),
+ * projetos que a têm como fonte ativa e quantas pessoas isso envolve (fora o dono da fonte).
+ */
+export const sourceUsage = async (actor: Actor, id: string): Promise<SourceUsage> => {
+  const row = await getManagedSource(actor, id);
+  const pattern = `%"sourceId": "${id}"%`;
+  const dashboards = await db
+    .select({ userId: schema.dashboards.userId })
+    .from(schema.dashboards)
+    .where(sql`${schema.dashboards.doc}::text LIKE ${pattern}`);
+  const projects = await db
+    .select({ userId: schema.projects.userId })
+    .from(schema.projects)
+    .where(eq(schema.projects.sourceId, id));
+  const people = new Set([...dashboards, ...projects].map((entry) => entry.userId));
+  people.delete(row.userId);
+  return { dashboards: dashboards.length, projects: projects.length, people: people.size };
+};
+
+/** Impede quebrar o que outras pessoas usam sem confirmação explícita (`force`). */
+const assertUnusedOrForced = async (actor: Actor, id: string, force: boolean) => {
+  if (force) return;
+  const usage = await sourceUsage(actor, id);
+  if (usage.dashboards + usage.projects > 0) {
+    throw new HttpError(
+      409,
+      `Em uso por ${usage.dashboards} dashboard(s) e ${usage.projects} projeto(s) (${usage.people} outra(s) pessoa(s)). Confirme para continuar.`,
+    );
+  }
+};
+
 /** Publica ou retira da publicação um dataset pronto (só datasets são publicados). */
-export const setPublished = async (actor: Actor, id: string, published: boolean) => {
+export const setPublished = async (actor: Actor, id: string, published: boolean, force = false) => {
   const row = await getManagedSource(actor, id);
   if (row.kind !== "dataset") throw new HttpError(400, "Só datasets podem ser publicados.");
   if (published) assertReady(row);
+  else if (row.published) await assertUnusedOrForced(actor, id, force);
   invalidateSourceCache(row.id);
   return finish(row.id, { published });
 };
 
-export const deleteSource = async (actor: Actor, id: string) => {
+export const deleteSource = async (actor: Actor, id: string, force = false) => {
   const row = await getManagedSource(actor, id);
+  await assertUnusedOrForced(actor, id, force);
   await db.delete(schema.dataSources).where(eq(schema.dataSources.id, row.id));
   invalidateSourceCache(row.id);
   if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);

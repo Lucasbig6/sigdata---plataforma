@@ -1,3 +1,4 @@
+import { eq } from "drizzle-orm";
 import { betterAuth } from "better-auth";
 import { APIError } from "better-auth/api";
 import { adminCreationRole, openSignup, rememberAccessLink } from "./access";
@@ -66,6 +67,21 @@ export const auth = betterAuth({
     additionalFields: { role: { type: "string", defaultValue: "usuario", input: false } },
   },
   databaseHooks: {
+    session: {
+      create: {
+        // conta desativada não abre sessão nova (as abertas são encerradas ao desativar)
+        before: async (created) => {
+          const [owner] = await db
+            .select({ disabled: schema.user.disabled })
+            .from(schema.user)
+            .where(eq(schema.user.id, created.userId));
+          if (owner?.disabled) {
+            throw new APIError("FORBIDDEN", { message: "Conta desativada. Fale com um administrador." });
+          }
+          return { data: created };
+        },
+      },
+    },
     user: {
       create: {
         // a primeira conta criada administra o sistema; as demais entram como usuário
