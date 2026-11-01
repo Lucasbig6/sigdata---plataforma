@@ -36,7 +36,8 @@ import {
   SidebarMenuItem,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { signOut, useSession } from "@/lib/auth-client";
+import { signOut, useRole, useSession } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { cn } from "@/lib/utils";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
@@ -83,6 +84,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const selectedId = activeNotebook?.sourceId ?? null;
   const readyDatasets = datasets.filter((dataset) => dataset.status === "pronta");
   const { data: session } = useSession();
+  const role = useRole();
 
   useEffect(() => {
     hydrateDatasets();
@@ -159,11 +161,15 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                     </DropdownMenuItem>
                   ))
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
-                  <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-                  Gerenciar datasets
-                </DropdownMenuItem>
+                {canManageData(role ?? "usuario") ? (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
+                      <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                      Gerenciar datasets
+                    </DropdownMenuItem>
+                  </>
+                ) : null}
               </DropdownMenuContent>
             </DropdownMenu>
           </SidebarGroupContent>
@@ -299,14 +305,18 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
             </span>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" side="top" className="w-56">
-            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
-              <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              Fontes de dados
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
-              <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
-              Editor SQL
-            </DropdownMenuItem>
+            {canManageData(role ?? "usuario") ? (
+              <>
+                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados")}>
+                  <Database className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  Fontes de dados
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
+                  <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                  Editor SQL
+                </DropdownMenuItem>
+              </>
+            ) : null}
             <DropdownMenuItem onClick={() => router.push("/configuracoes")}>
               <Settings className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               Configurações

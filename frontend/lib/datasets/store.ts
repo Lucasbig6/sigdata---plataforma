@@ -40,6 +40,7 @@ type DatasetsStore = {
   refreshSchema: (id: string) => Promise<DataSource>;
   profileTable: (id: string, table: string) => Promise<SourceTable>;
   removeDataset: (id: string) => Promise<void>;
+  setPublished: (id: string, published: boolean) => Promise<void>;
 };
 
 let hydrating: Promise<void> | null = null;
@@ -115,6 +116,10 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
         });
       }
       return profiled;
+    },
+
+    setPublished: async (id, published) => {
+      upsert(await api<DataSource>(`/api/sources/${id}/publish`, { method: "POST", json: { published } }));
     },
 
     removeDataset: async (id) => {

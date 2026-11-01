@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Code2, Loader2, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Code2, EyeOff, Globe, Loader2, Search, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { DATASET_KIND_LABELS, type Dataset } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
@@ -27,11 +27,14 @@ export const SourceTile = ({
   selected,
   onInspect,
   onRemove,
+  onTogglePublish,
 }: {
   dataset: Dataset;
   selected: boolean;
   onInspect: () => void;
   onRemove: () => void;
+  /** Só datasets: publicar para todos os usuários ou voltar a rascunho. */
+  onTogglePublish?: () => void;
 }) => {
   const rows = dataset.tables.reduce((sum, table) => sum + (table.rowCount ?? 0), 0);
   const definition = dataset.definition;
@@ -76,6 +79,17 @@ export const SourceTile = ({
         {definition ? (
           <span className={pill}>{new Date(dataset.createdAt).toLocaleDateString("pt-BR")}</span>
         ) : null}
+        {dataset.kind === "dataset" ? (
+          <span
+            className={cn(
+              pill,
+              "font-medium",
+              dataset.published && "border-primary/40 bg-primary/10 text-primary",
+            )}
+          >
+            {dataset.published ? "Publicado" : "Rascunho"}
+          </span>
+        ) : null}
       </div>
 
       <div className="mt-auto flex flex-wrap justify-end gap-2 pt-1">
@@ -88,6 +102,22 @@ export const SourceTile = ({
             <Code2 className="size-3.5" aria-hidden />
             {definition ? "Editar consulta" : "Abrir no editor"}
           </Link>
+        ) : null}
+        {dataset.kind === "dataset" && onTogglePublish ? (
+          <button
+            type="button"
+            disabled={dataset.status !== "pronta"}
+            onClick={onTogglePublish}
+            title={
+              dataset.published
+                ? "Esconder dos usuários comuns"
+                : "Deixar disponível para todos os usuários usarem em projetos e dashboards"
+            }
+            className="flex h-8 items-center gap-1.5 rounded-md border border-border/70 px-2.5 text-xs text-foreground transition-colors hover:bg-muted/60 disabled:opacity-40"
+          >
+            {dataset.published ? <EyeOff className="size-3.5" aria-hidden /> : <Globe className="size-3.5" aria-hidden />}
+            {dataset.published ? "Despublicar" : "Publicar"}
+          </button>
         ) : null}
         <button
           type="button"

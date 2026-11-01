@@ -6,7 +6,8 @@ import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { authClient, signOut, useSession } from "@/lib/auth-client";
+import { authClient, signOut, useRole, useSession } from "@/lib/auth-client";
+import { ROLE_LABELS } from "@shared/roles";
 import { toast } from "@/lib/feedback";
 
 const Section = ({ title, description, children }: { title: string; description?: string; children: React.ReactNode }) => (
@@ -28,6 +29,7 @@ const Field = ({ id, label, ...props }: { id: string; label: string } & React.Co
 
 const ProfileForm = () => {
   const { data: session } = useSession();
+  const role = useRole();
   const [name, setName] = useState("");
   const [busy, setBusy] = useState(false);
 
@@ -48,6 +50,7 @@ const ProfileForm = () => {
     <form onSubmit={submit} className="flex max-w-sm flex-col gap-3">
       <Field id="nome" label="Nome" value={name} onChange={(e) => setName(e.target.value)} required maxLength={80} />
       <Field id="email" label="E-mail" value={session?.user.email ?? ""} readOnly disabled />
+      <Field id="perfil" label="Perfil de acesso" value={role ? ROLE_LABELS[role] : ""} readOnly disabled />
       <Button type="submit" disabled={busy || !name.trim() || name.trim() === session?.user.name} className="self-start">
         {busy ? <Loader2 className="animate-spin" aria-hidden /> : null}
         Salvar

@@ -11,9 +11,10 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useSession } from "@/lib/auth-client";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { GettingStarted } from "./getting-started";
-import { NotebookCard } from "./notebook-card";
+import { NewProjectTile, NotebookCard } from "./notebook-card";
 import { NotebooksHeader } from "./notebooks-header";
 import { CardSkeletons, EmptyState, ErrorState } from "./list-states";
 
@@ -25,6 +26,9 @@ export const NotebooksHome = () => {
   const createNotebook = useNotebooksStore((state) => state.createNotebook);
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
   const deleteNotebook = useNotebooksStore((state) => state.deleteNotebook);
+
+  const { data: session } = useSession();
+  const firstName = session?.user.name.trim().split(/\s+/)[0] ?? "";
 
   const [query, setQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
@@ -42,6 +46,8 @@ export const NotebooksHome = () => {
       .sort((a, b) => b.updatedAt - a.updatedAt);
   }, [notebooks, query]);
 
+  const showHeaderCreate = hydrated && items.length > 0 && (view === "list" || query.trim() !== "");
+
   const openCreate = () => {
     setDraftTitle("");
     setCreateOpen(true);
@@ -56,22 +62,30 @@ export const NotebooksHome = () => {
     <div className="min-h-dvh bg-background">
       <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
 
-      <main className="mx-auto px-4 sm:px-10 lg:px-30 py-6">
-        <GettingStarted />
-        <div className="flex items-center justify-between gap-5 pb-10">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Projetos recentes
-          </h1>
-          <Button onClick={openCreate} className="flex items-center gap-1.5 cursor-pointer">
-            <Plus aria-hidden />
-            Novo projeto
-          </Button>
+      <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+        <div className="flex items-end justify-between gap-5 pb-8">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+              {firstName ? `Olá, ${firstName}` : "Seus projetos"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">Continue de onde parou ou comece um novo projeto.</p>
+          </div>
+          {/* na grade, o primeiro cartão já cria projetos; no vazio, o botão está no aviso */}
+          {showHeaderCreate ? (
+            <Button onClick={openCreate} className="shrink-0">
+              <Plus aria-hidden />
+              Novo projeto
+            </Button>
+          ) : null}
         </div>
+
+        <GettingStarted />
 
         {!hydrated ? (
           <CardSkeletons
-            className={view === "grid" ? undefined : "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 gap-2.5"}
-            itemClassName={view === "grid" ? "aspect-[5/4] h-auto" : "h-20 rounded-xl"}
+            count={view === "grid" ? 5 : 4}
+            className={view === "grid" ? "lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 gap-2.5"}
+            itemClassName={view === "grid" ? "aspect-[3/2] h-auto rounded-2xl" : "h-16 rounded-xl"}
           />
         ) : loadError ? (
           <ErrorState title="Não foi possível carregar seus projetos" message={loadError} onRetry={hydrate} />
@@ -95,6 +109,7 @@ export const NotebooksHome = () => {
           />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {!query.trim() ? <NewProjectTile onClick={openCreate} /> : null}
             {items.map((notebook, index) => (
               <NotebookCard
                 key={notebook.id}
@@ -107,7 +122,7 @@ export const NotebooksHome = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {items.map((notebook, index) => (
               <NotebookCard
                 key={notebook.id}

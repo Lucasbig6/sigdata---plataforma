@@ -9,6 +9,7 @@ import {
   Moon,
   Search,
   Settings,
+  Users,
   type LucideIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -18,7 +19,9 @@ import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/compone
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
+import { useRole } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
+import { canManageData } from "@shared/roles";
 
 /** Evento para abrir a paleta de fora (ex.: botão da barra lateral). */
 export const OPEN_PALETTE_EVENT = "sigdata:open-palette";
@@ -49,6 +52,7 @@ export const CommandPalette = () => {
   const pathname = usePathname();
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
+  const role = useRole();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [active, setActive] = useState(0);
@@ -104,8 +108,15 @@ export const CommandPalette = () => {
         run: () => router.push(`/workspace?notebook=${useNotebooksStore.getState().createNotebook()}`),
       },
       { id: "a:projetos", group: "Ações", label: "Ir para a página inicial", icon: FolderKanban, run: go("/") },
-      { id: "a:fontes", group: "Ações", label: "Fontes de dados", icon: Database, run: go("/fontes-de-dados") },
-      { id: "a:editor", group: "Ações", label: "Editor SQL", icon: Code2, run: go("/fontes-de-dados/editor") },
+      ...(canManageData(role ?? "usuario")
+        ? [
+            { id: "a:fontes", group: "Ações" as const, label: "Fontes de dados", icon: Database, run: go("/fontes-de-dados") },
+            { id: "a:editor", group: "Ações" as const, label: "Editor SQL", icon: Code2, run: go("/fontes-de-dados/editor") },
+          ]
+        : []),
+      ...(role === "admin"
+        ? [{ id: "a:usuarios", group: "Ações" as const, label: "Gerenciar usuários", icon: Users, run: go("/admin/usuarios") }]
+        : []),
       { id: "a:dashboards", group: "Ações", label: "Dashboards", icon: LayoutDashboard, run: go("/dashboards") },
       { id: "a:config", group: "Ações", label: "Configurações da conta", icon: Settings, run: go("/configuracoes") },
       {
@@ -131,7 +142,7 @@ export const CommandPalette = () => {
         label: dataset.name,
         hint: dataset.definition ? "Dataset" : undefined,
         icon: Database,
-        run: go("/fontes-de-dados"),
+        run: go(canManageData(role ?? "usuario") ? "/fontes-de-dados" : "/"),
       })),
       ...dashboardOrder.flatMap<Entry>((id) => {
         const dashboard = dashboards[id];
@@ -148,7 +159,7 @@ export const CommandPalette = () => {
           : [];
       }),
     ];
-  }, [router, resolvedTheme, setTheme, notebooks, datasets, dashboards, dashboardOrder]);
+  }, [router, role, resolvedTheme, setTheme, notebooks, datasets, dashboards, dashboardOrder]);
 
   const visible = useMemo(() => {
     const needle = normalize(query.trim());

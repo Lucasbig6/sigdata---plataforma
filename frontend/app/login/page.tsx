@@ -3,7 +3,7 @@
 import { Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { Logo } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { Button } from "@/components/ui/button";
@@ -43,8 +43,22 @@ const LoginForm = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  // `false` esconde o cadastro (contas criadas pelo admin); enquanto carrega, mantém como estava
+  const [signupOpen, setSignupOpen] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch("/api/config")
+      .then((res) => (res.ok ? (res.json() as Promise<{ openSignup: boolean }>) : null))
+      .then((config) => {
+        if (config && !config.openSignup) {
+          setSignupOpen(false);
+          setMode("entrar");
+        }
+      })
+      .catch(() => undefined);
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
@@ -69,6 +83,7 @@ const LoginForm = () => {
         <Logo className="h-18 w-auto shrink-0 mx-auto block" />
       </div>
 
+      {signupOpen ? (
       <div
         role="tablist"
         aria-label="Acesso"
@@ -100,6 +115,11 @@ const LoginForm = () => {
           </button>
         ))}
       </div>
+      ) : (
+        <p className="mb-5 text-center text-xs text-muted-foreground">
+          O acesso é por convite: peça a um administrador para criar sua conta.
+        </p>
+      )}
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-3">
         {mode === "cadastrar" ? (

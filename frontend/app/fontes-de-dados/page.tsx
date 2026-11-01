@@ -19,6 +19,8 @@ import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { useDatasetsStore, type Dataset } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
 import { confirmAction, toast } from "@/lib/feedback";
+import { RoleGate } from "@/components/sigdata/role-gate";
+import { DATA_ROLES } from "@shared/roles";
 import { CardSkeletons, EmptyState, ErrorState } from "@/components/sigdata/list-states";
 import { Button } from "@/components/ui/button";
 
@@ -76,6 +78,7 @@ function FontesDeDadosContent() {
   const reload = useDatasetsStore((state) => state.reload);
   const datasets = useDatasetsStore((state) => state.datasets);
   const removeDataset = useDatasetsStore((state) => state.removeDataset);
+  const setPublished = useDatasetsStore((state) => state.setPublished);
 
   const router = useRouter();
   const tab: TabId = useSearchParams().get("aba") === "datasets" ? "datasets" : "fontes";
@@ -102,6 +105,22 @@ function FontesDeDadosContent() {
       dataset={dataset}
       selected={dataset.id === selectedId}
       onInspect={() => setSelectedId(dataset.id === selectedId ? null : dataset.id)}
+      onTogglePublish={() => {
+        const next = !dataset.published;
+        void confirmAction({
+          title: next ? `Publicar "${dataset.name}"?` : `Despublicar "${dataset.name}"?`,
+          description: next
+            ? "Todos os usuários passam a ver e usar este dataset em projetos e dashboards."
+            : "Projetos e dashboards de outras pessoas que o usam deixam de funcionar até ele ser publicado de novo.",
+          confirmLabel: next ? "Publicar" : "Despublicar",
+          destructive: !next,
+        }).then((ok) => {
+          if (!ok) return;
+          setPublished(dataset.id, next)
+            .then(() => toast.success(next ? "Dataset publicado." : "Dataset voltou a rascunho."))
+            .catch((error: Error) => toast.error(error.message));
+        });
+      }}
       onRemove={() => {
         const kind = dataset.definition ? "dataset" : "fonte";
         void confirmAction({
@@ -254,8 +273,10 @@ function FontesDeDadosContent() {
 /** Fontes de dados e datasets salvos, em abas (a aba ativa fica na URL: ?aba=datasets). */
 export default function FontesDeDadosPage() {
   return (
-    <Suspense>
-      <FontesDeDadosContent />
-    </Suspense>
+    <RoleGate roles={DATA_ROLES}>
+      <Suspense>
+        <FontesDeDadosContent />
+      </Suspense>
+    </RoleGate>
   );
 }
