@@ -41,6 +41,7 @@ import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
+import { openCommandPalette } from "./command-palette";
 import { Logo } from "./logo";
 import { LineSkeletons } from "./list-states";
 
@@ -205,6 +206,15 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
 
         <SidebarGroup className="gap-2 p-0">
           <SidebarGroupContent className="flex flex-col gap-2">
+            <button
+              type="button"
+              onClick={openCommandPalette}
+              className="flex h-9 items-center gap-2 rounded-lg border border-border/70 bg-background px-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              <Search className="size-4 shrink-0" aria-hidden />
+              <span className="flex-1 text-start">Buscar em tudo</span>
+              <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
+            </button>
             <button
               type="button"
               onClick={handleNewConversation}
