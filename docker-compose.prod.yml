@@ -1,0 +1,45 @@
+name: sigdata
+
+# Exemplo de implantação completa. Defina os segredos em um arquivo .env na raiz
+# (veja backend/.env.example) e rode:
+#   docker compose -f docker-compose.prod.yml up -d --build
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: sigdata
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD}
+      POSTGRES_DB: sigdata
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U sigdata -d sigdata"]
+      interval: 5s
+      retries: 10
+
+  backend:
+    build: { context: ., dockerfile: backend/Dockerfile }
+    restart: unless-stopped
+    depends_on:
+      db: { condition: service_healthy }
+    environment:
+      DATABASE_URL: postgres://sigdata:${POSTGRES_PASSWORD}@db:5432/sigdata
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:?URL pública do frontend}
+      SIGDATA_ENCRYPTION_KEY: ${SIGDATA_ENCRYPTION_KEY:?}
+      GROQ_API_KEY: ${GROQ_API_KEY:?}
+      SIGDATA_STORAGE_DIR: /app/backend/storage
+    volumes:
+      - storage:/app/backend/storage
+
+  frontend:
+    build: { context: ., dockerfile: frontend/Dockerfile }
+    restart: unless-stopped
+    depends_on: [backend]
+    ports:
+      - "3000:3000"
+
+volumes:
+  db-data:
+  storage:

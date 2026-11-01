@@ -70,3 +70,22 @@ demonstração consultável e três dashboards de exemplo.
 | `npm run db:studio` | Drizzle Studio |
 | `npm run typecheck` | checa tipos dos dois projetos |
 | `npm test` | testes do backend e do frontend |
+
+## Produção
+
+```bash
+docker compose -f docker-compose.prod.yml up -d --build   # Postgres + backend + frontend
+```
+
+Defina `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGDATA_ENCRYPTION_KEY` e `GROQ_API_KEY`
+em um `.env` na raiz. O backend aplica as migrações ao iniciar (`dist/migrate.js`) e expõe `/api/health`
+(vivo) e `/api/ready` (confere o banco). Sem build do Docker: `npm run build` na raiz gera `backend/dist`.
+
+Em produção, conexões com bancos externos em rede interna (localhost, 10.x, 192.168.x, metadados de nuvem)
+são recusadas; libere com `SIGDATA_ALLOW_PRIVATE_HOSTS=true` só se for necessário. Para recuperação de senha por
+e-mail configure `RESEND_API_KEY` (sem ela, o link aparece no log do servidor).
+
+## Testes
+
+`npm test` roda backend e frontend. Os testes de integração do backend criam o banco descartável `sigdata_test`
+no Postgres do `npm run db:up` (ou em `TEST_PG_ADMIN_URL`) e são pulados se ele não estiver disponível.

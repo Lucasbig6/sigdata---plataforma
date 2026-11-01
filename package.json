@@ -12,7 +12,9 @@
     "db:generate": "npm --prefix backend run db:generate",
     "db:migrate": "npm --prefix backend run db:migrate",
     "db:studio": "npm --prefix backend run db:studio",
-    "test": "npm --prefix backend test && npm --prefix frontend test"
+    "test": "npm --prefix backend test && npm --prefix frontend test",
+    "lint": "npm --prefix frontend run lint",
+    "build": "npm --prefix backend run build && npm --prefix frontend run build"
   },
   "devDependencies": {
     "concurrently": "^10.0.6"

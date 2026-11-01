@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "oxlint && oxfmt --check",
+    "lint": "oxlint",
     "lint:fix": "oxlint --fix && oxfmt",
     "format": "oxfmt --check",
     "format:fix": "oxfmt",
@@ -14,7 +14,7 @@
     "test": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --test \"test/*.test.mts\""
   },
   "dependencies": {
-    "@assistant-ui/ai-sdk": "latest",
+    "@assistant-ui/ai-sdk": "^0.0.15",
     "@assistant-ui/react": "^0.15.31",
     "@assistant-ui/react-markdown": "^0.14.24",
     "@base-ui/react": "^1.9.0",
@@ -46,7 +46,7 @@
     "zustand": "^5.0.15"
   },
   "devDependencies": {
-    "@assistant-ui/next": "latest",
+    "@assistant-ui/next": "^0.0.25",
     "@tailwindcss/postcss": "^4.3.3",
     "@types/node": "^26.6.5",
     "@types/react": "^19.3.0",

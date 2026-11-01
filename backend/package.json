@@ -10,7 +10,10 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test": "node --import tsx --test \"test/*.test.ts\""
+    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "build": "esbuild src/server.ts src/migrate.ts --bundle --platform=node --format=esm --packages=external --target=node24 --outdir=dist",
+    "start:prod": "node dist/server.js",
+    "migrate:prod": "node dist/migrate.js"
   },
   "dependencies": {
     "@ai-sdk/groq": "^4.0.70",
@@ -30,6 +33,7 @@
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }
