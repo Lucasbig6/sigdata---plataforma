@@ -8,6 +8,7 @@ import {
   MessageSquarePlus,
   Moon,
   Search,
+  Settings,
   type LucideIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -42,7 +43,7 @@ const normalize = (text: string) =>
     .toLowerCase();
 
 /** Páginas sem sessão (login, link público) não carregam dados da conta. */
-const PUBLIC_PREFIXES = ["/login", "/compartilhado"];
+const PUBLIC_PREFIXES = ["/login", "/compartilhado", "/redefinir-senha"];
 
 export const CommandPalette = () => {
   const pathname = usePathname();
@@ -106,6 +107,7 @@ export const CommandPalette = () => {
       { id: "a:fontes", group: "Ações", label: "Fontes de dados", icon: Database, run: go("/fontes-de-dados") },
       { id: "a:editor", group: "Ações", label: "Editor SQL", icon: Code2, run: go("/fontes-de-dados/editor") },
       { id: "a:dashboards", group: "Ações", label: "Dashboards", icon: LayoutDashboard, run: go("/dashboards") },
+      { id: "a:config", group: "Ações", label: "Configurações da conta", icon: Settings, run: go("/configuracoes") },
       {
         id: "a:tema",
         group: "Ações",

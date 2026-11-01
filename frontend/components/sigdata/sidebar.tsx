@@ -13,6 +13,7 @@ import {
   LogOut,
   MessageSquarePlus,
   Search,
+  Settings,
   UserRound,
 } from "lucide-react";
 import {
@@ -305,6 +306,10 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
             <DropdownMenuItem onClick={() => router.push("/fontes-de-dados/editor")}>
               <Code2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
               Editor SQL
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => router.push("/configuracoes")}>
+              <Settings className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+              Configurações
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem

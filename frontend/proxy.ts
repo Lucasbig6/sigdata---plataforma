@@ -5,7 +5,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * Checagem otimista das páginas: sem cookie de sessão, vai para /login.
  * /api/* não passa por aqui — é repassado ao backend, que valida a sessão.
  */
-const PUBLIC_PREFIXES = ["/login", "/compartilhado"];
+const PUBLIC_PREFIXES = ["/login", "/compartilhado", "/redefinir-senha"];
 
 export function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

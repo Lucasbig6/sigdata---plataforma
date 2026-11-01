@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, schema } from "./db";
+import { mailerConfigured, sendMail } from "./mailer";
 import { seedNewUser } from "./seed";
 
 export const auth = betterAuth({
@@ -26,7 +27,30 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     autoSignIn: true,
+    resetPasswordTokenExpiresIn: 60 * 60,
+    // não bloqueia a requisição esperando o provedor de e-mail
+    sendResetPassword: async ({ user, url }) => {
+      void sendMail({
+        to: user.email,
+        subject: "Redefinir sua senha no SIGDATA",
+        text: `Olá, ${user.name}.\n\nPara criar uma nova senha, abra o link (vale por 1 hora):\n${url}\n\nSe você não pediu isso, ignore este e-mail.`,
+      }).catch((error) => console.error("[sigdata] falha ao enviar e-mail", error));
+    },
+    revokeSessionsOnPasswordReset: true,
   },
+  // só envia o e-mail de confirmação se houver provedor; o acesso não depende dele
+  ...(mailerConfigured() && {
+    emailVerification: {
+      sendOnSignUp: true,
+      sendVerificationEmail: async ({ user, url }: { user: { email: string; name: string }; url: string }) => {
+        void sendMail({
+          to: user.email,
+          subject: "Confirme seu e-mail no SIGDATA",
+          text: `Olá, ${user.name}.\n\nConfirme seu e-mail abrindo o link:\n${url}`,
+        }).catch((error) => console.error("[sigdata] falha ao enviar e-mail", error));
+      },
+    },
+  }),
   session: {
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,

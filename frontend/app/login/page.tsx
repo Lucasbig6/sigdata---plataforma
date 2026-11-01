@@ -1,6 +1,7 @@
 "use client";
 
 import { Loader2 } from "lucide-react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 import { Logo } from "@/components/sigdata/logo";
@@ -142,7 +143,11 @@ const LoginForm = () => {
           />
           {mode === "cadastrar" ? (
             <p className="text-[11px] text-muted-foreground">Mínimo de 8 caracteres.</p>
-          ) : null}
+          ) : (
+            <Link href="/redefinir-senha" className="self-end text-[11px] text-muted-foreground hover:text-foreground">
+              Esqueci minha senha
+            </Link>
+          )}
         </div>
         {error ? (
           <p role="alert" className="text-xs text-destructive">
