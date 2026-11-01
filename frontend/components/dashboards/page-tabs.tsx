@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { MAX_PAGES } from "@/lib/dashboards/types";
+import { confirmAction } from "@/lib/feedback";
 
 type Props = {
   /** Visualização/compartilhado: só navega entre as páginas. */
@@ -140,7 +141,12 @@ export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
                 type="button"
                 onClick={() => {
                   const name = list[index]?.name ?? "esta página";
-                  if (window.confirm(`Excluir a página "${name}" e todos os seus elementos?`)) deletePage(current);
+                  void confirmAction({
+                    title: `Excluir a página "${name}"?`,
+                    description: "Todos os elementos dela serão removidos.",
+                    confirmLabel: "Excluir",
+                    destructive: true,
+                  }).then((ok) => ok && deletePage(current));
                 }}
                 aria-label="Excluir página"
                 title="Excluir página"

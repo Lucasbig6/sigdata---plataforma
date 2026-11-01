@@ -3,6 +3,7 @@
 import { History, Loader2, RotateCcw, Trash2 } from "lucide-react";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { confirmAction, toast } from "@/lib/feedback";
 import {
   Dialog,
   DialogContent,
@@ -75,17 +76,24 @@ export const VersionHistory = ({ dashboardId, dirty }: { dashboardId: string; di
     });
 
   const restore = (version: Version) => {
-    const warning = dirty
-      ? "Há alterações não salvas, que serão perdidas. Restaurar mesmo assim?"
-      : `Restaurar a versão de ${when(version.createdAt)}? O estado atual fica guardado no histórico.`;
-    if (!window.confirm(warning)) return;
-    void run(version.id, async () => {
-      const restored = await api<Dashboard>(`/api/dashboards/${dashboardId}/versions/${version.id}/restore`, {
-        method: "POST",
+    void confirmAction({
+      title: `Restaurar a versão de ${when(version.createdAt)}?`,
+      description: dirty
+        ? "Há alterações não salvas, que serão perdidas."
+        : "O estado atual fica guardado no histórico.",
+      confirmLabel: "Restaurar",
+      destructive: dirty,
+    }).then((ok) => {
+      if (!ok) return;
+      void run(version.id, async () => {
+        const restored = await api<Dashboard>(`/api/dashboards/${dashboardId}/versions/${version.id}/restore`, {
+          method: "POST",
+        });
+        replaceFromServer(restored);
+        toast.success("Versão restaurada.");
+        load();
+        setOpen(false);
       });
-      replaceFromServer(restored);
-      load();
-      setOpen(false);
     });
   };
 

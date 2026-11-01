@@ -21,6 +21,7 @@ import { PageTabs } from "./page-tabs";
 import { PropertiesPanel } from "./properties-panel";
 import { TopBar } from "./top-bar";
 import { ViewControls } from "./view-controls";
+import { confirmAction } from "@/lib/feedback";
 
 const PRIVATE_MODE = { kind: "private" } as const;
 
@@ -311,7 +312,12 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
         onRedo={redo}
         onSave={() => void save()}
         onDiscard={() => {
-          if (window.confirm("Descartar as alterações e voltar à última versão salva?")) discardChanges();
+          void confirmAction({
+            title: "Descartar alterações?",
+            description: "O painel volta à última versão salva.",
+            confirmLabel: "Descartar",
+            destructive: true,
+          }).then((ok) => ok && discardChanges());
         }}
         onTogglePreview={togglePreview}
       />

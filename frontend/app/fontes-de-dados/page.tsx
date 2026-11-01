@@ -18,6 +18,9 @@ import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { useDatasetsStore, type Dataset } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
+import { confirmAction, toast } from "@/lib/feedback";
+import { CardSkeletons, EmptyState, ErrorState } from "@/components/sigdata/list-states";
+import { Button } from "@/components/ui/button";
 
 type TabId = "fontes" | "datasets";
 
@@ -70,6 +73,7 @@ function FontesDeDadosContent() {
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const loadError = useDatasetsStore((state) => state.error);
   const hydrate = useDatasetsStore((state) => state.hydrate);
+  const reload = useDatasetsStore((state) => state.reload);
   const datasets = useDatasetsStore((state) => state.datasets);
   const removeDataset = useDatasetsStore((state) => state.removeDataset);
 
@@ -99,13 +103,20 @@ function FontesDeDadosContent() {
       selected={dataset.id === selectedId}
       onInspect={() => setSelectedId(dataset.id === selectedId ? null : dataset.id)}
       onRemove={() => {
-        const message = dataset.definition
-          ? `Excluir o dataset "${dataset.name}"? Projetos que o usam ficarão sem fonte.`
-          : `Excluir a fonte "${dataset.name}"? Projetos que a usam ficarão sem fonte.`;
-        if (!window.confirm(message)) return;
-        setRemoveError(null);
-        if (selectedId === dataset.id) setSelectedId(null);
-        removeDataset(dataset.id).catch((error: Error) => setRemoveError(error.message));
+        const kind = dataset.definition ? "dataset" : "fonte";
+        void confirmAction({
+          title: `Excluir ${kind === "dataset" ? "o dataset" : "a fonte"} "${dataset.name}"?`,
+          description: "Projetos que a usam ficarão sem fonte.",
+          confirmLabel: "Excluir",
+          destructive: true,
+        }).then((ok) => {
+          if (!ok) return;
+          setRemoveError(null);
+          if (selectedId === dataset.id) setSelectedId(null);
+          removeDataset(dataset.id)
+            .then(() => toast.success(`${kind === "dataset" ? "Dataset excluído" : "Fonte excluída"}.`))
+            .catch((error: Error) => setRemoveError(error.message));
+        });
       }}
     />
   );
@@ -144,7 +155,6 @@ function FontesDeDadosContent() {
       <main className="mx-auto px-30 py-6">
         <TabBar active={tab} counts={{ fontes: sources.length, datasets: saved.length }} onChange={changeTab} />
 
-        {loadError ? <p className="mb-4 text-sm text-destructive">{loadError}</p> : null}
         {removeError ? <p className="mb-4 text-sm text-destructive">{removeError}</p> : null}
 
         {tab === "fontes" ? (
@@ -167,22 +177,16 @@ function FontesDeDadosContent() {
             ) : null}
 
             {!hydrated ? (
-              <TileGrid>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-32 animate-pulse rounded-2xl bg-muted/50" />
-                ))}
-              </TileGrid>
+              <CardSkeletons />
+            ) : loadError ? (
+              <ErrorState title="Não foi possível carregar as fontes" message={loadError} onRetry={() => void reload()} />
             ) : sources.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-                <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-                  <Database className="size-5" aria-hidden />
-                </span>
-                <p className="text-sm font-medium text-foreground">Nenhuma fonte ainda</p>
-                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                  Envie um CSV/XLSX ou conecte um banco PostgreSQL acima. Depois escolha a fonte na barra lateral do
-                  projeto para o assistente consultar.
-                </p>
-              </div>
+              <EmptyState
+                icon={Database}
+                title="Nenhuma fonte ainda"
+                description="Envie um CSV/XLSX ou conecte um banco PostgreSQL. Depois escolha a fonte na barra lateral do projeto para o assistente consultar."
+                action={<Button onClick={() => setNewOpen(true)}>Nova fonte de dados</Button>}
+              />
             ) : (
               <TileGrid>{sources.map((dataset) => renderTile(dataset))}</TileGrid>
             )}
@@ -206,22 +210,20 @@ function FontesDeDadosContent() {
             ) : null}
 
             {!hydrated ? (
-              <TileGrid>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-32 animate-pulse rounded-2xl bg-muted/50" />
-                ))}
-              </TileGrid>
+              <CardSkeletons />
+            ) : loadError ? (
+              <ErrorState title="Não foi possível carregar os datasets" message={loadError} onRetry={() => void reload()} />
             ) : saved.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-                <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-                  <Table2 className="size-5" aria-hidden />
-                </span>
-                <p className="text-sm font-medium text-foreground">Nenhum dataset salvo ainda</p>
-                <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-                  No editor SQL, trate os dados com uma consulta e use &quot;Salvar como dataset&quot;. Ele aparece aqui e
-                  na barra lateral dos projetos, para as análises.
-                </p>
-              </div>
+              <EmptyState
+                icon={Table2}
+                title="Nenhum dataset salvo ainda"
+                description='No editor SQL, trate os dados com uma consulta e use "Salvar como dataset". Ele aparece aqui e na barra lateral dos projetos.'
+                action={
+                  <Button render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
+                    Abrir editor SQL
+                  </Button>
+                }
+              />
             ) : (
               <TileGrid>{saved.map((dataset) => renderTile(dataset))}</TileGrid>
             )}

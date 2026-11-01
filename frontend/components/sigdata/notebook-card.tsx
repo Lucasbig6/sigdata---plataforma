@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Notebook } from "@/lib/notebooks/store";
 import { CoverArt } from "./cover-art";
+import { confirmAction } from "@/lib/feedback";
 
 const COVER_GRADIENTS = [
   "linear-gradient(145deg, #1e3a5f 0%, #0f766e 100%)",
@@ -83,9 +84,12 @@ export const NotebookCard = ({
 
   const handleDelete = () => {
     setMenuOpen(false);
-    if (window.confirm(`Excluir o projeto "${notebook.title}"? Esta ação não pode ser desfeita.`)) {
-      onDelete(notebook.id);
-    }
+    void confirmAction({
+      title: `Excluir o projeto "${notebook.title}"?`,
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    }).then((ok) => ok && onDelete(notebook.id));
   };
 
   const submitRename = () => {

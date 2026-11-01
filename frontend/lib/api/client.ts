@@ -3,6 +3,7 @@
  * Erros viram `ApiError` com a mensagem em português vinda do servidor;
  * 401 leva para o login preservando a página atual.
  */
+import { toast } from "@/lib/feedback";
 
 export class ApiError extends Error {
   constructor(
@@ -55,5 +56,6 @@ export const api = async <T>(path: string, init: RequestInit & { json?: unknown 
 export const background = (promise: Promise<unknown>, what: string) => {
   promise.catch((error: unknown) => {
     console.error(`[sigdata] ${what}:`, error);
+    toast.error(`Não foi possível ${what}. ${error instanceof Error ? error.message : ""}`.trim());
   });
 };

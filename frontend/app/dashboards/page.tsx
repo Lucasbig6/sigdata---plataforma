@@ -1,12 +1,15 @@
 "use client";
 
-import { ArrowLeft, Eye, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Eye, LayoutDashboard, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { confirmAction } from "@/lib/feedback";
+import { Button } from "@/components/ui/button";
+import { CardSkeletons, EmptyState, ErrorState } from "@/components/sigdata/list-states";
 
 const formatDate = (timestamp: number): string =>
   new Date(timestamp).toLocaleDateString("pt-BR", {
@@ -78,43 +81,16 @@ export default function DashboardsPage() {
 
       <main className="mx-auto px-30 py-6">
         {!hydrated ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {Array.from({ length: 3 }).map((_, index) => (
-              <div
-                key={index}
-                className="h-40 animate-pulse rounded-xl border border-border/60 bg-card/50"
-              />
-            ))}
-          </div>
+          <CardSkeletons count={3} itemClassName="h-40" />
         ) : loadError ? (
-          <div
-            role="alert"
-            className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-destructive/40 px-6 py-16 text-center"
-          >
-            <p className="text-sm font-medium text-foreground">Não foi possível carregar os dashboards</p>
-            <p className="max-w-sm text-xs text-muted-foreground">{loadError}</p>
-            <button
-              type="button"
-              onClick={hydrate}
-              className="rounded-md border border-border px-3 py-1.5 text-xs font-medium text-foreground transition-colors hover:bg-muted/60"
-            >
-              Tentar novamente
-            </button>
-          </div>
+          <ErrorState title="Não foi possível carregar os dashboards" message={loadError} onRetry={hydrate} />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-xl border border-dashed border-border/70 px-6 py-16 text-center">
-            <p className="text-sm font-medium text-foreground">Nenhum dashboard ainda</p>
-            <p className="max-w-sm text-xs text-muted-foreground">
-              Crie um painel do zero ou salve as visualizações de um projeto como dashboard.
-            </p>
-            <button
-              type="button"
-              onClick={handleCreate}
-              className="rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground"
-            >
-              Criar dashboard
-            </button>
-          </div>
+          <EmptyState
+            icon={LayoutDashboard}
+            title="Nenhum dashboard ainda"
+            description="Crie um painel do zero ou salve as visualizações de um projeto como dashboard."
+            action={<Button onClick={handleCreate}>Criar dashboard</Button>}
+          />
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((dashboard) => (
@@ -171,13 +147,12 @@ export default function DashboardsPage() {
                     aria-label={`Excluir ${dashboard.name}`}
                     title="Excluir"
                     onClick={() => {
-                      if (
-                        window.confirm(
-                          `Excluir o dashboard "${dashboard.name}"? Esta ação não pode ser desfeita.`,
-                        )
-                      ) {
-                        deleteDashboard(dashboard.id);
-                      }
+                      void confirmAction({
+                        title: `Excluir "${dashboard.name}"?`,
+                        description: "Esta ação não pode ser desfeita.",
+                        confirmLabel: "Excluir",
+                        destructive: true,
+                      }).then((ok) => ok && deleteDashboard(dashboard.id));
                     }}
                     className="grid size-8 place-items-center rounded-md border border-border/70 text-destructive transition-colors hover:bg-destructive/10"
                   >

@@ -42,6 +42,7 @@ import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
 import { Logo } from "./logo";
+import { LineSkeletons } from "./list-states";
 
 type NavItem = {
   section: SigdataSection;
@@ -254,11 +255,13 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                 </ul>
               </>
             ) : (
-              <p className="px-0.5 text-xs leading-relaxed text-muted-foreground">
-                {notebooksHydrated
-                  ? "Nenhum projeto ainda. Inicie uma conversa para criar o primeiro."
-                  : "Carregando projetos…"}
-              </p>
+              notebooksHydrated ? (
+                <p className="px-0.5 text-xs leading-relaxed text-muted-foreground">
+                  Nenhum projeto ainda. Inicie uma conversa para criar o primeiro.
+                </p>
+              ) : (
+                <LineSkeletons />
+              )
             )}
           </SidebarGroupContent>
         </SidebarGroup>

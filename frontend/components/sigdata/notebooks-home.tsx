@@ -12,9 +12,9 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { cn } from "@/lib/utils";
 import { NotebookCard } from "./notebook-card";
 import { NotebooksHeader } from "./notebooks-header";
+import { CardSkeletons, EmptyState, ErrorState } from "./list-states";
 
 export const NotebooksHome = () => {
   const hydrated = useNotebooksStore((state) => state.hydrated);
@@ -67,54 +67,30 @@ export const NotebooksHome = () => {
         </div>
 
         {!hydrated ? (
-          <div
-            className={cn(
-              view === "grid"
-                ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "flex flex-col gap-2.5",
-            )}
-          >
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "animate-pulse rounded-2xl bg-muted/50",
-                  view === "grid" ? "aspect-[5/4]" : "h-20 rounded-xl",
-                )}
-              />
-            ))}
-          </div>
+          <CardSkeletons
+            className={view === "grid" ? undefined : "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 gap-2.5"}
+            itemClassName={view === "grid" ? "aspect-[5/4] h-auto" : "h-20 rounded-xl"}
+          />
         ) : loadError ? (
-          <div
-            role="alert"
-            className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/40 px-6 py-20 text-center"
-          >
-            <p className="text-sm font-medium text-foreground">Não foi possível carregar seus projetos</p>
-            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{loadError}</p>
-            <Button variant="outline" onClick={hydrate} className="mt-1 cursor-pointer">
-              Tentar novamente
-            </Button>
-          </div>
+          <ErrorState title="Não foi possível carregar seus projetos" message={loadError} onRetry={hydrate} />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-            <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-              <BookOpen className="size-5" aria-hidden />
-            </span>
-            <p className="text-sm font-medium text-foreground">
-              {query.trim() ? "Nenhum projeto encontrado" : "Nenhum projeto ainda"}
-            </p>
-            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-              {query.trim()
+          <EmptyState
+            icon={BookOpen}
+            title={query.trim() ? "Nenhum projeto encontrado" : "Nenhum projeto ainda"}
+            description={
+              query.trim()
                 ? "Tente buscar por outro título."
-                : "Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."}
-            </p>
-            {!query.trim() && (
-              <Button onClick={openCreate} className="mt-1 cursor-pointer">
-                <Plus aria-hidden />
-                Novo projeto
-              </Button>
-            )}
-          </div>
+                : "Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."
+            }
+            action={
+              query.trim() ? undefined : (
+                <Button onClick={openCreate}>
+                  <Plus aria-hidden />
+                  Novo projeto
+                </Button>
+              )
+            }
+          />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {items.map((notebook, index) => (

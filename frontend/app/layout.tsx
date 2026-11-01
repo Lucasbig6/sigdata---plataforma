@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { IBM_Plex_Mono, Inter } from "next/font/google";
 import { ThemeProvider } from "next-themes";
+import { FeedbackHost } from "@/components/sigdata/feedback-host";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import "./globals.css";
 
@@ -35,7 +36,10 @@ export default function RootLayout({
           enableSystem={false}
           storageKey="sigdata-theme"
         >
-          <TooltipProvider>{children}</TooltipProvider>
+          <TooltipProvider>
+            {children}
+            <FeedbackHost />
+          </TooltipProvider>
         </ThemeProvider>
       </body>
     </html>
