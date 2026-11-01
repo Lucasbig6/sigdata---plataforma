@@ -24,6 +24,100 @@ const EXPIRY_OPTIONS: { value: string; label: string; days: number | null }[] = 
 
 const publicUrl = (token: string) => `${window.location.origin}/compartilhado/${token}`;
 
+type AccessState = { sharedWithAll: boolean; people: { id: string; name: string; email: string }[] };
+
+/** Compartilhamento com pessoas logadas (somente leitura): por e-mail ou com todos os usuários. */
+const AccessSection = ({ dashboardId, open }: { dashboardId: string; open: boolean }) => {
+  const [state, setState] = useState<AccessState | null>(null);
+  const [draft, setDraft] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    api<AccessState>(`/api/dashboards/${dashboardId}/access`)
+      .then(setState)
+      .catch((err: Error) => setError(err.message));
+  }, [open, dashboardId]);
+
+  const save = async (next: { sharedWithAll: boolean; emails: string[] }) => {
+    setBusy(true);
+    setError(null);
+    try {
+      setState(await api<AccessState>(`/api/dashboards/${dashboardId}/access`, { method: "PUT", json: next }));
+      toast.success("Acesso atualizado.");
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  if (!state) return error ? <p className="text-xs text-destructive">{error}</p> : null;
+  const emails = state.people.map((person) => person.email);
+
+  return (
+    <div className="space-y-2 rounded-lg border border-border p-3">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-sm font-medium text-foreground">Pessoas com acesso</p>
+          <p className="text-[11px] text-muted-foreground">Precisam entrar no SIGDATA. Só leitura.</p>
+        </div>
+        <label className="flex shrink-0 items-center gap-1.5 text-xs text-foreground">
+          <input
+            type="checkbox"
+            checked={state.sharedWithAll}
+            disabled={busy}
+            onChange={(e) => void save({ sharedWithAll: e.target.checked, emails })}
+          />
+          Todos os usuários
+        </label>
+      </div>
+      {state.people.length > 0 ? (
+        <ul className="flex flex-wrap gap-1.5">
+          {state.people.map((person) => (
+            <li key={person.id} className="flex items-center gap-1 rounded-full border border-border bg-muted/40 py-0.5 pr-1 pl-2 text-[11px] text-foreground">
+              {person.name}
+              <button
+                type="button"
+                aria-label={`Remover acesso de ${person.name}`}
+                disabled={busy}
+                onClick={() => void save({ sharedWithAll: state.sharedWithAll, emails: emails.filter((email) => email !== person.email) })}
+                className="grid size-4 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+              >
+                ×
+              </button>
+            </li>
+          ))}
+        </ul>
+      ) : null}
+      <form
+        className="flex gap-2"
+        onSubmit={(event) => {
+          event.preventDefault();
+          const email = draft.trim().toLowerCase();
+          if (!email) return;
+          setDraft("");
+          void save({ sharedWithAll: state.sharedWithAll, emails: [...new Set([...emails, email])] });
+        }}
+      >
+        <input
+          type="email"
+          value={draft}
+          onChange={(event) => setDraft(event.target.value)}
+          placeholder="e-mail da pessoa"
+          aria-label="E-mail da pessoa para dar acesso"
+          className="h-8 min-w-0 flex-1 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+        />
+        <Button type="submit" size="sm" variant="outline" disabled={busy || !draft.trim()}>
+          Adicionar
+        </Button>
+      </form>
+      {error ? <p className="text-xs text-destructive">{error}</p> : null}
+    </div>
+  );
+};
+
 /** Compartilhamento por link público (somente leitura, versão salva, dados ao vivo). */
 export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty: boolean }) => {
   const token = useDashboardsStore((state) => state.shareTokens[dashboardId] ?? null);
@@ -108,6 +202,8 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
               Quem tiver o link vê o painel em modo leitura, sem precisar de conta.
             </DialogDescription>
           </DialogHeader>
+
+          <AccessSection dashboardId={dashboardId} open={open} />
 
           <div className="flex items-center gap-3 rounded-lg border border-border p-3">
             <span

@@ -16,7 +16,7 @@ import {
 import { SourceTile } from "@/components/fontes/source-tile";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
-import { useDatasetsStore, type Dataset } from "@/lib/datasets/store";
+import { useDatasetsStore, type Dataset, type SourceUsage } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
 import { confirmAction, toast } from "@/lib/feedback";
 import { RoleGate } from "@/components/sigdata/role-gate";
@@ -71,6 +71,14 @@ const TileGrid = ({ children }: { children: React.ReactNode }) => (
   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
 );
 
+/** Frase com o impacto real; sem dados de uso, cai no aviso genérico. */
+const usageText = (usage: SourceUsage | null, fallback: string) =>
+  usage && usage.dashboards + usage.projects > 0
+    ? `Está em uso por ${usage.dashboards} dashboard(s) e ${usage.projects} projeto(s)${
+        usage.people > 0 ? `, de ${usage.people} outra(s) pessoa(s)` : ""
+      }. Eles deixam de funcionar.`
+    : fallback;
+
 function FontesDeDadosContent() {
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const loadError = useDatasetsStore((state) => state.error);
@@ -79,6 +87,7 @@ function FontesDeDadosContent() {
   const datasets = useDatasetsStore((state) => state.datasets);
   const removeDataset = useDatasetsStore((state) => state.removeDataset);
   const setPublished = useDatasetsStore((state) => state.setPublished);
+  const usageOf = useDatasetsStore((state) => state.usageOf);
 
   const router = useRouter();
   const tab: TabId = useSearchParams().get("aba") === "datasets" ? "datasets" : "fontes";
@@ -107,32 +116,41 @@ function FontesDeDadosContent() {
       onInspect={() => setSelectedId(dataset.id === selectedId ? null : dataset.id)}
       onTogglePublish={() => {
         const next = !dataset.published;
-        void confirmAction({
-          title: next ? `Publicar "${dataset.name}"?` : `Despublicar "${dataset.name}"?`,
-          description: next
-            ? "Todos os usuários passam a ver e usar este dataset em projetos e dashboards."
-            : "Projetos e dashboards de outras pessoas que o usam deixam de funcionar até ele ser publicado de novo.",
-          confirmLabel: next ? "Publicar" : "Despublicar",
-          destructive: !next,
-        }).then((ok) => {
+        void (next ? Promise.resolve(null) : usageOf(dataset.id).catch(() => null))
+          .then((usage) =>
+            confirmAction({
+              title: next ? `Publicar "${dataset.name}"?` : `Despublicar "${dataset.name}"?`,
+              description: next
+                ? "Todos os usuários passam a ver e usar este dataset em projetos e dashboards."
+                : usageText(usage, "Dashboards e projetos de outras pessoas que o usam deixam de funcionar até ele ser publicado de novo."),
+              confirmLabel: next ? "Publicar" : "Despublicar",
+              destructive: !next,
+            }),
+          )
+          .then((ok) => {
           if (!ok) return;
-          setPublished(dataset.id, next)
+          setPublished(dataset.id, next, true)
             .then(() => toast.success(next ? "Dataset publicado." : "Dataset voltou a rascunho."))
             .catch((error: Error) => toast.error(error.message));
         });
       }}
       onRemove={() => {
         const kind = dataset.definition ? "dataset" : "fonte";
-        void confirmAction({
-          title: `Excluir ${kind === "dataset" ? "o dataset" : "a fonte"} "${dataset.name}"?`,
-          description: "Projetos que a usam ficarão sem fonte.",
-          confirmLabel: "Excluir",
-          destructive: true,
-        }).then((ok) => {
+        void usageOf(dataset.id)
+          .catch(() => null)
+          .then((usage) =>
+            confirmAction({
+              title: `Excluir ${kind === "dataset" ? "o dataset" : "a fonte"} "${dataset.name}"?`,
+              description: usageText(usage, "Projetos que a usam ficarão sem fonte."),
+              confirmLabel: "Excluir",
+              destructive: true,
+            }),
+          )
+          .then((ok) => {
           if (!ok) return;
           setRemoveError(null);
           if (selectedId === dataset.id) setSelectedId(null);
-          removeDataset(dataset.id)
+          removeDataset(dataset.id, true)
             .then(() => toast.success(`${kind === "dataset" ? "Dataset excluído" : "Fonte excluída"}.`))
             .catch((error: Error) => setRemoveError(error.message));
         });

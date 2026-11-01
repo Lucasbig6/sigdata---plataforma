@@ -17,6 +17,8 @@ export type Dataset = DataSource;
 export type DatasetKind = SourceKind;
 export const DATASET_KIND_LABELS = SOURCE_KIND_LABELS;
 
+export type SourceUsage = { dashboards: number; projects: number; people: number };
+
 type DatasetsStore = {
   hydrated: boolean;
   error: string | null;
@@ -39,8 +41,11 @@ type DatasetsStore = {
   }) => Promise<DataSource>;
   refreshSchema: (id: string) => Promise<DataSource>;
   profileTable: (id: string, table: string) => Promise<SourceTable>;
-  removeDataset: (id: string) => Promise<void>;
-  setPublished: (id: string, published: boolean) => Promise<void>;
+  /** `force` confirma mesmo com o dataset em uso por dashboards/projetos. */
+  removeDataset: (id: string, force?: boolean) => Promise<void>;
+  setPublished: (id: string, published: boolean, force?: boolean) => Promise<void>;
+  /** Onde a fonte está em uso (dashboards, projetos e pessoas além do dono). */
+  usageOf: (id: string) => Promise<SourceUsage>;
 };
 
 let hydrating: Promise<void> | null = null;
@@ -118,12 +123,14 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
       return profiled;
     },
 
-    setPublished: async (id, published) => {
-      upsert(await api<DataSource>(`/api/sources/${id}/publish`, { method: "POST", json: { published } }));
+    setPublished: async (id, published, force = false) => {
+      upsert(await api<DataSource>(`/api/sources/${id}/publish`, { method: "POST", json: { published, force } }));
     },
 
-    removeDataset: async (id) => {
-      await api(`/api/sources/${id}`, { method: "DELETE" });
+    usageOf: (id) => api<SourceUsage>(`/api/sources/${id}/usage`),
+
+    removeDataset: async (id, force = false) => {
+      await api(`/api/sources/${id}${force ? "?force=true" : ""}`, { method: "DELETE" });
       set({ datasets: get().datasets.filter((entry) => entry.id !== id) });
     },
   };

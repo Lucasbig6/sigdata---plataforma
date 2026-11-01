@@ -3,7 +3,8 @@
 import { ArrowLeft, Eye, LayoutDashboard, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { api } from "@/lib/api/client";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
@@ -18,6 +19,8 @@ const formatDate = (timestamp: number): string =>
     year: "numeric",
   });
 
+type SharedEntry = { id: string; name: string; description: string; updatedAt: number; ownerName: string };
+
 export default function DashboardsPage() {
   const router = useRouter();
   const hydrated = useDashboardsStore((state) => state.hydrated);
@@ -29,8 +32,13 @@ export default function DashboardsPage() {
   const deleteDashboard = useDashboardsStore((state) => state.deleteDashboard);
   const shareTokens = useDashboardsStore((state) => state.shareTokens);
 
+  const [sharedWithMe, setSharedWithMe] = useState<SharedEntry[]>([]);
+
   useEffect(() => {
     hydrate();
+    api<SharedEntry[]>("/api/dashboards/shared")
+      .then(setSharedWithMe)
+      .catch(() => undefined);
   }, [hydrate]);
 
   const items = useMemo(
@@ -163,6 +171,31 @@ export default function DashboardsPage() {
             ))}
           </div>
         )}
+
+        {sharedWithMe.length > 0 ? (
+          <section aria-labelledby="compartilhados" className="mt-10">
+            <h2 id="compartilhados" className="mb-3 text-sm font-medium text-foreground">
+              Compartilhados com você
+            </h2>
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {sharedWithMe.map((entry) => (
+                <Link
+                  key={entry.id}
+                  href={`/dashboards/compartilhado/${entry.id}`}
+                  className="flex flex-col gap-1.5 rounded-xl border border-border/70 bg-card/60 p-4 transition-colors hover:border-primary/50 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none"
+                >
+                  <span className="truncate text-sm font-medium text-foreground">{entry.name}</span>
+                  <span className="line-clamp-2 min-h-8 text-xs leading-relaxed text-muted-foreground">
+                    {entry.description || "Sem descrição."}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    de {entry.ownerName} · somente leitura · {formatDate(entry.updatedAt)}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          </section>
+        ) : null}
       </main>
     </div>
   );

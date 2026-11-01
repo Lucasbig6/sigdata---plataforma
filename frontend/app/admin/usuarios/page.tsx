@@ -1,6 +1,7 @@
 "use client";
 
-import { ArrowLeft, Link2, Loader2, UserPlus } from "lucide-react";
+import { ArrowLeft, Link2, Loader2, MoreHorizontal, Trash2, UserPlus } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -11,7 +12,7 @@ import { RoleGate } from "@/components/sigdata/role-gate";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { api } from "@/lib/api/client";
 import { useSession } from "@/lib/auth-client";
-import { toast } from "@/lib/feedback";
+import { confirmAction, toast } from "@/lib/feedback";
 import { ROLES, ROLE_LABELS, type Role } from "@shared/roles";
 
 type AdminUser = {
@@ -19,6 +20,7 @@ type AdminUser = {
   name: string;
   email: string;
   role: Role;
+  disabled: boolean;
   createdAt: string;
   projects: number;
   dashboards: number;
@@ -183,6 +185,43 @@ const UsersTable = () => {
   const [createOpen, setCreateOpen] = useState(false);
   const [shownLink, setShownLink] = useState<{ name: string; url: string } | null>(null);
 
+  const toggleDisabled = async (user: AdminUser) => {
+    const next = !user.disabled;
+    const ok = await confirmAction({
+      title: next ? `Desativar ${user.name}?` : `Reativar ${user.name}?`,
+      description: next
+        ? "A pessoa é desconectada e não consegue entrar. Projetos, dashboards e fontes dela ficam guardados."
+        : "A pessoa volta a poder entrar com a mesma senha.",
+      confirmLabel: next ? "Desativar" : "Reativar",
+      destructive: next,
+    });
+    if (!ok) return;
+    try {
+      await api(`/api/admin/users/${user.id}`, { method: "PATCH", json: { disabled: next } });
+      setUsers((list) => list?.map((entry) => (entry.id === user.id ? { ...entry, disabled: next } : entry)) ?? null);
+      toast.success(next ? `${user.name} foi desativado.` : `${user.name} foi reativado.`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
+  const removeUser = async (user: AdminUser) => {
+    const ok = await confirmAction({
+      title: `Remover ${user.name}?`,
+      description: `Apaga a conta, ${user.projects} projeto(s), ${user.dashboards} dashboard(s) e as fontes dela. Datasets publicados ficam com você. Não dá para desfazer; para só bloquear o acesso, use Desativar.`,
+      confirmLabel: "Remover",
+      destructive: true,
+    });
+    if (!ok) return;
+    try {
+      await api(`/api/admin/users/${user.id}`, { method: "DELETE" });
+      setUsers((list) => list?.filter((entry) => entry.id !== user.id) ?? null);
+      toast.success(`${user.name} foi removido.`);
+    } catch (err) {
+      toast.error((err as Error).message);
+    }
+  };
+
   const requestLink = async (user: AdminUser) => {
     try {
       const { accessLink } = await api<{ accessLink: string | null }>(`/api/admin/users/${user.id}/access-link`, {
@@ -228,7 +267,7 @@ const UsersTable = () => {
       </ul>
 
       <div className="overflow-x-auto rounded-xl border border-border/70">
-        <table className="w-full min-w-[48rem] text-sm">
+        <table className="w-full min-w-[44rem] text-sm">
           <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
             <tr>
               <th className="px-4 py-2.5 font-medium">Pessoa</th>
@@ -246,6 +285,11 @@ const UsersTable = () => {
                   <span className="block font-medium text-foreground">
                     {user.name}
                     {user.id === session?.user.id ? <span className="ml-1.5 text-xs font-normal text-muted-foreground">(você)</span> : null}
+                    {user.disabled ? (
+                      <span className="ml-1.5 rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-[10px] font-normal text-destructive">
+                        Desativada
+                      </span>
+                    ) : null}
                   </span>
                   <span className="block text-xs text-muted-foreground">{user.email}</span>
                 </td>
@@ -271,15 +315,32 @@ const UsersTable = () => {
                 <td className="px-4 py-3 text-right tabular-nums">{user.dashboards}</td>
                 <td className="px-4 py-3 text-right tabular-nums">{user.sources}</td>
                 <td className="px-4 py-3 text-right">
-                  <Button
-                    size="xs"
-                    variant="outline"
-                    title="Gera um link para a pessoa definir uma nova senha"
-                    onClick={() => void requestLink(user)}
-                  >
-                    <Link2 aria-hidden />
-                    Link de acesso
-                  </Button>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger
+                      aria-label={`Ações de ${user.name}`}
+                      className="inline-grid size-8 place-items-center rounded-md border border-border/70 text-muted-foreground transition-colors outline-none hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                      <MoreHorizontal className="size-4" aria-hidden />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-52">
+                      <DropdownMenuItem onClick={() => void requestLink(user)}>
+                        <Link2 className="size-3.5 shrink-0 text-muted-foreground" aria-hidden />
+                        Link de acesso
+                      </DropdownMenuItem>
+                      {user.id !== session?.user.id ? (
+                        <>
+                          <DropdownMenuItem onClick={() => void toggleDisabled(user)}>
+                            {user.disabled ? "Reativar conta" : "Desativar conta"}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem className="text-destructive" onClick={() => void removeUser(user)}>
+                            <Trash2 className="size-3.5 shrink-0" aria-hidden />
+                            Remover conta
+                          </DropdownMenuItem>
+                        </>
+                      ) : null}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </td>
               </tr>
             ))}
@@ -307,6 +368,12 @@ export default function UsersAdminPage() {
               <ArrowLeft className="size-4" aria-hidden />
             </Link>
             <h1 className="flex-1 text-base font-medium text-foreground">Usuários e perfis</h1>
+            <Link
+              href="/admin/atividades"
+              className="rounded-md border border-border/70 px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted/60"
+            >
+              Atividades
+            </Link>
             <ThemeToggle />
           </div>
         </header>

@@ -34,7 +34,14 @@ import type {
   NumberFormat,
 } from "@shared/dashboards/types";
 
-type Mode = { kind: "private" } | { kind: "public"; token: string };
+/**
+ * `public`: só leitura, a partir da versão salva. `token` identifica o link público; para quem está
+ * logado e recebeu o dashboard, `basePath` aponta para a rota autenticada (`/api/dashboards/:id/view`).
+ */
+type Mode = { kind: "private" } | { kind: "public"; token: string; basePath?: string };
+
+const viewerBase = (mode: { token: string; basePath?: string }) =>
+  mode.basePath ?? `/api/public/dashboards/${encodeURIComponent(mode.token)}`;
 
 type FilterElement = DashboardElement & { type: "filter" };
 
@@ -255,10 +262,11 @@ export const useBindingData = (
   if (ready) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
+      const base = viewerBase(ctx.mode);
       const publicFilters: PublicFilter[] = filters.map((entry) => ({ elementId: entry.id, value: entry.value }));
       key = JSON.stringify(["pub", token, elementId, publicFilters, ctx.refreshKey]);
       load = () =>
-        api<BindingData>(`/api/public/dashboards/${token}/data`, {
+        api<BindingData>(`${base}/data`, {
           method: "POST",
           json: { elementId, filters: publicFilters },
         });
@@ -288,9 +296,10 @@ export const useFilterOptions = (element: FilterElement) => {
   if (binding?.sourceId && binding.table && binding.column && (element.props.mode !== "range" || element.props.rangeDisplay === "deslizante")) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
+      const base = viewerBase(ctx.mode);
       key = JSON.stringify(["pub-opt", token, element.id, ctx.refreshKey]);
       load = () =>
-        api<FilterOptions>(`/api/public/dashboards/${token}/filter-options`, {
+        api<FilterOptions>(`${base}/filter-options`, {
           method: "POST",
           json: { elementId: element.id },
         });
