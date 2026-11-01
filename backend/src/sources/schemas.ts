@@ -7,6 +7,7 @@ export const postgresConnectionSchema = z.object({
   user: z.string().trim().min(1, "informe o usuário").max(128),
   password: z.string().max(512).default(""),
   ssl: z.boolean().default(false),
+  sslVerify: z.boolean().default(true),
   schemas: z.array(z.string().trim().max(128)).max(20).optional(),
 });
 

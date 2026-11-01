@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import type { DataSource, PostgresConnectionInput } from "@/lib/domain/sources";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/feedback";
 
 type Mode = "arquivo" | "postgresql";
 
@@ -28,6 +29,7 @@ const EMPTY_PG: PostgresConnectionInput = {
   user: "",
   password: "",
   ssl: false,
+  sslVerify: true,
 };
 
 export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) => void }) => {
@@ -74,6 +76,7 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
           : await connectPostgres({ name, description, connection: pg });
       if (source.status === "erro") throw new Error(source.error ?? "Falha ao processar a fonte.");
       reset();
+      toast.success(`Fonte "${source.name}" adicionada.`);
       onCreated(source);
       return `"${source.name}" pronta — ${source.tables.length} tabela(s).`;
     });
@@ -223,6 +226,16 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
             <input type="checkbox" checked={pg.ssl} onChange={(e) => setPgField("ssl", e.target.checked)} />
             Usar SSL
           </label>
+          {pg.ssl ? (
+            <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-6">
+              <input
+                type="checkbox"
+                checked={pg.sslVerify !== false}
+                onChange={(e) => setPgField("sslVerify", e.target.checked)}
+              />
+              Validar o certificado do servidor (desmarque só para certificado autoassinado)
+            </label>
+          ) : null}
         </div>
       )}
 

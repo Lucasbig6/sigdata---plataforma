@@ -68,6 +68,8 @@ export type PostgresConnectionInput = {
   user: string;
   password: string;
   ssl: boolean;
+  /** Valida o certificado TLS do servidor (padrão: sim). Desligue só para certificados autoassinados. */
+  sslVerify?: boolean;
   /** Schemas a inspecionar; vazio = todos os não-sistema. */
   schemas?: string[];
 };

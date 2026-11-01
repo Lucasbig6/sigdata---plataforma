@@ -11,9 +11,11 @@ import {
   type UIMessage,
 } from "ai";
 import { Hono } from "hono";
+import { z } from "zod";
+import { userLimiter } from "../rate-limit";
 import { buildSystemPrompt, loadActiveSource, persistConversation, serverTools } from "../chat";
 import { sanitizeMessages } from "../extract-file";
-import { errorResponse, HttpError, requireUser } from "../http";
+import { errorResponse, HttpError, parseBody, requireUser } from "../http";
 import { getProject } from "../projects";
 
 const MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
@@ -39,6 +41,35 @@ const frontendTools = (defs: FrontendToolDefs): ToolSet =>
     ]),
   );
 
+/** Corpo da requisição: limites evitam abuso de cota e payloads gigantes. */
+const chatBodySchema = z.object({
+  projectId: z.string().min(1).max(64),
+  messages: z.array(z.custom<UIMessage>((value) => typeof value === "object" && value !== null)).min(1).max(100),
+  system: z.string().max(4000).optional(),
+  tools: z
+    .record(
+      z.string().max(64),
+      z.object({ description: z.string().max(2000).optional(), parameters: z.custom<JSONSchema7>() }),
+    )
+    .refine((tools) => Object.keys(tools).length <= 20, "Ferramentas demais.")
+    .optional(),
+});
+
+const chatLimit = userLimiter({
+  windowMs: 60_000,
+  max: Number(process.env.CHAT_RATE_LIMIT_PER_MIN) || 20,
+});
+
+/** Mensagem segura para o navegador; o detalhe fica só no log do servidor. */
+const publicChatError = (error: unknown) => {
+  console.error("[sigdata] erro no chat", error);
+  const message = error instanceof Error ? error.message : String(error);
+  if (/rate.?limit|too large|429|quota/i.test(message)) {
+    return "O serviço de IA atingiu o limite de uso. Tente novamente em instantes.";
+  }
+  return "Não foi possível gerar a resposta. Tente novamente.";
+};
+
 export const chatRoutes = new Hono();
 
 chatRoutes.post("/", async (c) => {
@@ -49,15 +80,19 @@ chatRoutes.post("/", async (c) => {
     const apiKey = process.env.GROQ_API_KEY;
     if (!apiKey) throw new HttpError(500, "GROQ_API_KEY não configurada no backend (.env).");
 
-    const { messages, system, tools, projectId } = (await req.json()) as {
+    const retryAfter = chatLimit(user.id);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      throw new HttpError(429, `Muitas mensagens em pouco tempo. Aguarde ${retryAfter}s.`);
+    }
+
+    const { messages, system, tools, projectId } = (await parseBody(req, chatBodySchema)) as {
       messages: UIMessage[];
       system?: string;
       tools?: FrontendToolDefs;
-      projectId?: string;
+      projectId: string;
     };
 
-    if (!projectId) throw new HttpError(400, "projectId é obrigatório.");
-    if (!Array.isArray(messages)) throw new HttpError(400, "messages inválido.");
     const project = await getProject(user.id, projectId);
     const source = await loadActiveSource(user.id, project.sourceId);
 
@@ -90,7 +125,7 @@ chatRoutes.post("/", async (c) => {
           console.error("[sigdata] falha ao salvar conversa", error);
         }
       },
-      onError: (error) => (error instanceof Error ? error.message : String(error)),
+      onError: publicChatError,
     });
   } catch (error) {
     return errorResponse(error);
