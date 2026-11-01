@@ -142,7 +142,7 @@ type SigdataDashboardsStore = {
   undo: () => void;
   redo: () => void;
   save: () => Promise<void>;
-  share: (id: string) => Promise<string>;
+  share: (id: string, expiresInDays?: number | null) => Promise<string>;
   unshare: (id: string) => Promise<void>;
   /** Abre um dashboard recebido por link público (somente leitura). */
   loadPublic: (dashboard: Dashboard, analyses: SavedAnalysis[]) => void;
@@ -515,9 +515,12 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       }
     },
 
-    share: async (id) => {
+    share: async (id, expiresInDays) => {
       const { token } = await afterCreate(id, () =>
-        api<{ token: string }>(`/api/dashboards/${id}/share`, { method: "POST" }),
+        api<{ token: string }>(`/api/dashboards/${id}/share`, {
+          method: "POST",
+          json: { expiresInDays: expiresInDays ?? null },
+        }),
       ).then((out) => out as { token: string });
       set({ shareTokens: { ...get().shareTokens, [id]: token } });
       return token;

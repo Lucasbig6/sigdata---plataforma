@@ -323,18 +323,54 @@ dashboardsRoutes.delete(
   }),
 );
 
-/** Gera (ou devolve) o link público somente-leitura. */
-dashboardsRoutes.post(
+const shareOptionsSchema = z.object({ expiresInDays: z.number().int().min(1).max(365).nullable().optional() });
+
+const expiryFrom = (days: number | null | undefined) =>
+  days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null;
+
+/** Estado atual do link público (token e validade). */
+dashboardsRoutes.get(
   "/:id/share",
   handle<{ id: string }>(async ({ user, params }) => {
     const row = await getDashboardRow(user.id, params.id);
-    if (row.shareToken) return { token: row.shareToken };
+    return { token: row.shareToken, expiresAt: row.sharedExpiresAt?.getTime() ?? null };
+  }),
+);
+
+/** Gera (ou devolve) o link público somente-leitura; `expiresInDays` define a validade. */
+dashboardsRoutes.post(
+  "/:id/share",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    const raw = (await req.json().catch(() => ({}))) as unknown;
+    const parsed = shareOptionsSchema.safeParse(raw ?? {});
+    if (!parsed.success) throw new HttpError(400, "Validade inválida (1 a 365 dias).");
+    const { expiresInDays } = parsed.data;
+    const expired = row.sharedExpiresAt !== null && row.sharedExpiresAt.getTime() <= Date.now();
+    // link expirado ganha token novo; o antigo não volta a funcionar
+    if (row.shareToken && !expired) {
+      return { token: row.shareToken, expiresAt: row.sharedExpiresAt?.getTime() ?? null };
+    }
     const token = randomBytes(18).toString("base64url");
+    const expiresAt = expiryFrom(expiresInDays);
     await db
       .update(schema.dashboards)
-      .set({ shareToken: token, sharedAt: new Date() })
+      .set({ shareToken: token, sharedAt: new Date(), sharedExpiresAt: expiresAt })
       .where(eq(schema.dashboards.id, row.id));
-    return { token };
+    return { token, expiresAt: expiresAt?.getTime() ?? null };
+  }),
+);
+
+/** Altera a validade de um link já ativo (null = sem expiração). */
+dashboardsRoutes.patch(
+  "/:id/share",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    if (!row.shareToken) throw new HttpError(400, "O painel não está compartilhado.");
+    const { expiresInDays } = await parseBody(req, shareOptionsSchema);
+    const expiresAt = expiryFrom(expiresInDays);
+    await db.update(schema.dashboards).set({ sharedExpiresAt: expiresAt }).where(eq(schema.dashboards.id, row.id));
+    return { token: row.shareToken, expiresAt: expiresAt?.getTime() ?? null };
   }),
 );
 
@@ -345,7 +381,7 @@ dashboardsRoutes.delete(
     const row = await getDashboardRow(user.id, params.id);
     await db
       .update(schema.dashboards)
-      .set({ shareToken: null, sharedAt: null })
+      .set({ shareToken: null, sharedAt: null, sharedExpiresAt: null })
       .where(eq(schema.dashboards.id, row.id));
     return { ok: true };
   }),
@@ -362,6 +398,9 @@ const sharedDashboard = async (token: string) => {
     .from(schema.dashboards)
     .where(eq(schema.dashboards.shareToken, token));
   if (!row) throw notFound("Link");
+  if (row.sharedExpiresAt && row.sharedExpiresAt.getTime() <= Date.now()) {
+    throw new HttpError(410, "Este link expirou. Peça um novo a quem compartilhou.");
+  }
   return row;
 };
 

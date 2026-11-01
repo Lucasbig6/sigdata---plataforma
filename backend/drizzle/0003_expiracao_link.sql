@@ -1,0 +1,1 @@
+ALTER TABLE "dashboards" ADD COLUMN "shared_expires_at" timestamp with time zone;

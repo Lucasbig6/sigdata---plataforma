@@ -1,7 +1,7 @@
 "use client";
 
 import { Check, Copy, ExternalLink, Globe, Loader2, Lock, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -11,7 +11,16 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { api } from "@/lib/api/client";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { toast } from "@/lib/feedback";
+
+const EXPIRY_OPTIONS: { value: string; label: string; days: number | null }[] = [
+  { value: "nunca", label: "Sem expiração", days: null },
+  { value: "1", label: "24 horas", days: 1 },
+  { value: "7", label: "7 dias", days: 7 },
+  { value: "30", label: "30 dias", days: 30 },
+];
 
 const publicUrl = (token: string) => `${window.location.origin}/compartilhado/${token}`;
 
@@ -27,6 +36,28 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [expiry, setExpiry] = useState("nunca");
+
+  // validade atual do link, buscada ao abrir
+  useEffect(() => {
+    if (!open || !token) return;
+    api<{ expiresAt: number | null }>(`/api/dashboards/${dashboardId}/share`)
+      .then((state) => setExpiresAt(state.expiresAt))
+      .catch(() => undefined);
+  }, [open, token, dashboardId]);
+
+  const changeExpiry = (value: string) =>
+    void run(async () => {
+      const days = EXPIRY_OPTIONS.find((option) => option.value === value)?.days ?? null;
+      const state = await api<{ expiresAt: number | null }>(`/api/dashboards/${dashboardId}/share`, {
+        method: "PATCH",
+        json: { expiresInDays: days },
+      });
+      setExpiry(value);
+      setExpiresAt(state.expiresAt);
+      toast.success(days ? "Validade do link atualizada." : "O link não expira mais.");
+    });
 
   const run = async (fn: () => Promise<unknown>) => {
     setBusy(true);
@@ -45,6 +76,7 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
     try {
       await navigator.clipboard.writeText(publicUrl(token));
       setCopied(true);
+      toast.success("Link copiado.");
       setTimeout(() => setCopied(false), 1800);
     } catch {
       setError("Não foi possível copiar. Selecione o link e copie manualmente.");
@@ -56,6 +88,7 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
       <button
         type="button"
         onClick={() => setOpen(true)}
+        aria-label="Compartilhar painel"
         className="flex h-9 items-center gap-1.5 rounded-md border border-border/70 bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/60"
       >
         <Share2 className="size-4" aria-hidden />
@@ -98,7 +131,19 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
               aria-checked={Boolean(token)}
               aria-label="Link público"
               disabled={busy}
-              onClick={() => void run(() => (token ? unshare(dashboardId) : share(dashboardId)))}
+              onClick={() =>
+                void run(async () => {
+                  if (token) {
+                    await unshare(dashboardId);
+                    setExpiresAt(null);
+                    setExpiry("nunca");
+                    toast.info("Link desativado.");
+                  } else {
+                    await share(dashboardId, EXPIRY_OPTIONS.find((o) => o.value === expiry)?.days ?? null);
+                    toast.success("Link público ativado.");
+                  }
+                })
+              }
               className={`relative h-5 w-9 shrink-0 rounded-full transition-colors disabled:opacity-50 ${
                 token ? "bg-primary" : "bg-muted"
               }`}
@@ -134,6 +179,26 @@ export const ShareDialog = ({ dashboardId, dirty }: { dashboardId: string; dirty
               </Button>
             </div>
           ) : null}
+
+          <div className="flex items-center justify-between gap-3">
+            <label htmlFor="share-expiry" className="text-[11px] text-muted-foreground">
+              Validade do link
+              {token && expiresAt ? ` — expira em ${new Date(expiresAt).toLocaleString("pt-BR")}` : ""}
+            </label>
+            <select
+              id="share-expiry"
+              value={expiry}
+              disabled={busy}
+              onChange={(event) => (token ? changeExpiry(event.target.value) : setExpiry(event.target.value))}
+              className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              {EXPIRY_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
 
           {token ? (
             <div className="space-y-1.5">

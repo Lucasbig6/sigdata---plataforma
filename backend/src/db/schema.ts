@@ -231,6 +231,8 @@ export const dashboards = pgTable(
     /** Token do link público (null = não compartilhado). */
     shareToken: text("share_token"),
     sharedAt: timestamp("shared_at", { withTimezone: true }),
+    /** Fim da validade do link público (null = sem expiração). */
+    sharedExpiresAt: timestamp("shared_expires_at", { withTimezone: true }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
