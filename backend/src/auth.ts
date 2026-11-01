@@ -1,4 +1,6 @@
 import { betterAuth } from "better-auth";
+import { APIError } from "better-auth/api";
+import { adminCreationRole, openSignup, rememberAccessLink } from "./access";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db, schema } from "./db";
 import { mailerConfigured, sendMail } from "./mailer";
@@ -27,13 +29,15 @@ export const auth = betterAuth({
     minPasswordLength: 8,
     maxPasswordLength: 128,
     autoSignIn: true,
-    resetPasswordTokenExpiresIn: 60 * 60,
+    // também vale para o link de primeiro acesso enviado pelo admin
+    resetPasswordTokenExpiresIn: 60 * 60 * 24,
     // não bloqueia a requisição esperando o provedor de e-mail
     sendResetPassword: async ({ user, url }) => {
+      rememberAccessLink(user.email, url);
       void sendMail({
         to: user.email,
         subject: "Redefinir sua senha no SIGDATA",
-        text: `Olá, ${user.name}.\n\nPara criar uma nova senha, abra o link (vale por 1 hora):\n${url}\n\nSe você não pediu isso, ignore este e-mail.`,
+        text: `Olá, ${user.name}.\n\nPara criar uma nova senha, abra o link (vale por 24 horas):\n${url}\n\nSe você não pediu isso, ignore este e-mail.`,
       }).catch((error) => console.error("[sigdata] falha ao enviar e-mail", error));
     },
     revokeSessionsOnPasswordReset: true,
@@ -55,10 +59,25 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7,
     updateAge: 60 * 60 * 24,
   },
-  rateLimit: { enabled: true, window: 60, max: 30 },
+  // desligado só nos testes, que criam várias contas em sequência
+  rateLimit: { enabled: process.env.SIGDATA_TEST !== "1", window: 60, max: 30 },
+  user: {
+    // `input: false`: o papel nunca vem do cadastro nem da edição de perfil, só do admin
+    additionalFields: { role: { type: "string", defaultValue: "usuario", input: false } },
+  },
   databaseHooks: {
     user: {
       create: {
+        // a primeira conta criada administra o sistema; as demais entram como usuário
+        before: async (created) => {
+          const [first] = await db.select({ id: schema.user.id }).from(schema.user).limit(1);
+          if (!first) return { data: { ...created, role: "admin" } };
+          const byAdmin = adminCreationRole(created.email);
+          if (!byAdmin && !openSignup()) {
+            throw new APIError("FORBIDDEN", { message: "Cadastro fechado. Peça a um administrador para criar sua conta." });
+          }
+          return { data: { ...created, role: byAdmin ?? "usuario" } };
+        },
         // Conteúdo inicial: fonte de demonstração consultável + dashboards de exemplo.
         after: async (created) => {
           try {

@@ -14,3 +14,5 @@ process.env.BETTER_AUTH_SECRET = randomBytes(32).toString("base64url");
 process.env.BETTER_AUTH_URL = "http://localhost:3000";
 process.env.SIGDATA_ENCRYPTION_KEY = randomBytes(32).toString("base64");
 process.env.SIGDATA_STORAGE_DIR = STORAGE_TESTE;
+process.env.SIGDATA_TEST = "1";
+process.env.SIGDATA_OPEN_SIGNUP = "true";

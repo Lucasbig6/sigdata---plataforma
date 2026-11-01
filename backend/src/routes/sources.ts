@@ -16,6 +16,7 @@ import {
   previewTable,
   profileTable,
   refreshSource,
+  setPublished,
   runEditorQuery,
   runQuery,
   testPostgres,
@@ -25,12 +26,17 @@ import {
 
 export const sourcesRoutes = new Hono();
 
-sourcesRoutes.get("/", handle(async ({ user }) => listSources(user.id)));
+/** Importar fontes, SQL e datasets: só analistas e administradores. */
+const analystHandle = <P extends Record<string, string> = Record<string, string>>(
+  fn: Parameters<typeof handle<P>>[0],
+) => handle<P>(fn, { roles: ["analista", "admin"] });
+
+sourcesRoutes.get("/", handle(async ({ user }) => listSources(user)));
 
 /** multipart (arquivo CSV/XLSX) ou JSON (conexão Postgres). */
 sourcesRoutes.post(
   "/",
-  handle(async ({ req, user }) => {
+  analystHandle(async ({ req, user }) => {
     const type = req.headers.get("content-type") ?? "";
     if (type.startsWith("multipart/form-data")) {
       const form = await req.formData();
@@ -56,12 +62,12 @@ const datasetSchema = z.object({
 /** Cria um dataset a partir de uma consulta SQL sobre uma fonte existente. */
 sourcesRoutes.post(
   "/dataset",
-  handle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
+  analystHandle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
 );
 
 sourcesRoutes.post(
   "/test",
-  handle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema))),
+  analystHandle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema))),
 );
 
 sourcesRoutes.get(
@@ -76,22 +82,31 @@ const patchSchema = z.object({
 
 sourcesRoutes.patch(
   "/:id",
-  handle<{ id: string }>(async ({ req, user, params }) =>
-    updateSourceMeta(user.id, params.id, await parseBody(req, patchSchema)),
+  analystHandle<{ id: string }>(async ({ req, user, params }) =>
+    updateSourceMeta(user, params.id, await parseBody(req, patchSchema)),
   ),
 );
 
 sourcesRoutes.delete(
   "/:id",
-  handle<{ id: string }>(async ({ user, params }) => {
-    await deleteSource(user.id, params.id);
+  analystHandle<{ id: string }>(async ({ user, params }) => {
+    await deleteSource(user, params.id);
     return { ok: true };
+  }),
+);
+
+/** Publica (ou retira) um dataset: usuários comuns só enxergam os publicados. */
+sourcesRoutes.post(
+  "/:id/publish",
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
+    const { published } = await parseBody(req, z.object({ published: z.boolean() }));
+    return setPublished(user, params.id, published);
   }),
 );
 
 sourcesRoutes.post(
   "/:id/refresh",
-  handle<{ id: string }>(async ({ user, params }) => refreshSource(user.id, params.id)),
+  analystHandle<{ id: string }>(async ({ user, params }) => refreshSource(user, params.id)),
 );
 
 const tableParam = (req: Request) => {
@@ -119,7 +134,7 @@ const querySchema = z.object({
 /** Editor SQL do analista: prévia da consulta, sem gravar o resultado. */
 sourcesRoutes.post(
   "/:id/run",
-  handle<{ id: string }>(async ({ req, user, params }) => {
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
     const body = await parseBody(
       req,
       z.object({

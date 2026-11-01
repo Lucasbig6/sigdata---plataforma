@@ -29,6 +29,13 @@
       "when": 1793566687831,
       "tag": "0003_expiracao_link",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793571900580,
+      "tag": "0004_papeis_e_publicacao",
+      "breakpoints": true
     }
   ]
 }

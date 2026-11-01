@@ -146,4 +146,133 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
     await request(dono, "DELETE", `/api/dashboards/${id}/share`);
     assert.equal((await request(null, "GET", `/api/public/dashboards/${renewed.token}`)).status, 404);
   });
+
+  describe("papéis", () => {
+    const setRole = async (email: string, role: "usuario" | "analista" | "admin") => {
+      const { db, schema } = dbModule;
+      const { eq } = await import("drizzle-orm");
+      await db.update(schema.user).set({ role }).where(eq(schema.user.email, email));
+    };
+
+    test("cadastro novo entra como usuário e não escolhe o próprio papel", async () => {
+      const res = await request(null, "POST", "/api/auth/sign-up/email", {
+        name: "Tentativa",
+        email: "tentativa@teste.dev",
+        password: "senha-de-teste-123",
+        role: "admin",
+      });
+      const cookie = res.headers.getSetCookie().map((c) => c.split(";")[0]).join("; ");
+      const session = (await (await request(cookie, "GET", "/api/auth/get-session")).json()) as {
+        user: { role: string };
+      };
+      assert.equal(session.user.role, "usuario");
+    });
+
+    test("usuário comum não importa fontes, não usa o editor SQL e não vê a tela de admin", async () => {
+      const comum = await signUp("comum@teste.dev");
+      assert.equal((await request(comum, "POST", "/api/sources/test", { host: "x", database: "d", user: "u" })).status, 403);
+      assert.equal((await request(comum, "POST", "/api/sources/dataset", { sourceId: "x", sql: "select 1", name: "n" })).status, 403);
+      assert.equal((await request(comum, "POST", "/api/sources/qualquer/run", { sql: "select 1" })).status, 403);
+      assert.equal((await request(comum, "GET", "/api/admin/users")).status, 403);
+    });
+
+    test("analista publica dataset; usuário o enxerga e usa, mas não gerencia", async () => {
+      const analista = await signUp("analista@teste.dev");
+      await setRole("analista@teste.dev", "analista");
+      const comum = await signUp("comum2@teste.dev");
+
+      const sources = (await (await request(analista, "GET", "/api/sources")).json()) as { id: string; kind: string }[];
+      const demo = sources.find((source) => source.kind === "demo");
+      assert.ok(demo);
+      const created = await request(analista, "POST", "/api/sources/dataset", {
+        sourceId: demo.id,
+        sql: "SELECT * FROM municipios",
+        name: "Municípios tratados",
+      });
+      assert.equal(created.status, 200, await created.clone().text());
+      const dataset = (await created.json()) as { id: string; tables: { name: string }[]; published: boolean };
+      assert.equal(dataset.published, false);
+
+      const listBefore = (await (await request(comum, "GET", "/api/sources")).json()) as { id: string }[];
+      assert.ok(!listBefore.some((source) => source.id === dataset.id), "rascunho não aparece");
+      assert.equal((await request(comum, "GET", `/api/sources/${dataset.id}`)).status, 404);
+
+      assert.equal((await request(comum, "POST", `/api/sources/${dataset.id}/publish`, { published: true })).status, 403);
+      const published = await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: true });
+      assert.equal(published.status, 200);
+
+      const listAfter = (await (await request(comum, "GET", "/api/sources")).json()) as { id: string }[];
+      assert.ok(listAfter.some((source) => source.id === dataset.id), "publicado aparece");
+      const table = encodeURIComponent(dataset.tables[0]!.name);
+      assert.equal((await request(comum, "GET", `/api/sources/${dataset.id}/preview?table=${table}`)).status, 200);
+      assert.equal((await request(comum, "DELETE", `/api/sources/${dataset.id}`)).status, 403);
+
+      // retirar da publicação esconde de novo
+      await request(analista, "POST", `/api/sources/${dataset.id}/publish`, { published: false });
+      assert.equal((await request(comum, "GET", `/api/sources/${dataset.id}`)).status, 404);
+    });
+
+    test("admin altera papéis e não pode ficar sem administrador", async () => {
+      const { db, schema } = dbModule;
+      const { eq } = await import("drizzle-orm");
+      await db.update(schema.user).set({ role: "usuario" }).where(eq(schema.user.role, "admin"));
+      const admin = await signUp("admin@teste.dev");
+      await setRole("admin@teste.dev", "admin");
+
+      const users = (await (await request(admin, "GET", "/api/admin/users")).json()) as { id: string; email: string; role: string }[];
+      const self = users.find((entry) => entry.email === "admin@teste.dev")!;
+      const other = users.find((entry) => entry.email === "comum2@teste.dev")!;
+
+      const withDashboards = users.find((entry) => entry.email === "alice@teste.dev") as unknown as { dashboards: number };
+      assert.ok(withDashboards.dashboards >= 3, "contagens por pessoa refletem os dashboards de exemplo");
+
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${other.id}`, { role: "analista" })).status, 200);
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${other.id}`, { role: "super" })).status, 400);
+      assert.equal((await request(admin, "PATCH", `/api/admin/users/${self.id}`, { role: "usuario" })).status, 409);
+    });
+
+    test("admin cria conta com link de acesso; cadastro fechado barra o autocadastro", async () => {
+      const admin = await signUp("admin2@teste.dev");
+      await setRole("admin2@teste.dev", "admin");
+
+      const created = await request(admin, "POST", "/api/admin/users", {
+        name: "Convidada",
+        email: "Convidada@Teste.dev",
+        role: "analista",
+      });
+      assert.equal(created.status, 200, await created.clone().text());
+      const body = (await created.json()) as { id: string; role: string; accessLink: string | null };
+      assert.equal(body.role, "analista");
+      assert.ok(body.accessLink?.includes("token") || body.accessLink?.includes("reset-password"), "devolve o link de acesso");
+      assert.equal((await request(admin, "POST", "/api/admin/users", { name: "x", email: "convidada@teste.dev" })).status, 409);
+
+      // a conta criada tem o perfil escolhido e recebeu o conteúdo inicial
+      const users = (await (await request(admin, "GET", "/api/admin/users")).json()) as { email: string; role: string; dashboards: number }[];
+      const row = users.find((entry) => entry.email === "convidada@teste.dev");
+      assert.equal(row?.role, "analista");
+      assert.ok((row?.dashboards ?? 0) >= 3);
+
+      const comum = await signUp("comum3@teste.dev");
+      assert.equal((await request(comum, "POST", "/api/admin/users", { name: "x", email: "x@teste.dev" })).status, 403);
+      assert.equal((await request(comum, "POST", `/api/admin/users/${body.id}/access-link`)).status, 403);
+      const again = (await (await request(admin, "POST", `/api/admin/users/${body.id}/access-link`)).json()) as { accessLink: string | null };
+      assert.ok(again.accessLink);
+
+      process.env.SIGDATA_OPEN_SIGNUP = "false";
+      try {
+        const config = (await (await request(null, "GET", "/api/config")).json()) as { openSignup: boolean };
+        assert.equal(config.openSignup, false);
+        const blocked = await request(null, "POST", "/api/auth/sign-up/email", {
+          name: "Intrusa",
+          email: "intrusa@teste.dev",
+          password: "senha-de-teste-123",
+        });
+        assert.notEqual(blocked.status, 200);
+        const stillAdmin = await request(admin, "POST", "/api/admin/users", { name: "Outra", email: "outra@teste.dev" });
+        assert.equal(stillAdmin.status, 200, "o admin continua criando contas com o cadastro fechado");
+      } finally {
+        process.env.SIGDATA_OPEN_SIGNUP = "true";
+      }
+    });
+  });
 });

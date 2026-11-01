@@ -21,6 +21,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { UIMessage } from "ai";
 import type { AnalysisSnapshot } from "@shared/analyses";
+import type { Role } from "@shared/roles";
 import type { DashboardElement, DashboardMeasure, DashboardPage } from "@shared/dashboards/types";
 import type { PanelWidget } from "@shared/panel";
 import type {
@@ -46,6 +47,8 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  /** Papel de acesso (ver shared/roles.ts). */
+  role: text("role").$type<Role>().notNull().default("usuario"),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -122,6 +125,8 @@ export const dataSources = pgTable(
     connection: text("connection"),
     /** Consulta de origem, quando a fonte é um dataset criado no editor SQL. */
     definition: jsonb("definition").$type<DatasetDefinition>(),
+    /** Dataset publicado fica visível e utilizável por todos os usuários. */
+    published: boolean("published").notNull().default(false),
     /** Cache do schema + perfil das colunas. */
     tables: jsonb("tables").$type<SourceTable[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: createdAt(),

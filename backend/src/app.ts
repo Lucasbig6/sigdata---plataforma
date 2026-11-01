@@ -3,10 +3,12 @@ import { bodyLimit } from "hono/body-limit";
 import { logger } from "hono/logger";
 import { secureHeaders } from "hono/secure-headers";
 import { sql } from "drizzle-orm";
-import { db } from "./db";
+import { openSignup } from "./access";
+import { db, schema } from "./db";
 import { rateLimitByIp } from "./rate-limit";
 import { auth } from "./auth";
 import { errorResponse } from "./http";
+import { adminRoutes } from "./routes/admin";
 import { chatRoutes } from "./routes/chat";
 import { analysesRoutes, dashboardsRoutes, publicRoutes } from "./routes/dashboards";
 import { projectsRoutes } from "./routes/projects";
@@ -40,6 +42,13 @@ app.route("/analyses", analysesRoutes);
 app.route("/dashboards", dashboardsRoutes);
 app.route("/public", publicRoutes);
 app.route("/chat", chatRoutes);
+app.route("/admin", adminRoutes);
+
+/** Configuração pública que a tela de login precisa: o cadastro está aberto? (A primeira conta é sempre permitida.) */
+app.get("/config", async (c) => {
+  const [first] = await db.select({ id: schema.user.id }).from(schema.user).limit(1);
+  return c.json({ openSignup: !first || openSignup() });
+});
 
 app.get("/health", (c) => c.json({ ok: true }));
 

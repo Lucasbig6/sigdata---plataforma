@@ -2,7 +2,7 @@ import { invalidateSourceCache } from "../query-cache";
 import { randomUUID } from "node:crypto";
 import { mkdir, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { and, desc, eq } from "drizzle-orm";
+import { and, desc, eq, or } from "drizzle-orm";
 import type {
   AnalyticResult,
   DataSource,
@@ -11,6 +11,7 @@ import type {
   TablePreview,
 } from "@shared/domain/sources";
 import { MUNICIPIOS, SERIE_TEMPORAL } from "@shared/demo-data";
+import type { Role } from "@shared/roles";
 import { decryptJson, encryptJson } from "../crypto";
 import { db, schema } from "../db";
 import { HttpError, notFound } from "../http";
@@ -51,26 +52,61 @@ export const toDataSource = (row: SourceRow): DataSource => {
     fileSize: row.fileSize,
     connectionLabel,
     definition: row.definition ?? null,
+    published: row.published,
     tables: row.tables,
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
   };
 };
 
-export const listSources = async (userId: string) => {
+/** Quem pede: o usuário da sessão (id + papel). */
+export type Actor = { id: string; role: Role };
+
+/**
+ * Fontes que a pessoa enxerga: as próprias (incluindo a de demonstração) e os datasets
+ * publicados por analistas. O admin enxerga todas.
+ */
+export const listSources = async (actor: Actor) => {
   const rows = await db
     .select()
     .from(schema.dataSources)
-    .where(eq(schema.dataSources.userId, userId))
+    .where(
+      actor.role === "admin"
+        ? undefined
+        : or(eq(schema.dataSources.userId, actor.id), eq(schema.dataSources.published, true)),
+    )
     .orderBy(desc(schema.dataSources.createdAt));
   return rows.map(toDataSource);
 };
 
+/**
+ * Fonte para USO (consultar, visualizar, ligar a dashboards): a própria ou um dataset
+ * publicado. Fontes de outras pessoas, e rascunhos, respondem como inexistentes.
+ */
 export const getSourceRow = async (userId: string, id: string) => {
   const [row] = await db
     .select()
     .from(schema.dataSources)
-    .where(and(eq(schema.dataSources.id, id), eq(schema.dataSources.userId, userId)));
+    .where(
+      and(
+        eq(schema.dataSources.id, id),
+        or(eq(schema.dataSources.userId, userId), eq(schema.dataSources.published, true)),
+      ),
+    );
+  if (!row) throw notFound("Fonte de dados", "a");
+  return row;
+};
+
+/** Fonte para GERENCIAR (editar, atualizar, excluir, publicar): a própria, ou qualquer uma para o admin. */
+export const getManagedSource = async (actor: Actor, id: string) => {
+  const [row] = await db
+    .select()
+    .from(schema.dataSources)
+    .where(
+      actor.role === "admin"
+        ? eq(schema.dataSources.id, id)
+        : and(eq(schema.dataSources.id, id), eq(schema.dataSources.userId, actor.id)),
+    );
   if (!row) throw notFound("Fonte de dados", "a");
   return row;
 };
@@ -153,27 +189,36 @@ export const testPostgres = async (connection: PostgresConnectionInput) => {
 };
 
 /** Relê o schema (útil quando o banco externo mudou). */
-export const refreshSource = async (userId: string, id: string) => {
-  const row = await getSourceRow(userId, id);
+export const refreshSource = async (actor: Actor, id: string) => {
+  const row = await getManagedSource(actor, id);
   if (row.kind !== "postgresql") return toDataSource(row);
   const tables = await introspectPg(connectionOf(row));
   return finish(id, { tables, status: "pronta", error: null });
 };
 
 export const updateSourceMeta = async (
-  userId: string,
+  actor: Actor,
   id: string,
   patch: { name?: string; description?: string },
 ) => {
-  await getSourceRow(userId, id);
+  await getManagedSource(actor, id);
   return finish(id, {
     ...(patch.name !== undefined && { name: patch.name.trim() || "Fonte sem nome" }),
     ...(patch.description !== undefined && { description: patch.description.trim() }),
   });
 };
 
-export const deleteSource = async (userId: string, id: string) => {
-  const row = await getSourceRow(userId, id);
+/** Publica ou retira da publicação um dataset pronto (só datasets são publicados). */
+export const setPublished = async (actor: Actor, id: string, published: boolean) => {
+  const row = await getManagedSource(actor, id);
+  if (row.kind !== "dataset") throw new HttpError(400, "Só datasets podem ser publicados.");
+  if (published) assertReady(row);
+  invalidateSourceCache(row.id);
+  return finish(row.id, { published });
+};
+
+export const deleteSource = async (actor: Actor, id: string) => {
+  const row = await getManagedSource(actor, id);
   await db.delete(schema.dataSources).where(eq(schema.dataSources.id, row.id));
   invalidateSourceCache(row.id);
   if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);

@@ -71,6 +71,23 @@ demonstração consultável e três dashboards de exemplo.
 | `npm run typecheck` | checa tipos dos dois projetos |
 | `npm test` | testes do backend e do frontend |
 
+## Perfis de acesso
+
+| Perfil | Pode |
+|---|---|
+| Usuário | criar projetos e dashboards próprios e usar os datasets **publicados** |
+| Analista | além disso: importar fontes, usar o editor SQL, criar e publicar datasets |
+| Administrador | tudo do analista em qualquer fonte, mais gerenciar usuários e perfis (`/admin/usuarios`) |
+
+A primeira conta criada vira administradora. O admin cria contas em `/admin/usuarios` ("Novo usuário"): a pessoa
+recebe um link de primeiro acesso (24 h) para definir a senha, que o admin copia ou que segue por e-mail. O
+autocadastro na tela de login fica aberto em desenvolvimento e **fechado em produção**; mude com
+`SIGDATA_OPEN_SIGNUP=true|false`. Com ele fechado, o login mostra que o acesso é por convite.
+Projetos e dashboards são sempre privados de quem os criou (o admin vê só as contagens). Um dataset em
+rascunho só aparece para quem o criou e para o admin; ao publicar, todos o enxergam e podem usá-lo.
+Despublicar faz projetos e dashboards de outras pessoas que o usam deixarem de funcionar até nova publicação.
+As regras valem no backend (`handle(..., { roles })`); esconder menus no frontend é só conveniência.
+
 ## Produção
 
 ```bash

@@ -56,6 +56,8 @@ export type DataSource = {
   connectionLabel: string | null;
   /** Só em datasets (kind "dataset"). */
   definition: DatasetDefinition | null;
+  /** Dataset publicado: visível para todos os usuários. Só datasets são publicados. */
+  published: boolean;
   tables: SourceTable[];
   createdAt: string;
   updatedAt: string;
