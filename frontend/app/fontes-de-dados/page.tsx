@@ -124,7 +124,7 @@ function FontesDeDadosContent() {
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="flex h-20 items-center gap-2 px-15 sm:gap-7">
+        <div className="flex h-20 items-center gap-2 px-4 sm:px-8 lg:px-15 sm:gap-7">
           <Link
             href="/"
             aria-label="Voltar ao início"
@@ -152,7 +152,7 @@ function FontesDeDadosContent() {
         </div>
       </header>
 
-      <main className="mx-auto px-30 py-6">
+      <main className="mx-auto px-4 sm:px-10 lg:px-30 py-6">
         <TabBar active={tab} counts={{ fontes: sources.length, datasets: saved.length }} onChange={changeTab} />
 
         {removeError ? <p className="mb-4 text-sm text-destructive">{removeError}</p> : null}

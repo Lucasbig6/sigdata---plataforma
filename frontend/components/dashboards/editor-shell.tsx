@@ -21,7 +21,7 @@ import { PageTabs } from "./page-tabs";
 import { PropertiesPanel } from "./properties-panel";
 import { TopBar } from "./top-bar";
 import { ViewControls } from "./view-controls";
-import { confirmAction } from "@/lib/feedback";
+import { confirmAction, toast } from "@/lib/feedback";
 
 const PRIVATE_MODE = { kind: "private" } as const;
 
@@ -74,7 +74,7 @@ const PageMenu = ({ width, height }: { width: number; height: number }) => {
 
 const EditorSkeleton = () => (
   <div className="flex h-dvh flex-col overflow-hidden bg-background">
-    <div className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-15 backdrop-blur sm:gap-7">
+    <div className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-4 sm:px-8 lg:px-15 backdrop-blur sm:gap-7">
       <div className="size-10 animate-pulse rounded-md bg-muted" />
       <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
       <div className="ml-auto h-9 w-24 animate-pulse rounded-md bg-muted" />
@@ -201,6 +201,14 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
   };
 
+  /** Salvamento pedido pela pessoa (botão ou Ctrl+S): avisa o resultado; o autosave fica em silêncio. */
+  const saveWithFeedback = async () => {
+    await save();
+    const { saveError } = useDashboardsStore.getState();
+    if (saveError) toast.error(`Não foi possível salvar: ${saveError}`);
+    else toast.success("Painel salvo.");
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
@@ -224,7 +232,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
       }
       if (mod && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        void save();
+        void saveWithFeedback();
         return;
       }
       if (typing) return;
@@ -310,7 +318,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
         onRename={rename}
         onUndo={undo}
         onRedo={redo}
-        onSave={() => void save()}
+        onSave={() => void saveWithFeedback()}
         onDiscard={() => {
           void confirmAction({
             title: "Descartar alterações?",

@@ -28,7 +28,7 @@ export const NotebooksHeader = ({
   onViewChange,
 }: NotebooksHeaderProps) => (
   <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-    <div className="flex h-20 items-center gap-2 px-15 sm:gap-7">
+    <div className="flex h-20 items-center gap-2 px-4 sm:px-8 lg:px-15 sm:gap-7">
       <Link
         href="/"
         aria-label="SIGDATA — página inicial"

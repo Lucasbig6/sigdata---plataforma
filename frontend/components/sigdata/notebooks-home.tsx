@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useNotebooksStore } from "@/lib/notebooks/store";
+import { GettingStarted } from "./getting-started";
 import { NotebookCard } from "./notebook-card";
 import { NotebooksHeader } from "./notebooks-header";
 import { CardSkeletons, EmptyState, ErrorState } from "./list-states";
@@ -55,7 +56,8 @@ export const NotebooksHome = () => {
     <div className="min-h-dvh bg-background">
       <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
 
-      <main className="mx-auto px-30 py-6">
+      <main className="mx-auto px-4 sm:px-10 lg:px-30 py-6">
+        <GettingStarted />
         <div className="flex items-center justify-between gap-5 pb-10">
           <h1 className="text-2xl font-semibold tracking-tight text-foreground">
             Projetos recentes

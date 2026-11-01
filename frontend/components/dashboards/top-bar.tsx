@@ -160,6 +160,7 @@ export const TopBar = ({
       <button
         type="button"
         onClick={onTogglePreview}
+        aria-label={preview ? "Voltar a editar" : "Visualizar painel"}
         className="flex h-9 items-center gap-1.5 rounded-md border border-border/70 bg-background px-3 text-sm text-foreground transition-colors hover:bg-muted/60"
       >
         {preview ? <EyeOff className="size-4" aria-hidden /> : <Eye className="size-4" aria-hidden />}

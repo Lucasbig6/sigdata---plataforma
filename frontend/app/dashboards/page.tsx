@@ -50,7 +50,7 @@ export default function DashboardsPage() {
   return (
     <div className="min-h-dvh bg-background">
       <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="flex h-20 items-center gap-2 sm:gap-7 px-15">
+        <div className="flex h-20 items-center gap-2 sm:gap-7 px-4 sm:px-8 lg:px-15">
           <Link
             href="/"
             aria-label="Voltar ao início"
@@ -79,7 +79,7 @@ export default function DashboardsPage() {
         </div>
       </header>
 
-      <main className="mx-auto px-30 py-6">
+      <main className="mx-auto px-4 sm:px-10 lg:px-30 py-6">
         {!hydrated ? (
           <CardSkeletons count={3} itemClassName="h-40" />
         ) : loadError ? (

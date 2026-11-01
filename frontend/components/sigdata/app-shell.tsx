@@ -5,7 +5,7 @@ import { GripVertical, PanelRight, PanelRightOpen } from "lucide-react";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
+import { PANEL_WIDTH_MAX, PANEL_WIDTH_MIN, useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { SectionPlaceholder } from "./section-placeholder";
 import { SigdataSidebar } from "./sidebar";
 import { ThemeToggle } from "./theme-toggle";
@@ -33,19 +33,36 @@ const useIsWide = () => {
   return wide;
 };
 
+const KEYBOARD_STEP = 24;
+
 const PanelDivider = ({
+  width,
   onPointerDown,
+  onResizeBy,
 }: {
+  width: number;
   onPointerDown: (event: ReactPointerEvent<HTMLDivElement>) => void;
+  /** Positivo alarga a área de visualizações. */
+  onResizeBy: (delta: number) => void;
 }) => (
   <div
     role="separator"
     aria-orientation="vertical"
-    aria-label="Redimensionar visualizações"
+    aria-label="Redimensionar visualizações (setas esquerda e direita)"
+    aria-valuenow={width}
+    aria-valuemin={PANEL_WIDTH_MIN}
+    aria-valuemax={PANEL_WIDTH_MAX}
+    tabIndex={0}
     onPointerDown={onPointerDown}
+    onKeyDown={(event) => {
+      if (event.key === "ArrowLeft") onResizeBy(KEYBOARD_STEP);
+      else if (event.key === "ArrowRight") onResizeBy(-KEYBOARD_STEP);
+      else return;
+      event.preventDefault();
+    }}
     className={cn(
       "group relative z-10 hidden w-2 shrink-0 cursor-col-resize touch-none bg-transparent lg:block",
-      "hover:bg-primary/30 active:bg-primary/50 transition-colors",
+      "hover:bg-primary/30 active:bg-primary/50 transition-colors outline-none focus-visible:bg-primary/40",
     )}
   >
     <GripVertical
@@ -138,7 +155,11 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
 
           {showInlinePanel && (
             <>
-              <PanelDivider onPointerDown={startResize} />
+              <PanelDivider
+                width={panelWidth}
+                onPointerDown={startResize}
+                onResizeBy={(delta) => setPanelWidth(panelWidth + delta)}
+              />
               <div
                 data-slot="sigdata-work-panel-wrapper"
                 className="hidden max-w-[45%] shrink-0 lg:flex"
@@ -166,7 +187,7 @@ export const AppShell = ({ children }: { children: ReactNode }) => {
       </SidebarInset>
 
       {showMobilePanel && (
-        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-label="Área de trabalho">
+        <div className="fixed inset-0 z-50 lg:hidden" role="dialog" aria-modal="true" aria-label="Área de trabalho">
           <div
             className="absolute inset-0 bg-black/55"
             onClick={() => setPanelMobileOpen(false)}
