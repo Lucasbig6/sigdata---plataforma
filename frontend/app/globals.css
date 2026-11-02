@@ -455,3 +455,8 @@
   background: var(--card);
   cursor: grab;
 }
+
+/* Durante o arrasto das laterais, sem animação de largura (senão o painel "atrasa" no cursor). */
+html[data-resizing] [data-slot^="sidebar"] {
+  transition: none !important;
+}

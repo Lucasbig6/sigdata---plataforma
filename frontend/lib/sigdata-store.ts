@@ -10,12 +10,15 @@ export type DemoStatus = "idle" | "loading" | "ready" | "error";
 
 export type PanelView = "todos" | "grafico" | "tabela" | "indicadores";
 
-const STORAGE_KEY = "sigdata.workspace.v1";
+// v2: as duas laterais passaram a começar com a mesma largura (larguras salvas na v1 são descartadas)
+const STORAGE_KEY = "sigdata.workspace.v2";
 
 type Persisted = {
   section?: SigdataSection;
   panelWidth?: number;
+  sidebarWidth?: number;
   panelCollapsed?: boolean;
+  sourcesCollapsed?: boolean;
 };
 
 const readPersisted = (): Persisted => {
@@ -43,9 +46,10 @@ const SECTIONS: SigdataSection[] = ["conversa", "projetos"];
 const safeSection = (value: unknown): SigdataSection =>
   SECTIONS.includes(value as SigdataSection) ? (value as SigdataSection) : "conversa";
 
-export const PANEL_WIDTH_MIN = 320;
-export const PANEL_WIDTH_MAX = 720;
-export const PANEL_WIDTH_DEFAULT = 460;
+/** As duas laterais (fontes/projetos à esquerda, estúdio à direita) têm os mesmos limites e começam iguais. */
+export const PANEL_WIDTH_MIN = 300;
+export const PANEL_WIDTH_MAX = 640;
+export const PANEL_WIDTH_DEFAULT = 340;
 
 export const clampPanelWidth = (px: number) =>
   Math.min(PANEL_WIDTH_MAX, Math.max(PANEL_WIDTH_MIN, Math.round(px)));
@@ -53,7 +57,11 @@ export const clampPanelWidth = (px: number) =>
 type SigdataStore = {
   section: SigdataSection;
   panelWidth: number;
+  /** Largura da barra lateral esquerda. */
+  sidebarWidth: number;
   panelCollapsed: boolean;
+  /** Painel Fontes (esquerda) recolhido. */
+  sourcesCollapsed: boolean;
   panelMobileOpen: boolean;
   panelView: PanelView;
   demoStatus: DemoStatus;
@@ -62,8 +70,10 @@ type SigdataStore = {
 
   setSection: (section: SigdataSection) => void;
   setPanelWidth: (px: number) => void;
+  setSidebarWidth: (px: number) => void;
   setPanelCollapsed: (collapsed: boolean) => void;
   togglePanelCollapsed: () => void;
+  toggleSourcesCollapsed: () => void;
   setPanelMobileOpen: (open: boolean) => void;
   setPanelView: (view: PanelView) => void;
   hydrate: () => void;
@@ -74,7 +84,9 @@ type SigdataStore = {
 export const useSigdata = create<SigdataStore>((set, get) => ({
   section: "conversa",
   panelWidth: PANEL_WIDTH_DEFAULT,
+  sidebarWidth: PANEL_WIDTH_DEFAULT,
   panelCollapsed: false,
+  sourcesCollapsed: false,
   panelMobileOpen: false,
   panelView: "todos",
   demoStatus: "idle",
@@ -83,8 +95,10 @@ export const useSigdata = create<SigdataStore>((set, get) => ({
 
   setSection: (section) => set({ section }),
   setPanelWidth: (px) => set({ panelWidth: clampPanelWidth(px) }),
+  setSidebarWidth: (px) => set({ sidebarWidth: clampPanelWidth(px) }),
   setPanelCollapsed: (panelCollapsed) => set({ panelCollapsed }),
   togglePanelCollapsed: () => set((s) => ({ panelCollapsed: !s.panelCollapsed })),
+  toggleSourcesCollapsed: () => set((s) => ({ sourcesCollapsed: !s.sourcesCollapsed })),
   setPanelMobileOpen: (panelMobileOpen) => set({ panelMobileOpen }),
   setPanelView: (panelView) => set({ panelView }),
 
@@ -95,7 +109,9 @@ export const useSigdata = create<SigdataStore>((set, get) => ({
       hydrated: true,
       section: safeSection(persisted.section),
       panelWidth: clampPanelWidth(persisted.panelWidth ?? PANEL_WIDTH_DEFAULT),
+      sidebarWidth: clampPanelWidth(persisted.sidebarWidth ?? PANEL_WIDTH_DEFAULT),
       panelCollapsed: persisted.panelCollapsed ?? false,
+      sourcesCollapsed: persisted.sourcesCollapsed ?? false,
     });
   },
 
@@ -109,8 +125,8 @@ export const useSigdata = create<SigdataStore>((set, get) => ({
   },
 
   savePreferences: () => {
-    const { section, panelWidth, panelCollapsed } = get();
-    persist({ section, panelWidth, panelCollapsed });
+    const { section, panelWidth, sidebarWidth, panelCollapsed, sourcesCollapsed } = get();
+    persist({ section, panelWidth, sidebarWidth, panelCollapsed, sourcesCollapsed });
     set({ savedAt: Date.now() });
   },
 }));

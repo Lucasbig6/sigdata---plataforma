@@ -253,6 +253,9 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
             <Composer autoFocus={autoFocus} />
+            <p className="-mt-2 text-center text-[11px] text-muted-foreground/80">
+              O assistente pode cometer erros. Confira os números nas consultas.
+            </p>
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
             </AuiIf>

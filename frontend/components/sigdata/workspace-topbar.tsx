@@ -1,0 +1,83 @@
+"use client";
+
+import { PanelLeft, PanelRight, Plus, Search } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { useNotebooksStore } from "@/lib/notebooks/store";
+import { LogoMark } from "./logo";
+import { openCommandPalette } from "./command-palette";
+import { ThemeToggle } from "./theme-toggle";
+import { UserMenu } from "./user-menu";
+import { WorkspaceTitle } from "./workspace-title";
+
+/** Barra superior: início, nome do projeto (editável), busca, novo projeto, tema e conta. */
+export const WorkspaceTopbar = ({
+  onToggleSources,
+  onToggleStudio,
+  sourcesOpen,
+  studioOpen,
+  fallbackTitle,
+}: {
+  onToggleSources: () => void;
+  onToggleStudio: () => void;
+  sourcesOpen: boolean;
+  studioOpen: boolean;
+  fallbackTitle: string;
+}) => {
+  const router = useRouter();
+  const createNotebook = useNotebooksStore((state) => state.createNotebook);
+
+  return (
+    <header className="flex h-14 shrink-0 items-center gap-2 px-3 sm:px-4">
+      <Link
+        href="/"
+        aria-label="Ir para a página inicial"
+        className="shrink-0 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
+      >
+        <LogoMark className="h-8 w-auto" />
+      </Link>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Mostrar ou ocultar fontes"
+        aria-pressed={sourcesOpen}
+        title="Fontes"
+        onClick={onToggleSources}
+        className="ml-1"
+      >
+        <PanelLeft className="size-4" aria-hidden />
+      </Button>
+      <div className="flex min-w-0 flex-1 items-center gap-2">
+        <WorkspaceTitle fallback={fallbackTitle} />
+      </div>
+
+      <Button variant="ghost" size="sm" onClick={openCommandPalette} className="hidden gap-1.5 text-muted-foreground sm:inline-flex">
+        <Search className="size-4" aria-hidden />
+        Buscar
+        <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
+      </Button>
+      <Button
+        variant="outline"
+        size="sm"
+        className="gap-1.5 rounded-full"
+        onClick={() => router.push(`/workspace?notebook=${createNotebook()}`)}
+      >
+        <Plus className="size-4" aria-hidden />
+        <span className="hidden sm:inline">Novo projeto</span>
+      </Button>
+      <Button
+        variant="ghost"
+        size="icon-sm"
+        aria-label="Mostrar ou ocultar o estúdio"
+        aria-pressed={studioOpen}
+        title="Estúdio"
+        onClick={onToggleStudio}
+      >
+        <PanelRight className="size-4" aria-hidden />
+      </Button>
+      <ThemeToggle />
+      <UserMenu />
+    </header>
+  );
+};

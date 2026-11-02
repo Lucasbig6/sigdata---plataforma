@@ -32,11 +32,11 @@ import { fetchResult, widgetDataFromResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
 import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
-import { SourceCard } from "./source-card";
 import { NotesPanel } from "./notes-panel";
 import { StudioTools } from "./studio-tools";
 import { WidgetView } from "./widget-view";
 import { useNotesStore } from "@/lib/notes/store";
+import { toast } from "@/lib/feedback";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
@@ -366,11 +366,12 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     savePreferences();
     await saveDashboard();
     const { saveError } = useDashboardsStore.getState();
-    setNote(
-      saveError
-        ? `Não foi possível salvar o dashboard: ${saveError}`
-        : `Dashboard "${title}" salvo — abra em Dashboards.`,
-    );
+    const message = saveError
+      ? `Não foi possível salvar o dashboard: ${saveError}`
+      : `Dashboard "${title}" salvo — abra em Dashboards.`;
+    setNote(message);
+    if (saveError) toast.error(message);
+    else toast.success(message);
   };
 
   return (
@@ -417,40 +418,39 @@ export const WorkPanel = ({ className }: { className?: string }) => {
           </Button>
         </div>
 
-        <StudioTools source={activeSource} />
-
-        <div
-          role="tablist"
-          aria-label="Conteúdo do estúdio"
-          className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
-        >
-          {STUDIO_TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={studioTab === tab.id}
-              onClick={() => setStudioTab(tab.id)}
-              className={cn(
-                "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring/50",
-                studioTab === tab.id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {tab.label}
-              {tab.id === "visualizacoes" && widgets.length > 0 ? ` (${widgets.length})` : null}
-              {tab.id === "notas" && noteCount > 0 ? ` (${noteCount})` : null}
-            </button>
-          ))}
-        </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {panelVisible ? (
-          <div className="shrink-0 p-3 pb-0">
-            <SourceCard source={activeSource} />
+          <div className="flex shrink-0 flex-col gap-3 px-3 pt-3">
+          <StudioTools source={activeSource} widgetCount={widgets.length} onCreateDashboard={handleSaveAsDashboard} />
+
+          <div
+            role="tablist"
+            aria-label="Conteúdo do estúdio"
+            className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
+          >
+            {STUDIO_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={studioTab === tab.id}
+                onClick={() => setStudioTab(tab.id)}
+                className={cn(
+                  "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none",
+                  "focus-visible:ring-2 focus-visible:ring-ring/50",
+                  studioTab === tab.id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+                {tab.id === "visualizacoes" && widgets.length > 0 ? ` (${widgets.length})` : null}
+                {tab.id === "notas" && noteCount > 0 ? ` (${noteCount})` : null}
+              </button>
+            ))}
+          </div>
           </div>
         ) : null}
         {!panelVisible ? null : studioTab === "notas" ? (

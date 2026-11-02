@@ -1,7 +1,7 @@
 "use client";
 
 import { useAISDKChat } from "@assistant-ui/ai-sdk";
-import { ArrowUpRight, Database, Upload } from "lucide-react";
+import { Database, Upload } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
@@ -16,29 +16,24 @@ const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   const chat = useAISDKChat();
 
   return (
-    <div className="grid w-full gap-2.5 sm:grid-cols-2">
+    <ul className="flex w-full flex-col items-start gap-2" aria-label="Sugestões de perguntas">
       {prompts.map((prompt) => (
-        <button
-          key={prompt}
-          type="button"
-          disabled={!chat}
-          onClick={() => void chat?.sendMessage({ text: prompt })}
-          className={cn(
-            "group flex items-start justify-between gap-3 rounded-xl border border-border bg-card/60 px-3 py-2.5 text-start",
-            "text-[13px] leading-snug text-muted-foreground transition-colors",
-            "hover:border-primary/40 hover:bg-card hover:text-foreground",
-            "focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
-            "disabled:opacity-60 disabled:pointer-events-none",
-          )}
-        >
-          <span className="line-clamp-3">{prompt}</span>
-          <ArrowUpRight
-            className="mt-0.5 size-4 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-primary"
-            aria-hidden
-          />
-        </button>
+        <li key={prompt} className="max-w-full">
+          <button
+            type="button"
+            disabled={!chat}
+            onClick={() => void chat?.sendMessage({ text: prompt })}
+            className={cn(
+              "rounded-2xl bg-muted/70 px-4 py-2.5 text-start text-sm leading-snug text-foreground transition-colors",
+              "hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
+              "disabled:opacity-60 disabled:pointer-events-none",
+            )}
+          >
+            {prompt}
+          </button>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };
 
@@ -114,23 +109,26 @@ export const WelcomeScreen = () => {
   const firstName = useSession().data?.user.name.trim().split(/\s+/)[0] ?? "";
 
   return (
-    <div className="flex w-full flex-col items-center gap-5 px-2 py-10 text-center sm:py-14">
-      <div className="flex max-w-xl flex-col gap-1.5">
-        <h1 className="text-2xl font-medium tracking-tight text-balance text-foreground sm:text-3xl">
-          {firstName ? `Olá, ${firstName}.` : "Olá."}{" "}
-          <span className="text-muted-foreground">
-            {source ? "O que você quer saber?" : "Escolha um dataset para começar."}
-          </span>
-        </h1>
-        {source ? (
-          <p className="mx-auto max-w-lg text-xs leading-relaxed text-muted-foreground">
-            <Database className="mr-1 inline size-3 align-[-1px] text-primary" aria-hidden />
-            <span className="font-medium text-foreground">{source.name}</span> · {sourceSummary(source.tables)}
-          </p>
-        ) : null}
-      </div>
+    <div className="mx-auto flex w-full max-w-2xl flex-col items-start gap-5 px-4 py-10 text-start sm:py-14">
+      <h1 className="text-3xl font-light tracking-tight text-balance text-foreground sm:text-4xl">
+        {firstName ? `Olá, ${firstName}.` : "Olá."}{" "}
+        <span className="text-muted-foreground">
+          {source ? "O que você quer saber?" : "Escolha um dataset para começar."}
+        </span>
+      </h1>
+      {source ? (
+        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+          <Database className="mr-1.5 inline size-3.5 align-[-2px] text-primary" aria-hidden />
+          Analisando <span className="font-medium text-foreground">{source.name}</span> · {sourceSummary(source.tables)}
+        </p>
+      ) : null}
 
-      {source && prompts.length > 0 ? <SuggestedPrompts prompts={prompts} /> : null}
+      {source && prompts.length > 0 ? (
+        <div className="flex w-full flex-col gap-2.5">
+          <p className="text-sm font-medium text-foreground">Por onde começar?</p>
+          <SuggestedPrompts prompts={prompts} />
+        </div>
+      ) : null}
       {!source ? <PickSource notebookId={notebookId} /> : null}
     </div>
   );
