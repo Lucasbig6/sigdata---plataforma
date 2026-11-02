@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { LogoMark } from "./logo";
+import { Logo } from "./logo";
 import { openCommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
@@ -35,7 +35,7 @@ export const WorkspaceTopbar = ({
         aria-label="Ir para a página inicial"
         className="shrink-0 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
       >
-        <LogoMark className="h-8 w-auto" />
+        <Logo className="h-10 w-auto" />
       </Link>
       <Button
         variant="ghost"
