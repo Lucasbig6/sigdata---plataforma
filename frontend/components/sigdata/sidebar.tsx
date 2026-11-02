@@ -39,7 +39,7 @@ import {
 import { signOut, useRole, useSession } from "@/lib/auth-client";
 import { canManageData } from "@shared/roles";
 import { cn } from "@/lib/utils";
-import { useDatasetsStore } from "@/lib/datasets/store";
+import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
@@ -82,7 +82,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
   const activeNotebook = notebooks.find((notebook) => notebook.id === activeNotebookId) ?? null;
   const selectedId = activeNotebook?.sourceId ?? null;
-  const readyDatasets = datasets.filter((dataset) => dataset.status === "pronta");
+  const readyDatasets = datasets.filter(isAnalysisDataset);
   const { data: session } = useSession();
   const role = useRole();
 
@@ -219,7 +219,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
               className="flex h-9 items-center gap-2 rounded-lg border border-border/70 bg-background px-2.5 text-sm text-muted-foreground transition-colors outline-none hover:bg-muted/60 focus-visible:ring-2 focus-visible:ring-ring/50"
             >
               <Search className="size-4 shrink-0" aria-hidden />
-              <span className="flex-1 text-start">Buscar em tudo</span>
+              <span className="flex-1 text-start">Buscar geral</span>
               <kbd className="rounded border border-border px-1.5 py-0.5 font-mono text-[10px]">Ctrl K</kbd>
             </button>
             <button
@@ -233,20 +233,6 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
             <SidebarGroupLabel className="px-0 pt-3 pb-1">Projetos recentes</SidebarGroupLabel>
             {notebooksHydrated && visibleNotebooks.length > 0 ? (
               <>
-                <div className="relative">
-                  <Search
-                    className="pointer-events-none absolute start-2.5 top-1/2 size-3.5 -translate-y-1/2 text-muted-foreground"
-                    aria-hidden
-                  />
-                  <input
-                    type="search"
-                    value={search}
-                    onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Buscar projetos"
-                    aria-label="Buscar projetos"
-                    className="h-8 w-full rounded-md border border-border bg-muted/40 ps-8 pe-2 text-xs text-foreground outline-none placeholder:text-muted-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
-                  />
-                </div>
                 <ul className="flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto">
                   {visibleNotebooks.map((notebook) => {
                     const isActive =

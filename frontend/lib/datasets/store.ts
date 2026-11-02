@@ -17,6 +17,12 @@ export type Dataset = DataSource;
 export type DatasetKind = SourceKind;
 export const DATASET_KIND_LABELS = SOURCE_KIND_LABELS;
 
+/**
+ * Fontes oferecidas para análise (chat, dashboards, medidas): só datasets prontos, criados pelos
+ * analistas. Arquivos e bancos brutos ficam em Fontes de dados, para quem os gerencia.
+ */
+export const isAnalysisDataset = (source: Dataset) => source.kind === "dataset" && source.status === "pronta";
+
 export type SourceUsage = { dashboards: number; projects: number; people: number };
 
 type DatasetsStore = {

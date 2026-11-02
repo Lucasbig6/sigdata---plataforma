@@ -5,7 +5,9 @@ import { ArrowUpRight, Database, Upload } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
+import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
 import { cn } from "@/lib/utils";
@@ -46,15 +48,23 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
-  const ready = datasets.filter((dataset) => dataset.status === "pronta");
+  const ready = datasets.filter(isAnalysisDataset);
+  const canManage = canManageData(useRole() ?? "usuario");
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-4 text-start">
       <p className="text-sm font-medium text-foreground">Escolha os dados para começar</p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente só responde com números das suas fontes. Selecione uma para este projeto
-        ou envie um arquivo novo.
+        O assistente só responde com números dos datasets preparados pelos analistas. Selecione um
+        para este projeto.
       </p>
+      {hydrated && ready.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {canManage
+            ? "Ainda não há datasets. Crie um no editor SQL a partir de uma fonte."
+            : "Ainda não há datasets publicados. Peça a um analista para publicar um."}
+        </p>
+      ) : null}
       {hydrated && ready.length > 0 && notebookId ? (
         <ul className="flex flex-col gap-1.5">
           {ready.map((dataset) => (
@@ -74,13 +84,15 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
           ))}
         </ul>
       ) : null}
-      <Link
-        href="/fontes-de-dados"
-        className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-      >
-        <Upload className="size-3.5" aria-hidden />
-        Enviar CSV/XLSX ou conectar um banco
-      </Link>
+      {canManage ? (
+        <Link
+          href="/fontes-de-dados"
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        >
+          <Upload className="size-3.5" aria-hidden />
+          Gerenciar fontes e datasets
+        </Link>
+      ) : null}
     </div>
   );
 };

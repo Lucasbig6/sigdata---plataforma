@@ -17,7 +17,7 @@ import {
   type FilterBinding,
   type PeriodUnit,
 } from "@/lib/dashboards/types";
-import { useDatasetsStore } from "@/lib/datasets/store";
+import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import type { ResultColumn, SourceTable } from "@/lib/domain/sources";
 
 export const inputCls =
@@ -89,7 +89,7 @@ type RecentResult = {
 };
 
 const useReadySources = () =>
-  useDatasetsStore((state) => state.datasets).filter((s) => s.status === "pronta" && s.tables.length > 0);
+  useDatasetsStore((state) => state.datasets).filter((s) => isAnalysisDataset(s) && s.tables.length > 0);
 
 /** Status da consulta do elemento + botão de atualizar. */
 const BindingStatus = ({ elementId, binding }: { elementId: string; binding: DataBinding }) => {
