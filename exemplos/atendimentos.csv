@@ -1,0 +1,1801 @@
+id_atendimento,data_atendimento,municipio,unidade,tipo_atendimento,especialidade,faixa_etaria,sexo,tempo_espera_min,duracao_min,desfecho,satisfacao
+AT00070,2026-01-01,Floriano,UPA Floriano,Consulta,Ortopedia,18-39,M,48,10,Encaminhamento,3
+AT00250,2026-01-01,Piripiri,UBS Piripiri,Exame,Ginecologia,18-39,M,33,25,Internação,4
+AT00370,2026-01-01,Corrente,UBS Corrente,Retorno,Psiquiatria,40-59,F,28,10,Encaminhamento,4
+AT00520,2026-01-01,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,40-59,F,59,15,Encaminhamento,3
+AT00787,2026-01-01,Floriano,UPA Floriano,Consulta,Ginecologia,0-11,F,42,13,Retorno agendado,3
+AT00878,2026-01-01,Teresina,UPA Norte,Consulta,Ginecologia,60+,F,57,24,Internação,2
+AT01388,2026-01-01,Parnaíba,UPA Parnaíba,Urgência,Dermatologia,0-11,M,16,41,Encaminhamento,4
+AT01432,2026-01-01,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,F,20,27,Encaminhamento,5
+AT01653,2026-01-01,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,M,27,25,Encaminhamento,4
+AT00293,2026-01-02,Floriano,UPA Floriano,Urgência,Clínica Geral,18-39,M,20,46,Retorno agendado,3
+AT00448,2026-01-02,Picos,UBS Picos Sul,Consulta,Cardiologia,12-17,F,66,28,Encaminhamento,3
+AT00497,2026-01-02,Parnaíba,UBS Centro,Consulta,Dermatologia,40-59,M,38,27,Alta,5
+AT00506,2026-01-02,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,14,30,Alta,2
+AT00508,2026-01-02,Teresina,Hospital Regional,Retorno,Dermatologia,18-39,M,45,30,Encaminhamento,1
+AT00540,2026-01-02,Teresina,UBS Dirceu,Retorno,Odontologia,18-39,F,4,23,Alta,5
+AT00670,2026-01-02,Floriano,UBS Floriano,Consulta,Ortopedia,60+,M,59,22,Retorno agendado,5
+AT00716,2026-01-02,Parnaíba,UBS Centro,Consulta,Psiquiatria,18-39,M,48,41,Alta,3
+AT00828,2026-01-02,Corrente,UBS Corrente,Urgência,Pediatria,12-17,F,17,47,Alta,4
+AT00967,2026-01-02,Teresina,Hospital Regional,Consulta,Odontologia,18-39,F,42,24,Alta,3
+AT01017,2026-01-02,Picos,Hospital Regional de Picos,Exame,Cardiologia,18-39,F,32,14,Encaminhamento,3
+AT01280,2026-01-02,Corrente,UBS Corrente,Exame,Ginecologia,18-39,F,33,21,Alta,4
+AT01548,2026-01-02,Floriano,UPA Floriano,Consulta,Odontologia,12-17,F,54,17,Alta,4
+AT01736,2026-01-02,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,F,44,28,Alta,2
+AT00652,2026-01-03,Floriano,UPA Floriano,Urgência,Odontologia,40-59,F,54,35,Alta,2
+AT01547,2026-01-03,Corrente,UBS Corrente,Consulta,Ortopedia,18-39,F,76,23,Alta,4
+AT00082,2026-01-05,Oeiras,UBS Oeiras,Procedimento,Cardiologia,60+,M,34,67,Encaminhamento,5
+AT00153,2026-01-05,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,40-59,F,41,8,Alta,3
+AT00335,2026-01-05,Teresina,UBS Dirceu,Consulta,Ortopedia,60+,M,66,18,Alta,2
+AT00375,2026-01-05,Floriano,UPA Floriano,Consulta,Pediatria,12-17,M,24,29,Alta,3
+AT00686,2026-01-05,Parnaíba,UBS Centro,Consulta,Psiquiatria,40-59,M,39,10,Alta,4
+AT00773,2026-01-05,Parnaíba,UBS Centro,Consulta,Pediatria,18-39,F,45,15,Retorno agendado,4
+AT00876,2026-01-05,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,40-59,F,38,15,Alta,3
+AT00920,2026-01-05,Parnaíba,UBS Centro,Consulta,Ortopedia,0-11,M,55,13,Internação,4
+AT01544,2026-01-05,Teresina,Hospital Regional,Consulta,Clínica Geral,18-39,M,55,26,Alta,4
+AT01575,2026-01-05,Picos,Hospital Regional de Picos,Consulta,Dermatologia,18-39,M,50,29,Alta,4
+AT00343,2026-01-06,Picos,UBS Picos Sul,Consulta,Clínica Geral,12-17,M,31,18,Alta,3
+AT00490,2026-01-06,Floriano,UBS Floriano,Consulta,Pediatria,18-39,M,57,9,Alta,3
+AT00625,2026-01-06,Floriano,UBS Floriano,Consulta,Dermatologia,0-11,F,23,29,Retorno agendado,3
+AT00664,2026-01-06,Parnaíba,UBS Centro,Exame,Pediatria,40-59,M,39,7,Alta,5
+AT00811,2026-01-06,Piripiri,UBS Piripiri,Consulta,Ortopedia,40-59,M,42,20,Alta,3
+AT00843,2026-01-06,Oeiras,UBS Oeiras,Consulta,Dermatologia,12-17,M,62,21,Retorno agendado,2
+AT00999,2026-01-06,Parnaíba,UBS Centro,Consulta,Clínica Geral,60+,M,41,27,Alta,3
+AT01121,2026-01-06,Parnaíba,UBS Centro,Consulta,Ortopedia,18-39,M,52,13,Alta,2
+AT01789,2026-01-06,Teresina,UPA Norte,Urgência,Pediatria,18-39,F,30,28,Alta,4
+AT00203,2026-01-07,Teresina,UBS Dirceu,Exame,Ortopedia,18-39,M,26,15,Alta,3
+AT00238,2026-01-07,Corrente,UBS Corrente,Consulta,Psiquiatria,40-59,F,59,13,Alta,4
+AT00315,2026-01-07,Floriano,UBS Floriano,Retorno,Dermatologia,40-59,M,7,13,Alta,3
+AT00545,2026-01-07,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,F,16,31,Encaminhamento,4
+AT00707,2026-01-07,Teresina,Hospital Regional,Exame,Pediatria,0-11,M,26,30,Alta,4
+AT01485,2026-01-07,Oeiras,UBS Oeiras,Consulta,Psiquiatria,12-17,F,52,6,Retorno agendado,3
+AT01558,2026-01-07,Teresina,Hospital Regional,Consulta,Clínica Geral,12-17,F,39,19,Alta,5
+AT01731,2026-01-07,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,F,77,28,Alta,3
+AT00072,2026-01-08,Picos,UBS Picos Sul,Consulta,Pediatria,60+,M,48,18,Retorno agendado,4
+AT00302,2026-01-08,Oeiras,UBS Oeiras,Consulta,Clínica Geral,40-59,M,41,17,Alta,3
+AT00398,2026-01-08,Parnaíba,UBS Centro,Consulta,Odontologia,40-59,M,68,30,Alta,3
+AT00909,2026-01-08,Campo Maior,UBS Campo Maior,Exame,Pediatria,40-59,F,50,20,Evasão,3
+AT00968,2026-01-08,Oeiras,UBS Oeiras,Consulta,Psiquiatria,40-59,M,46,16,Retorno agendado,3
+AT01379,2026-01-08,Teresina,UPA Norte,Consulta,Cardiologia,18-39,F,69,29,Alta,4
+AT01523,2026-01-08,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,F,59,14,Retorno agendado,3
+AT00094,2026-01-09,Teresina,UPA Norte,Exame,Ortopedia,12-17,F,27,30,Retorno agendado,4
+AT00192,2026-01-09,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,F,61,15,Alta,3
+AT00285,2026-01-09,Piripiri,UBS Piripiri,Consulta,Odontologia,18-39,M,59,12,Encaminhamento,4
+AT00306,2026-01-09,Teresina,UBS Dirceu,Consulta,Ginecologia,40-59,F,43,17,Alta,4
+AT00340,2026-01-09,Parnaíba,UPA Parnaíba,Consulta,Pediatria,40-59,F,56,22,Alta,2
+AT00854,2026-01-09,Teresina,UPA Norte,Exame,Psiquiatria,40-59,M,53,16,Alta,3
+AT00907,2026-01-09,Teresina,UBS Dirceu,Urgência,Clínica Geral,60+,M,17,36,Alta,2
+AT01060,2026-01-09,Teresina,UBS Dirceu,Consulta,Pediatria,60+,M,31,10,Internação,5
+AT01285,2026-01-09,Corrente,UBS Corrente,Urgência,Clínica Geral,60+,F,45,16,Alta,4
+AT01293,2026-01-09,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,40-59,F,46,21,Alta,3
+AT01303,2026-01-09,Corrente,UBS Corrente,Consulta,Ginecologia,60+,F,44,27,Encaminhamento,5
+AT01329,2026-01-09,Piripiri,UBS Piripiri,Consulta,Clínica Geral,60+,F,44,24,Retorno agendado,4
+AT01579,2026-01-09,Floriano,UBS Floriano,Consulta,Dermatologia,40-59,F,52,19,Retorno agendado,4
+AT01646,2026-01-09,Parnaíba,UBS Centro,Consulta,Pediatria,0-11,M,49,28,Alta,4
+AT01747,2026-01-09,Parnaíba,UPA Parnaíba,Exame,Psiquiatria,40-59,F,15,21,Alta,4
+AT01773,2026-01-09,Teresina,UPA Norte,Retorno,Cardiologia,40-59,F,53,22,Retorno agendado,3
+AT00982,2026-01-11,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,F,29,48,Encaminhamento,2
+AT00687,2026-01-12,Picos,UBS Picos Sul,Procedimento,Cardiologia,60+,M,87,46,Evasão,1
+AT00957,2026-01-12,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,M,64,19,Alta,2
+AT01335,2026-01-12,Floriano,UPA Floriano,Consulta,Psiquiatria,40-59,F,52,6,Encaminhamento,1
+AT01706,2026-01-12,Piripiri,UBS Piripiri,Exame,Odontologia,18-39,M,29,15,Retorno agendado,4
+AT01719,2026-01-12,Picos,UBS Picos Sul,Consulta,Psiquiatria,40-59,F,43,35,Alta,5
+AT00030,2026-01-13,Teresina,UBS Dirceu,Exame,Psiquiatria,60+,M,30,23,Alta,2
+AT01115,2026-01-13,Parnaíba,UBS Centro,Urgência,Ginecologia,0-11,F,2,35,Alta,4
+AT01322,2026-01-13,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,40-59,F,41,22,Encaminhamento,2
+AT01443,2026-01-13,Teresina,UBS Dirceu,Consulta,Dermatologia,12-17,F,22,26,Alta,3
+AT01763,2026-01-13,Teresina,UPA Norte,Consulta,Clínica Geral,60+,M,29,31,Alta,4
+AT00067,2026-01-14,Teresina,Hospital Regional,Exame,Clínica Geral,40-59,M,57,17,Alta,3
+AT00096,2026-01-14,Teresina,UBS Dirceu,Exame,Ortopedia,18-39,F,33,16,Encaminhamento,4
+AT00599,2026-01-14,Teresina,Hospital Regional,Consulta,Dermatologia,0-11,M,13,11,Alta,4
+AT00883,2026-01-14,Corrente,UBS Corrente,Consulta,Cardiologia,0-11,M,35,17,Alta,4
+AT00940,2026-01-14,Teresina,UBS Dirceu,Procedimento,Psiquiatria,60+,M,57,48,Retorno agendado,2
+AT01057,2026-01-14,Teresina,UBS Dirceu,Consulta,Psiquiatria,0-11,M,74,24,Alta,3
+AT01089,2026-01-14,Teresina,UPA Norte,Consulta,Dermatologia,60+,M,72,32,Alta,3
+AT01434,2026-01-14,Teresina,UPA Norte,Procedimento,Cardiologia,60+,M,52,73,Alta,4
+AT01585,2026-01-14,Picos,UBS Picos Sul,Retorno,Pediatria,40-59,M,31,9,Evasão,2
+AT00046,2026-01-15,Parnaíba,UBS Centro,Urgência,Cardiologia,60+,F,2,44,Alta,4
+AT00314,2026-01-15,Campo Maior,UBS Campo Maior,Consulta,Odontologia,0-11,M,47,28,Encaminhamento,4
+AT00511,2026-01-15,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,40-59,M,41,11,Alta,3
+AT00719,2026-01-15,Floriano,UBS Floriano,Consulta,Odontologia,40-59,F,52,20,Alta,3
+AT00733,2026-01-15,Teresina,UBS Dirceu,Procedimento,Ginecologia,0-11,F,42,56,Retorno agendado,2
+AT01204,2026-01-15,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,F,51,9,Alta,4
+AT01415,2026-01-15,Teresina,UPA Norte,Consulta,Ortopedia,40-59,F,43,5,Encaminhamento,5
+AT00098,2026-01-16,Teresina,UBS Dirceu,Exame,Psiquiatria,60+,F,18,14,Retorno agendado,3
+AT00148,2026-01-16,Parnaíba,UBS Centro,Urgência,Clínica Geral,18-39,M,13,35,Alta,5
+AT00329,2026-01-16,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,M,27,48,Alta,4
+AT00485,2026-01-16,Teresina,UPA Norte,Urgência,Odontologia,40-59,F,25,26,Alta,3
+AT00491,2026-01-16,Teresina,Hospital Regional,Urgência,Pediatria,40-59,F,23,31,Retorno agendado,4
+AT00672,2026-01-16,Teresina,UBS Dirceu,Consulta,Ginecologia,40-59,F,57,20,Alta,2
+AT00895,2026-01-16,Campo Maior,UBS Campo Maior,Consulta,Pediatria,40-59,F,22,22,Alta,4
+AT01064,2026-01-16,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,F,17,27,Alta,4
+AT01105,2026-01-16,Floriano,UPA Floriano,Urgência,Clínica Geral,60+,M,37,39,Encaminhamento,3
+AT01268,2026-01-16,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,M,23,29,Alta,2
+AT01413,2026-01-16,Picos,Hospital Regional de Picos,Consulta,Ortopedia,18-39,F,43,14,Encaminhamento,3
+AT01491,2026-01-16,Teresina,Hospital Regional,Consulta,Cardiologia,40-59,F,58,6,Alta,3
+AT01586,2026-01-16,Teresina,Hospital Regional,Consulta,Cardiologia,60+,F,61,14,Alta,3
+AT01610,2026-01-16,Teresina,UPA Norte,Consulta,Dermatologia,12-17,M,59,19,Internação,4
+AT00549,2026-01-17,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,0-11,F,57,23,Alta,4
+AT00561,2026-01-17,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,40-59,M,54,15,Retorno agendado,4
+AT00807,2026-01-17,Teresina,UPA Norte,Consulta,Psiquiatria,60+,M,31,7,Encaminhamento,2
+AT01539,2026-01-17,Parnaíba,UBS Centro,Consulta,Ginecologia,18-39,F,22,9,Internação,5
+AT00700,2026-01-18,Picos,Hospital Regional de Picos,Urgência,Pediatria,0-11,F,25,29,Alta,4
+AT01173,2026-01-18,Teresina,Hospital Regional,Consulta,Clínica Geral,0-11,F,40,9,Alta,1
+AT01726,2026-01-18,Teresina,UBS Dirceu,Consulta,Ginecologia,0-11,M,42,22,Encaminhamento,3
+AT00077,2026-01-19,Teresina,Hospital Regional,Consulta,Pediatria,40-59,M,56,15,Retorno agendado,2
+AT00462,2026-01-19,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,0-11,M,24,17,Retorno agendado,3
+AT00482,2026-01-19,Floriano,UPA Floriano,Urgência,Clínica Geral,12-17,F,29,43,Encaminhamento,4
+AT01178,2026-01-19,Teresina,Hospital Regional,Consulta,Dermatologia,18-39,F,46,18,Alta,2
+AT00265,2026-01-20,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,F,11,35,Retorno agendado,3
+AT01447,2026-01-20,Teresina,Hospital Regional,Consulta,Ortopedia,40-59,M,10,16,Alta,5
+AT01694,2026-01-20,Parnaíba,UPA Parnaíba,Exame,Pediatria,40-59,F,30,15,Alta,4
+AT01785,2026-01-20,Piripiri,UBS Piripiri,Urgência,Dermatologia,60+,M,31,29,Alta,4
+AT00086,2026-01-21,Teresina,UBS Dirceu,Consulta,Dermatologia,18-39,M,23,21,Alta,3
+AT00255,2026-01-21,Teresina,UBS Dirceu,Consulta,Ortopedia,60+,F,59,20,Alta,4
+AT00352,2026-01-21,Teresina,UBS Dirceu,Consulta,Ginecologia,12-17,M,38,20,Alta,4
+AT01083,2026-01-21,Parnaíba,UBS Centro,Consulta,Odontologia,18-39,M,36,24,Alta,3
+AT01088,2026-01-21,Teresina,UBS Dirceu,Exame,Clínica Geral,40-59,M,20,31,Encaminhamento,3
+AT01217,2026-01-21,Teresina,UBS Dirceu,Consulta,Dermatologia,60+,M,38,31,Alta,3
+AT01273,2026-01-21,Parnaíba,UBS Centro,Consulta,Odontologia,40-59,M,57,23,Retorno agendado,2
+AT01351,2026-01-21,Teresina,UBS Dirceu,Procedimento,Clínica Geral,18-39,F,51,27,Alta,4
+AT00196,2026-01-22,Teresina,Hospital Regional,Procedimento,Odontologia,40-59,M,22,47,Retorno agendado,5
+AT00223,2026-01-22,Piripiri,UBS Piripiri,Consulta,Psiquiatria,60+,M,67,31,Alta,3
+AT00488,2026-01-22,Teresina,Hospital Regional,Urgência,Psiquiatria,18-39,M,27,26,Alta,3
+AT00501,2026-01-22,Parnaíba,UPA Parnaíba,Exame,Odontologia,18-39,F,63,12,Alta,2
+AT01638,2026-01-22,Teresina,UBS Dirceu,Retorno,Psiquiatria,0-11,F,51,19,Alta,2
+AT01677,2026-01-22,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,F,26,45,Alta,2
+AT00027,2026-01-23,Teresina,UPA Norte,Urgência,Clínica Geral,0-11,F,23,24,Alta,4
+AT00181,2026-01-23,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,40-59,M,75,41,Alta,3
+AT00230,2026-01-23,Picos,Hospital Regional de Picos,Consulta,Cardiologia,60+,F,61,21,Evasão,3
+AT00568,2026-01-23,Picos,UBS Picos Sul,Urgência,Pediatria,40-59,M,25,29,Alta,3
+AT00695,2026-01-23,Teresina,UPA Norte,Consulta,Ginecologia,60+,M,42,19,Evasão,3
+AT00951,2026-01-23,Parnaíba,UPA Parnaíba,Consulta,Pediatria,0-11,F,64,18,Retorno agendado,3
+AT01307,2026-01-23,Teresina,UBS Dirceu,Consulta,Pediatria,18-39,F,81,36,Alta,1
+AT01457,2026-01-23,Teresina,Hospital Regional,Consulta,Cardiologia,0-11,F,53,15,Retorno agendado,4
+AT01460,2026-01-23,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,40-59,F,41,15,Alta,2
+AT01542,2026-01-23,Piripiri,UBS Piripiri,Retorno,Ginecologia,60+,F,25,13,Encaminhamento,3
+AT01560,2026-01-23,Parnaíba,UPA Parnaíba,Urgência,Dermatologia,60+,M,9,32,Alta,3
+AT01616,2026-01-23,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,M,40,56,Alta,2
+AT01659,2026-01-23,Teresina,UPA Norte,Procedimento,Ortopedia,60+,F,39,49,Encaminhamento,3
+AT00005,2026-01-24,Piripiri,UBS Piripiri,Exame,Pediatria,18-39,M,22,24,Encaminhamento,4
+AT01008,2026-01-24,Oeiras,UBS Oeiras,Consulta,Psiquiatria,40-59,M,40,25,Alta,5
+AT01583,2026-01-24,Picos,Hospital Regional de Picos,Exame,Odontologia,40-59,F,39,16,Alta,4
+AT01762,2026-01-24,Teresina,UPA Norte,Procedimento,Odontologia,40-59,M,45,45,Retorno agendado,4
+AT00134,2026-01-25,Teresina,UPA Norte,Exame,Psiquiatria,60+,M,60,28,Alta,2
+AT00601,2026-01-25,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,M,19,32,Alta,4
+AT00856,2026-01-25,Teresina,UBS Dirceu,Exame,Psiquiatria,40-59,M,19,18,Retorno agendado,4
+AT01050,2026-01-25,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,M,46,42,Encaminhamento,3
+AT00866,2026-01-26,Floriano,UBS Floriano,Consulta,Clínica Geral,18-39,F,55,30,Alta,3
+AT01326,2026-01-26,Teresina,UBS Dirceu,Procedimento,Psiquiatria,18-39,M,55,45,Alta,4
+AT01590,2026-01-26,Picos,Hospital Regional de Picos,Consulta,Cardiologia,60+,F,52,14,Retorno agendado,4
+AT01635,2026-01-26,Parnaíba,UPA Parnaíba,Consulta,Odontologia,60+,F,57,31,Alta,3
+AT01639,2026-01-26,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,M,55,5,Encaminhamento,3
+AT01776,2026-01-26,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,F,95,26,Alta,5
+AT00333,2026-01-27,Piripiri,UBS Piripiri,Consulta,Dermatologia,40-59,F,66,27,Alta,1
+AT00446,2026-01-27,Parnaíba,UBS Centro,Urgência,Ginecologia,0-11,F,17,32,Alta,4
+AT00740,2026-01-27,Oeiras,UBS Oeiras,Exame,Psiquiatria,60+,F,54,13,Evasão,5
+AT00426,2026-01-28,Teresina,Hospital Regional,Procedimento,Ginecologia,0-11,M,31,62,Alta,4
+AT00513,2026-01-28,Oeiras,UBS Oeiras,Consulta,Odontologia,18-39,M,51,28,Alta,3
+AT00543,2026-01-28,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,F,20,44,Encaminhamento,5
+AT00559,2026-01-28,Campo Maior,UBS Campo Maior,Urgência,Psiquiatria,40-59,M,14,30,Encaminhamento,4
+AT00676,2026-01-28,Picos,Hospital Regional de Picos,Procedimento,Odontologia,18-39,F,24,50,Alta,4
+AT00710,2026-01-28,Oeiras,UBS Oeiras,Exame,Ortopedia,18-39,M,39,11,Encaminhamento,3
+AT01139,2026-01-28,Teresina,UPA Norte,Consulta,Dermatologia,18-39,M,47,26,Alta,4
+AT01182,2026-01-28,Floriano,UBS Floriano,Urgência,Ginecologia,0-11,F,46,35,Retorno agendado,4
+AT01486,2026-01-28,Teresina,UBS Dirceu,Consulta,Odontologia,40-59,M,32,17,Retorno agendado,4
+AT01518,2026-01-28,Parnaíba,UPA Parnaíba,Exame,Ginecologia,12-17,F,29,23,Retorno agendado,3
+AT01556,2026-01-28,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,F,24,24,Alta,3
+AT00007,2026-01-29,Teresina,UPA Norte,Exame,Psiquiatria,18-39,M,33,23,Alta,5
+AT00108,2026-01-29,Teresina,UBS Dirceu,Procedimento,Cardiologia,0-11,M,41,50,Encaminhamento,3
+AT00115,2026-01-29,Teresina,UPA Norte,Consulta,Odontologia,60+,F,58,23,Alta,3
+AT00242,2026-01-29,Teresina,Hospital Regional,Urgência,Clínica Geral,0-11,M,27,39,Internação,4
+AT00534,2026-01-29,Picos,UBS Picos Sul,Urgência,Clínica Geral,0-11,M,28,40,Encaminhamento,3
+AT01046,2026-01-29,Floriano,UPA Floriano,Consulta,Odontologia,0-11,F,39,25,Alta,3
+AT01348,2026-01-29,Parnaíba,UPA Parnaíba,Consulta,Psiquiatria,60+,F,29,24,Alta,3
+AT01357,2026-01-29,Parnaíba,UPA Parnaíba,Retorno,Odontologia,60+,M,42,24,Alta,3
+AT01476,2026-01-29,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,60+,M,39,24,Alta,3
+AT00021,2026-01-30,Teresina,UBS Dirceu,Consulta,Cardiologia,0-11,F,61,25,Alta,3
+AT00149,2026-01-30,Parnaíba,UBS Centro,Consulta,Cardiologia,60+,F,35,33,Encaminhamento,3
+AT00411,2026-01-30,Piripiri,UBS Piripiri,Exame,Clínica Geral,18-39,F,40,12,Internação,4
+AT00473,2026-01-30,Campo Maior,UBS Campo Maior,Exame,Cardiologia,12-17,M,23,19,Alta,3
+AT00475,2026-01-30,Picos,UBS Picos Sul,Consulta,Dermatologia,40-59,M,54,26,Encaminhamento,4
+AT00626,2026-01-30,Corrente,UBS Corrente,Consulta,Ginecologia,18-39,M,51,20,Retorno agendado,3
+AT00762,2026-01-30,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,F,20,49,Alta,2
+AT00903,2026-01-30,Picos,UBS Picos Sul,Urgência,Ginecologia,60+,F,22,33,Alta,3
+AT00978,2026-01-30,Campo Maior,UBS Campo Maior,Retorno,Ortopedia,18-39,M,24,7,Retorno agendado,3
+AT01535,2026-01-30,Campo Maior,UBS Campo Maior,Consulta,Pediatria,18-39,M,29,35,Alta,5
+AT01631,2026-01-30,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,M,73,30,Retorno agendado,4
+AT00644,2026-01-31,Teresina,UPA Norte,Urgência,Clínica Geral,60+,M,48,38,Alta,4
+AT00160,2026-02-01,Parnaíba,UBS Centro,Retorno,Odontologia,12-17,M,35,8,Alta,3
+AT01169,2026-02-01,Teresina,Hospital Regional,Consulta,Psiquiatria,12-17,F,20,28,Alta,5
+AT01313,2026-02-01,Teresina,UPA Norte,Consulta,Ortopedia,18-39,F,28,31,Retorno agendado,4
+AT01337,2026-02-01,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,M,31,30,Alta,4
+AT00500,2026-02-02,Piripiri,UBS Piripiri,Consulta,Odontologia,18-39,M,36,23,Encaminhamento,4
+AT00575,2026-02-02,Oeiras,UBS Oeiras,Procedimento,Pediatria,40-59,F,17,59,Alta,4
+AT00725,2026-02-02,Teresina,Hospital Regional,Consulta,Odontologia,0-11,F,41,18,Alta,5
+AT00061,2026-02-03,Parnaíba,UPA Parnaíba,Urgência,Cardiologia,0-11,M,36,43,Alta,3
+AT00646,2026-02-03,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,29,32,Encaminhamento,5
+AT00704,2026-02-03,Floriano,UPA Floriano,Urgência,Clínica Geral,18-39,M,27,40,Evasão,4
+AT00711,2026-02-03,Campo Maior,UBS Campo Maior,Retorno,Clínica Geral,40-59,F,24,11,Alta,4
+AT01030,2026-02-03,Teresina,UBS Dirceu,Consulta,Cardiologia,40-59,F,60,19,Alta,5
+AT01066,2026-02-03,Teresina,UBS Dirceu,Consulta,Psiquiatria,0-11,F,51,28,Alta,2
+AT01258,2026-02-03,Piripiri,UBS Piripiri,Consulta,Psiquiatria,0-11,M,39,27,Alta,4
+AT01365,2026-02-03,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,F,19,45,Retorno agendado,4
+AT00131,2026-02-04,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,3,28,Retorno agendado,5
+AT00138,2026-02-04,Teresina,Hospital Regional,Consulta,Psiquiatria,12-17,M,11,23,Internação,4
+AT00239,2026-02-04,Teresina,UPA Norte,Consulta,Clínica Geral,40-59,M,59,19,Encaminhamento,3
+AT01079,2026-02-04,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,F,56,9,Encaminhamento,4
+AT01424,2026-02-04,Teresina,UPA Norte,Retorno,Pediatria,40-59,M,62,19,Encaminhamento,3
+AT00035,2026-02-05,Corrente,UBS Corrente,Urgência,Pediatria,18-39,M,22,28,Alta,3
+AT00346,2026-02-05,Oeiras,UBS Oeiras,Consulta,Dermatologia,40-59,M,27,16,Retorno agendado,3
+AT00371,2026-02-05,Oeiras,UBS Oeiras,Urgência,Clínica Geral,60+,M,12,31,Retorno agendado,4
+AT00690,2026-02-05,Parnaíba,UBS Centro,Consulta,Cardiologia,18-39,F,37,13,Alta,5
+AT01406,2026-02-05,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,F,23,10,Encaminhamento,4
+AT00006,2026-02-06,Picos,UBS Picos Sul,Consulta,Ortopedia,60+,F,37,26,Encaminhamento,4
+AT00039,2026-02-06,Oeiras,UBS Oeiras,Urgência,Clínica Geral,60+,F,18,37,Encaminhamento,3
+AT00141,2026-02-06,Oeiras,UBS Oeiras,Retorno,Dermatologia,18-39,F,18,5,Encaminhamento,3
+AT00470,2026-02-06,Piripiri,UBS Piripiri,Consulta,Psiquiatria,12-17,M,50,22,Alta,4
+AT00493,2026-02-06,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,F,43,36,Alta,4
+AT00495,2026-02-06,Floriano,UPA Floriano,Consulta,Odontologia,18-39,M,57,31,Retorno agendado,4
+AT00717,2026-02-06,Parnaíba,UPA Parnaíba,Retorno,Pediatria,18-39,M,15,21,Alta,4
+AT00805,2026-02-06,Picos,UBS Picos Sul,Consulta,Dermatologia,18-39,F,52,26,Alta,5
+AT00897,2026-02-06,Parnaíba,UPA Parnaíba,Procedimento,Dermatologia,40-59,F,52,55,Alta,4
+AT00905,2026-02-06,Corrente,UBS Corrente,Procedimento,Odontologia,18-39,M,51,47,Alta,4
+AT00933,2026-02-06,Campo Maior,UBS Campo Maior,Procedimento,Dermatologia,18-39,M,56,58,Alta,3
+AT01035,2026-02-06,Teresina,UPA Norte,Consulta,Pediatria,40-59,F,34,20,Encaminhamento,2
+AT01053,2026-02-06,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,18-39,F,56,16,Alta,3
+AT01154,2026-02-06,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,18-39,M,64,14,Alta,2
+AT01506,2026-02-06,Oeiras,UBS Oeiras,Consulta,Psiquiatria,0-11,M,33,18,Retorno agendado,4
+AT01510,2026-02-06,Parnaíba,UBS Centro,Consulta,Odontologia,60+,F,42,27,Encaminhamento,3
+AT01663,2026-02-06,Floriano,UBS Floriano,Consulta,Ortopedia,40-59,F,43,17,Alta,3
+AT00273,2026-02-07,Teresina,UPA Norte,Consulta,Pediatria,40-59,F,53,24,Alta,2
+AT00697,2026-02-07,Floriano,UPA Floriano,Consulta,Psiquiatria,60+,M,54,15,Encaminhamento,4
+AT00191,2026-02-08,Floriano,UBS Floriano,Consulta,Ortopedia,0-11,M,52,23,Encaminhamento,4
+AT00816,2026-02-08,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,40-59,F,32,32,Alta,5
+AT00110,2026-02-09,Campo Maior,UBS Campo Maior,Urgência,Psiquiatria,60+,F,38,32,Retorno agendado,4
+AT00247,2026-02-09,Picos,UBS Picos Sul,Consulta,Clínica Geral,0-11,M,56,35,Retorno agendado,5
+AT00270,2026-02-09,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,M,64,27,Alta,2
+AT00349,2026-02-09,Floriano,UBS Floriano,Exame,Clínica Geral,0-11,M,42,8,Alta,4
+AT01206,2026-02-09,Teresina,UBS Dirceu,Consulta,Psiquiatria,60+,M,58,24,Alta,2
+AT01386,2026-02-09,Corrente,UBS Corrente,Urgência,Odontologia,18-39,F,23,25,Retorno agendado,4
+AT01793,2026-02-09,Oeiras,UBS Oeiras,Consulta,Pediatria,0-11,M,58,29,Alta,3
+AT00136,2026-02-10,Teresina,UBS Dirceu,Consulta,Psiquiatria,18-39,M,54,26,Alta,4
+AT00389,2026-02-10,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,F,60,18,Alta,5
+AT00712,2026-02-10,Parnaíba,UBS Centro,Consulta,Ortopedia,18-39,M,51,22,Alta,4
+AT01371,2026-02-10,Picos,UBS Picos Sul,Consulta,Ortopedia,0-11,M,45,16,Alta,2
+AT01445,2026-02-10,Teresina,UPA Norte,Consulta,Cardiologia,18-39,M,39,13,Alta,5
+AT01512,2026-02-10,Picos,UBS Picos Sul,Exame,Dermatologia,40-59,M,32,35,Alta,3
+AT00048,2026-02-11,Parnaíba,UPA Parnaíba,Retorno,Dermatologia,60+,F,15,15,Encaminhamento,4
+AT00521,2026-02-11,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,F,46,30,Alta,4
+AT00240,2026-02-12,Floriano,UBS Floriano,Consulta,Ginecologia,60+,F,68,37,Alta,4
+AT00980,2026-02-12,Teresina,UPA Norte,Consulta,Ortopedia,40-59,F,48,18,Alta,3
+AT00998,2026-02-12,Teresina,Hospital Regional,Consulta,Psiquiatria,18-39,M,49,22,Encaminhamento,3
+AT01532,2026-02-12,Corrente,UBS Corrente,Exame,Psiquiatria,0-11,M,42,37,Retorno agendado,5
+AT01534,2026-02-12,Floriano,UBS Floriano,Procedimento,Cardiologia,40-59,M,33,57,Retorno agendado,5
+AT00224,2026-02-13,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,F,32,29,Encaminhamento,3
+AT00685,2026-02-13,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,F,49,30,Alta,3
+AT01116,2026-02-13,Picos,UBS Picos Sul,Urgência,Clínica Geral,12-17,F,47,41,Retorno agendado,4
+AT01262,2026-02-13,Oeiras,UBS Oeiras,Consulta,Pediatria,60+,F,61,33,Encaminhamento,3
+AT01490,2026-02-13,Parnaíba,UBS Centro,Exame,Ortopedia,40-59,F,43,12,Alta,2
+AT01557,2026-02-13,Parnaíba,UBS Centro,Urgência,Pediatria,40-59,F,62,43,Encaminhamento,4
+AT01690,2026-02-13,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,18-39,F,39,10,Alta,3
+AT01761,2026-02-13,Floriano,UPA Floriano,Procedimento,Dermatologia,60+,M,64,50,Alta,2
+AT00535,2026-02-14,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,M,56,17,Alta,4
+AT01282,2026-02-14,Teresina,UBS Dirceu,Consulta,Ortopedia,40-59,F,50,5,Alta,4
+AT00746,2026-02-15,Campo Maior,UBS Campo Maior,Consulta,Odontologia,0-11,M,46,19,Encaminhamento,4
+AT00945,2026-02-15,Campo Maior,UBS Campo Maior,Consulta,Pediatria,40-59,M,24,22,Encaminhamento,4
+AT00952,2026-02-16,Piripiri,UBS Piripiri,Procedimento,Pediatria,18-39,F,57,44,Evasão,2
+AT01152,2026-02-16,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,F,70,20,Alta,2
+AT01430,2026-02-16,Teresina,Hospital Regional,Urgência,Cardiologia,40-59,M,18,48,Evasão,3
+AT01606,2026-02-16,Picos,Hospital Regional de Picos,Consulta,Ortopedia,40-59,M,65,31,Alta,3
+AT00312,2026-02-17,Parnaíba,UBS Centro,Consulta,Psiquiatria,60+,M,34,14,Encaminhamento,4
+AT00720,2026-02-17,Floriano,UPA Floriano,Consulta,Pediatria,18-39,M,64,16,Alta,3
+AT01309,2026-02-17,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,24,45,Encaminhamento,4
+AT01425,2026-02-17,Teresina,UBS Dirceu,Consulta,Ortopedia,60+,F,71,27,Alta,4
+AT00170,2026-02-18,Teresina,UPA Norte,Consulta,Ortopedia,18-39,M,28,29,Internação,4
+AT00868,2026-02-18,Teresina,Hospital Regional,Urgência,Ortopedia,12-17,M,45,40,Retorno agendado,5
+AT01108,2026-02-18,Teresina,Hospital Regional,Consulta,Dermatologia,60+,M,47,20,Retorno agendado,4
+AT01289,2026-02-18,Corrente,UBS Corrente,Consulta,Pediatria,18-39,F,49,27,Retorno agendado,4
+AT01724,2026-02-18,Teresina,UPA Norte,Urgência,Pediatria,18-39,M,36,41,Internação,3
+AT00361,2026-02-19,Teresina,Hospital Regional,Urgência,Pediatria,0-11,M,43,41,Alta,4
+AT00412,2026-02-19,Teresina,UPA Norte,Consulta,Ortopedia,40-59,F,46,26,Alta,5
+AT00702,2026-02-19,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,F,25,20,Encaminhamento,4
+AT00885,2026-02-19,Campo Maior,UBS Campo Maior,Urgência,Pediatria,12-17,F,23,23,Alta,4
+AT00899,2026-02-19,Teresina,UPA Norte,Procedimento,Dermatologia,40-59,M,42,39,Alta,4
+AT01142,2026-02-19,Piripiri,UBS Piripiri,Procedimento,Odontologia,0-11,M,30,46,Retorno agendado,4
+AT01308,2026-02-19,Teresina,UPA Norte,Procedimento,Psiquiatria,40-59,M,32,54,Retorno agendado,4
+AT01514,2026-02-19,Picos,UBS Picos Sul,Consulta,Psiquiatria,12-17,F,27,29,Alta,3
+AT01686,2026-02-19,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,60+,M,30,37,Alta,4
+AT00093,2026-02-20,Corrente,UBS Corrente,Consulta,Dermatologia,60+,F,56,24,Encaminhamento,5
+AT00303,2026-02-20,Picos,UBS Picos Sul,Consulta,Clínica Geral,18-39,F,41,28,Alta,3
+AT00463,2026-02-20,Floriano,UPA Floriano,Consulta,Ginecologia,40-59,M,38,17,Encaminhamento,4
+AT00489,2026-02-20,Teresina,Hospital Regional,Consulta,Ortopedia,40-59,F,43,11,Alta,4
+AT00622,2026-02-20,Teresina,UBS Dirceu,Consulta,Cardiologia,60+,F,55,25,Alta,4
+AT00757,2026-02-20,Parnaíba,UPA Parnaíba,Consulta,Pediatria,40-59,M,46,17,Alta,2
+AT00847,2026-02-20,Piripiri,UBS Piripiri,Consulta,Ortopedia,40-59,M,61,19,Encaminhamento,4
+AT00880,2026-02-20,Oeiras,UBS Oeiras,Urgência,Clínica Geral,60+,F,20,19,Encaminhamento,5
+AT01084,2026-02-20,Piripiri,UBS Piripiri,Consulta,Odontologia,18-39,F,15,32,Retorno agendado,2
+AT00307,2026-02-21,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,M,39,29,Alta,3
+AT00310,2026-02-21,Floriano,UPA Floriano,Retorno,Ginecologia,60+,F,22,14,Retorno agendado,4
+AT00621,2026-02-22,Teresina,UPA Norte,Consulta,Pediatria,18-39,M,67,9,Encaminhamento,3
+AT00705,2026-02-22,Piripiri,UBS Piripiri,Consulta,Pediatria,60+,F,10,8,Alta,4
+AT01634,2026-02-22,Parnaíba,UBS Centro,Consulta,Ginecologia,60+,F,12,12,Retorno agendado,5
+AT00689,2026-02-23,Floriano,UBS Floriano,Consulta,Odontologia,12-17,M,54,22,Encaminhamento,4
+AT00832,2026-02-23,Teresina,UPA Norte,Urgência,Clínica Geral,60+,F,12,21,Encaminhamento,4
+AT01100,2026-02-23,Campo Maior,UBS Campo Maior,Urgência,Ortopedia,0-11,M,44,24,Alta,4
+AT01129,2026-02-23,Floriano,UBS Floriano,Consulta,Clínica Geral,40-59,F,55,9,Alta,4
+AT01516,2026-02-23,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,18-39,F,18,36,Alta,4
+AT00939,2026-02-24,Oeiras,UBS Oeiras,Consulta,Ortopedia,0-11,F,28,18,Alta,4
+AT01184,2026-02-24,Oeiras,UBS Oeiras,Urgência,Ginecologia,18-39,F,16,41,Alta,4
+AT01287,2026-02-24,Teresina,UBS Dirceu,Urgência,Ginecologia,60+,M,47,7,Alta,3
+AT01783,2026-02-24,Oeiras,UBS Oeiras,Consulta,Ginecologia,18-39,F,23,18,Alta,4
+AT00031,2026-02-25,Parnaíba,UPA Parnaíba,Exame,Ortopedia,60+,F,45,35,Alta,2
+AT00772,2026-02-25,Piripiri,UBS Piripiri,Consulta,Clínica Geral,40-59,M,33,22,Alta,3
+AT00934,2026-02-25,Corrente,UBS Corrente,Consulta,Dermatologia,40-59,M,57,38,Alta,3
+AT01171,2026-02-25,Oeiras,UBS Oeiras,Consulta,Odontologia,0-11,M,40,32,Alta,3
+AT01336,2026-02-25,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,F,21,38,Alta,3
+AT01350,2026-02-25,Parnaíba,UBS Centro,Consulta,Cardiologia,60+,M,49,5,Encaminhamento,2
+AT01730,2026-02-25,Picos,UBS Picos Sul,Consulta,Ginecologia,40-59,F,24,15,Alta,4
+AT00512,2026-02-26,Teresina,UPA Norte,Consulta,Psiquiatria,18-39,M,53,27,Alta,3
+AT00756,2026-02-26,Floriano,UPA Floriano,Consulta,Pediatria,18-39,F,71,17,Alta,4
+AT00793,2026-02-26,Campo Maior,UBS Campo Maior,Consulta,Pediatria,0-11,F,41,40,Alta,2
+AT00797,2026-02-26,Teresina,UBS Dirceu,Consulta,Dermatologia,40-59,F,70,34,Alta,5
+AT01769,2026-02-26,Teresina,UBS Dirceu,Exame,Psiquiatria,18-39,F,46,8,Alta,3
+AT00001,2026-02-27,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,F,43,10,Alta,4
+AT00091,2026-02-27,Corrente,UBS Corrente,Retorno,Pediatria,40-59,M,55,24,Alta,4
+AT00469,2026-02-27,Teresina,UBS Dirceu,Exame,Ginecologia,60+,F,37,7,Alta,4
+AT00484,2026-02-27,Picos,UBS Picos Sul,Urgência,Clínica Geral,18-39,F,32,41,Encaminhamento,5
+AT00530,2026-02-27,Teresina,UPA Norte,Consulta,Dermatologia,0-11,M,65,26,Internação,4
+AT00573,2026-02-27,Teresina,UBS Dirceu,Consulta,Psiquiatria,0-11,M,16,30,Encaminhamento,4
+AT00578,2026-02-27,Teresina,UBS Dirceu,Consulta,Ortopedia,60+,M,49,38,Alta,3
+AT00736,2026-02-27,Teresina,UBS Dirceu,Retorno,Clínica Geral,12-17,M,38,11,Internação,5
+AT00800,2026-02-27,Picos,Hospital Regional de Picos,Consulta,Dermatologia,18-39,M,58,27,Alta,3
+AT01181,2026-02-27,Teresina,UPA Norte,Urgência,Ortopedia,12-17,M,26,21,Alta,3
+AT01211,2026-02-27,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,F,50,22,Alta,3
+AT01466,2026-02-27,Picos,UBS Picos Sul,Consulta,Cardiologia,40-59,F,48,38,Alta,3
+AT01656,2026-02-27,Teresina,UBS Dirceu,Procedimento,Pediatria,18-39,M,44,63,Alta,4
+AT00050,2026-02-28,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,M,39,31,Alta,3
+AT00100,2026-02-28,Floriano,UBS Floriano,Consulta,Ortopedia,18-39,F,37,9,Alta,4
+AT01324,2026-02-28,Parnaíba,UBS Centro,Exame,Ginecologia,12-17,M,34,23,Alta,5
+AT01662,2026-02-28,Corrente,UBS Corrente,Consulta,Odontologia,18-39,F,71,28,Alta,4
+AT00033,2026-03-01,Teresina,Hospital Regional,Retorno,Ginecologia,18-39,F,49,17,Alta,2
+AT00929,2026-03-01,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,M,39,20,Alta,3
+AT00187,2026-03-02,Piripiri,UBS Piripiri,Procedimento,Ortopedia,18-39,M,31,53,Alta,3
+AT00364,2026-03-02,Parnaíba,UBS Centro,Urgência,Dermatologia,18-39,M,30,31,Alta,4
+AT00435,2026-03-02,Teresina,UPA Norte,Urgência,Psiquiatria,40-59,M,37,33,Alta,4
+AT00864,2026-03-02,Oeiras,UBS Oeiras,Consulta,Ortopedia,18-39,F,39,27,Alta,4
+AT00931,2026-03-02,Teresina,UBS Dirceu,Consulta,Cardiologia,60+,F,26,16,Alta,4
+AT01205,2026-03-02,Floriano,UPA Floriano,Consulta,Odontologia,0-11,F,42,26,Internação,3
+AT01378,2026-03-02,Parnaíba,UPA Parnaíba,Consulta,Odontologia,40-59,F,6,22,Retorno agendado,5
+AT01404,2026-03-02,Corrente,UBS Corrente,Retorno,Clínica Geral,60+,F,9,25,Alta,5
+AT01745,2026-03-02,Teresina,Hospital Regional,Consulta,Ginecologia,60+,F,37,23,Encaminhamento,4
+AT01748,2026-03-02,Parnaíba,UPA Parnaíba,Consulta,Pediatria,40-59,F,44,11,Alta,4
+AT01786,2026-03-02,Teresina,UBS Dirceu,Urgência,Cardiologia,0-11,M,22,37,Retorno agendado,4
+AT00542,2026-03-03,Parnaíba,UPA Parnaíba,Exame,Cardiologia,18-39,F,36,14,Alta,3
+AT00645,2026-03-03,Teresina,UPA Norte,Exame,Ortopedia,0-11,M,9,18,Alta,4
+AT00941,2026-03-03,Parnaíba,UBS Centro,Consulta,Pediatria,18-39,F,76,5,Encaminhamento,3
+AT01059,2026-03-03,Oeiras,UBS Oeiras,Urgência,Clínica Geral,18-39,F,40,56,Internação,4
+AT01343,2026-03-03,Corrente,UBS Corrente,Procedimento,Ortopedia,0-11,F,24,56,Retorno agendado,3
+AT00650,2026-03-04,Campo Maior,UBS Campo Maior,Procedimento,Ortopedia,18-39,M,46,34,Encaminhamento,2
+AT00750,2026-03-04,Teresina,Hospital Regional,Consulta,Cardiologia,40-59,F,63,27,Internação,4
+AT00841,2026-03-04,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,M,59,27,Encaminhamento,2
+AT00859,2026-03-04,Picos,UBS Picos Sul,Urgência,Ginecologia,18-39,F,14,46,Alta,4
+AT00888,2026-03-04,Teresina,UBS Dirceu,Retorno,Ortopedia,60+,M,32,20,Retorno agendado,3
+AT00889,2026-03-05,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,F,56,33,Internação,2
+AT00955,2026-03-05,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,M,24,28,Alta,4
+AT01024,2026-03-05,Teresina,UBS Dirceu,Exame,Pediatria,40-59,F,11,16,Retorno agendado,3
+AT01229,2026-03-05,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,M,20,11,Alta,4
+AT01295,2026-03-05,Floriano,UPA Floriano,Urgência,Clínica Geral,0-11,F,40,33,Retorno agendado,4
+AT01339,2026-03-05,Picos,UBS Picos Sul,Consulta,Pediatria,18-39,F,38,18,Alta,4
+AT01607,2026-03-05,Teresina,UPA Norte,Consulta,Pediatria,18-39,M,43,23,Alta,3
+AT00145,2026-03-06,Oeiras,UBS Oeiras,Exame,Cardiologia,60+,M,32,22,Retorno agendado,4
+AT00477,2026-03-06,Teresina,UPA Norte,Urgência,Clínica Geral,0-11,M,41,27,Retorno agendado,4
+AT00514,2026-03-06,Picos,Hospital Regional de Picos,Consulta,Odontologia,18-39,M,47,17,Alta,4
+AT00633,2026-03-06,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,M,2,29,Encaminhamento,5
+AT00647,2026-03-06,Teresina,UBS Dirceu,Consulta,Ortopedia,18-39,M,46,17,Internação,3
+AT00748,2026-03-06,Teresina,UPA Norte,Urgência,Cardiologia,18-39,M,15,24,Alta,5
+AT00759,2026-03-06,Floriano,UBS Floriano,Urgência,Clínica Geral,18-39,F,14,32,Encaminhamento,5
+AT00930,2026-03-06,Oeiras,UBS Oeiras,Exame,Psiquiatria,40-59,M,48,12,Alta,2
+AT01133,2026-03-06,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,18-39,M,31,25,Alta,4
+AT01436,2026-03-06,Teresina,Hospital Regional,Procedimento,Pediatria,60+,F,2,46,Alta,5
+AT01765,2026-03-06,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,18-39,M,15,21,Internação,4
+AT01766,2026-03-06,Teresina,Hospital Regional,Procedimento,Psiquiatria,60+,M,25,55,Encaminhamento,3
+AT01342,2026-03-07,Picos,UBS Picos Sul,Consulta,Psiquiatria,18-39,M,26,16,Retorno agendado,5
+AT01744,2026-03-07,Piripiri,UBS Piripiri,Consulta,Ginecologia,60+,F,51,15,Alta,3
+AT00910,2026-03-08,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,M,37,40,Retorno agendado,3
+AT00087,2026-03-09,Piripiri,UBS Piripiri,Consulta,Ginecologia,60+,M,50,16,Retorno agendado,4
+AT00231,2026-03-09,Oeiras,UBS Oeiras,Consulta,Ginecologia,40-59,F,56,26,Alta,4
+AT00603,2026-03-09,Teresina,UPA Norte,Exame,Ortopedia,18-39,M,3,19,Retorno agendado,3
+AT00775,2026-03-09,Parnaíba,UBS Centro,Retorno,Cardiologia,18-39,M,11,19,Encaminhamento,4
+AT00983,2026-03-09,Teresina,UBS Dirceu,Urgência,Clínica Geral,60+,F,33,40,Internação,4
+AT01034,2026-03-09,Picos,UBS Picos Sul,Consulta,Ortopedia,18-39,F,69,12,Alta,2
+AT01582,2026-03-09,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,F,45,35,Encaminhamento,4
+AT00234,2026-03-10,Floriano,UBS Floriano,Consulta,Clínica Geral,18-39,F,38,18,Encaminhamento,3
+AT00451,2026-03-10,Teresina,UBS Dirceu,Consulta,Psiquiatria,40-59,F,22,20,Alta,4
+AT01391,2026-03-10,Floriano,UPA Floriano,Exame,Ortopedia,60+,M,41,14,Alta,5
+AT01482,2026-03-10,Piripiri,UBS Piripiri,Consulta,Pediatria,60+,F,29,27,Alta,4
+AT00342,2026-03-11,Piripiri,UBS Piripiri,Retorno,Cardiologia,60+,M,48,10,Internação,5
+AT01670,2026-03-11,Picos,UBS Picos Sul,Consulta,Odontologia,18-39,M,60,28,Alta,4
+AT00009,2026-03-12,Parnaíba,UPA Parnaíba,Exame,Pediatria,18-39,M,40,21,Alta,3
+AT00624,2026-03-12,Piripiri,UBS Piripiri,Procedimento,Odontologia,40-59,F,57,59,Alta,3
+AT01106,2026-03-12,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,18-39,F,23,25,Alta,5
+AT01177,2026-03-12,Parnaíba,UBS Centro,Consulta,Psiquiatria,40-59,F,70,23,Alta,2
+AT01212,2026-03-12,Teresina,UPA Norte,Exame,Ortopedia,18-39,F,27,21,Alta,5
+AT01684,2026-03-12,Teresina,UBS Dirceu,Exame,Cardiologia,40-59,M,57,22,Alta,3
+AT00213,2026-03-13,Teresina,UPA Norte,Consulta,Dermatologia,18-39,F,29,23,Alta,3
+AT00236,2026-03-13,Teresina,Hospital Regional,Consulta,Ginecologia,60+,M,61,24,Alta,2
+AT00295,2026-03-13,Floriano,UPA Floriano,Retorno,Ginecologia,60+,F,42,10,Alta,3
+AT00502,2026-03-13,Teresina,Hospital Regional,Consulta,Cardiologia,60+,F,39,33,Alta,4
+AT00806,2026-03-13,Piripiri,UBS Piripiri,Consulta,Dermatologia,0-11,F,47,11,Alta,4
+AT00893,2026-03-13,Teresina,Hospital Regional,Consulta,Psiquiatria,40-59,F,71,28,Alta,1
+AT01048,2026-03-13,Piripiri,UBS Piripiri,Procedimento,Dermatologia,40-59,F,56,57,Alta,3
+AT01162,2026-03-13,Oeiras,UBS Oeiras,Consulta,Clínica Geral,18-39,M,50,32,Encaminhamento,3
+AT01245,2026-03-13,Floriano,UPA Floriano,Consulta,Cardiologia,18-39,M,55,22,Alta,2
+AT01427,2026-03-13,Teresina,Hospital Regional,Exame,Pediatria,0-11,F,45,23,Alta,5
+AT01728,2026-03-13,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,M,43,26,Alta,4
+AT01737,2026-03-13,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,60+,F,55,18,Alta,5
+AT00251,2026-03-14,Teresina,UPA Norte,Procedimento,Psiquiatria,0-11,F,35,42,Encaminhamento,4
+AT00869,2026-03-14,Floriano,UPA Floriano,Consulta,Cardiologia,0-11,M,75,19,Internação,4
+AT01524,2026-03-14,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,0-11,M,46,40,Alta,3
+AT01655,2026-03-14,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,40-59,F,50,28,Encaminhamento,4
+AT00182,2026-03-15,Parnaíba,UBS Centro,Consulta,Clínica Geral,40-59,F,78,11,Encaminhamento,2
+AT00284,2026-03-15,Floriano,UPA Floriano,Consulta,Dermatologia,18-39,M,28,21,Retorno agendado,3
+AT01410,2026-03-15,Floriano,UPA Floriano,Urgência,Clínica Geral,18-39,M,29,33,Alta,2
+AT01688,2026-03-15,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,18-39,M,33,12,Alta,3
+AT00113,2026-03-16,Teresina,UPA Norte,Urgência,Pediatria,40-59,M,36,47,Encaminhamento,2
+AT00399,2026-03-16,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,F,58,37,Alta,3
+AT00743,2026-03-16,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,M,25,33,Internação,5
+AT01070,2026-03-16,Picos,UBS Picos Sul,Urgência,Clínica Geral,0-11,F,24,41,Retorno agendado,1
+AT01223,2026-03-16,Teresina,UPA Norte,Consulta,Psiquiatria,60+,M,61,5,Alta,4
+AT01489,2026-03-16,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,40-59,M,58,32,Encaminhamento,2
+AT01768,2026-03-16,Teresina,UBS Dirceu,Exame,Ortopedia,18-39,M,23,15,Alta,5
+AT01787,2026-03-16,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,40-59,M,47,29,Retorno agendado,5
+AT00281,2026-03-17,Campo Maior,UBS Campo Maior,Consulta,Pediatria,18-39,F,61,27,Encaminhamento,2
+AT00531,2026-03-17,Parnaíba,UPA Parnaíba,Consulta,Pediatria,18-39,M,58,18,Alta,3
+AT00612,2026-03-17,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,18-39,F,26,21,Retorno agendado,3
+AT00627,2026-03-17,Floriano,UPA Floriano,Urgência,Odontologia,12-17,M,14,19,Alta,4
+AT00786,2026-03-17,Oeiras,UBS Oeiras,Procedimento,Ginecologia,60+,F,47,51,Alta,3
+AT01441,2026-03-17,Picos,UBS Picos Sul,Retorno,Clínica Geral,18-39,M,20,16,Encaminhamento,5
+AT01588,2026-03-17,Teresina,Hospital Regional,Urgência,Ortopedia,40-59,F,6,33,Alta,4
+AT00119,2026-03-18,Teresina,Hospital Regional,Urgência,Ginecologia,60+,M,47,32,Alta,2
+AT00174,2026-03-18,Teresina,Hospital Regional,Consulta,Ortopedia,60+,M,70,20,Retorno agendado,2
+AT00246,2026-03-18,Teresina,UPA Norte,Urgência,Psiquiatria,60+,M,33,35,Alta,4
+AT00383,2026-03-18,Parnaíba,UPA Parnaíba,Consulta,Odontologia,18-39,M,66,34,Alta,2
+AT01266,2026-03-18,Floriano,UBS Floriano,Consulta,Pediatria,0-11,F,17,39,Alta,5
+AT01381,2026-03-18,Piripiri,UBS Piripiri,Consulta,Cardiologia,0-11,M,37,29,Alta,2
+AT01431,2026-03-18,Picos,Hospital Regional de Picos,Consulta,Ortopedia,60+,F,40,14,Retorno agendado,5
+AT01764,2026-03-18,Teresina,UBS Dirceu,Urgência,Clínica Geral,12-17,M,2,26,Encaminhamento,4
+AT00235,2026-03-19,Oeiras,UBS Oeiras,Exame,Pediatria,18-39,M,41,15,Alta,5
+AT00278,2026-03-19,Piripiri,UBS Piripiri,Consulta,Dermatologia,40-59,F,61,24,Alta,2
+AT00814,2026-03-19,Floriano,UBS Floriano,Procedimento,Pediatria,12-17,F,43,55,Encaminhamento,3
+AT01077,2026-03-19,Picos,Hospital Regional de Picos,Exame,Ginecologia,40-59,M,72,24,Retorno agendado,2
+AT01179,2026-03-19,Picos,Hospital Regional de Picos,Consulta,Dermatologia,18-39,M,36,21,Retorno agendado,4
+AT01261,2026-03-19,Corrente,UBS Corrente,Consulta,Clínica Geral,60+,M,73,39,Encaminhamento,2
+AT01584,2026-03-19,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,F,18,38,Alta,5
+AT00078,2026-03-20,Piripiri,UBS Piripiri,Consulta,Psiquiatria,60+,M,42,12,Internação,2
+AT00122,2026-03-20,Teresina,Hospital Regional,Exame,Cardiologia,18-39,F,16,17,Internação,4
+AT00201,2026-03-20,Piripiri,UBS Piripiri,Consulta,Pediatria,0-11,F,57,22,Alta,3
+AT00356,2026-03-20,Floriano,UBS Floriano,Urgência,Clínica Geral,40-59,M,30,33,Alta,4
+AT00390,2026-03-20,Oeiras,UBS Oeiras,Consulta,Ortopedia,0-11,F,53,21,Alta,2
+AT00404,2026-03-20,Floriano,UBS Floriano,Consulta,Ortopedia,40-59,M,32,17,Retorno agendado,5
+AT00414,2026-03-20,Picos,Hospital Regional de Picos,Procedimento,Dermatologia,40-59,M,43,54,Alta,3
+AT00461,2026-03-20,Teresina,UBS Dirceu,Urgência,Clínica Geral,60+,F,26,30,Alta,5
+AT00563,2026-03-20,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,13,22,Retorno agendado,4
+AT00795,2026-03-20,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,60+,F,28,31,Alta,3
+AT01126,2026-03-20,Teresina,UBS Dirceu,Procedimento,Dermatologia,0-11,M,35,33,Alta,4
+AT01216,2026-03-20,Parnaíba,UBS Centro,Exame,Psiquiatria,40-59,F,67,11,Encaminhamento,3
+AT01315,2026-03-20,Teresina,UPA Norte,Consulta,Cardiologia,60+,M,43,31,Retorno agendado,2
+AT01463,2026-03-20,Picos,UBS Picos Sul,Consulta,Cardiologia,18-39,F,58,21,Alta,3
+AT01617,2026-03-20,Teresina,Hospital Regional,Consulta,Clínica Geral,18-39,M,42,18,Alta,3
+AT01647,2026-03-20,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,M,46,26,Alta,3
+AT01788,2026-03-20,Teresina,Hospital Regional,Urgência,Ortopedia,60+,F,20,29,Alta,4
+AT00092,2026-03-21,Floriano,UPA Floriano,Urgência,Ginecologia,18-39,F,37,42,Retorno agendado,4
+AT00823,2026-03-21,Teresina,UPA Norte,Consulta,Clínica Geral,40-59,M,70,20,Alta,5
+AT01316,2026-03-22,Picos,UBS Picos Sul,Retorno,Psiquiatria,18-39,M,22,22,Alta,5
+AT00003,2026-03-23,Floriano,UPA Floriano,Consulta,Ortopedia,60+,M,58,20,Retorno agendado,4
+AT00401,2026-03-23,Picos,UBS Picos Sul,Urgência,Clínica Geral,0-11,F,37,41,Internação,3
+AT00629,2026-03-23,Teresina,Hospital Regional,Urgência,Clínica Geral,0-11,M,28,22,Alta,4
+AT00892,2026-03-23,Teresina,Hospital Regional,Consulta,Psiquiatria,12-17,M,41,17,Alta,3
+AT01314,2026-03-23,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,60+,F,16,10,Alta,4
+AT01411,2026-03-23,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,F,19,19,Encaminhamento,3
+AT01602,2026-03-23,Floriano,UBS Floriano,Urgência,Pediatria,12-17,F,25,42,Internação,5
+AT01628,2026-03-23,Teresina,UPA Norte,Consulta,Cardiologia,0-11,F,39,17,Alta,3
+AT01704,2026-03-23,Picos,Hospital Regional de Picos,Retorno,Pediatria,40-59,F,36,26,Alta,4
+AT00069,2026-03-24,Teresina,Hospital Regional,Consulta,Psiquiatria,18-39,M,52,12,Retorno agendado,3
+AT00357,2026-03-24,Floriano,UPA Floriano,Consulta,Clínica Geral,60+,F,58,29,Alta,4
+AT00815,2026-03-24,Corrente,UBS Corrente,Consulta,Cardiologia,60+,M,37,28,Alta,4
+AT01375,2026-03-24,Floriano,UPA Floriano,Procedimento,Cardiologia,12-17,M,47,53,Encaminhamento,1
+AT01435,2026-03-24,Parnaíba,UBS Centro,Consulta,Cardiologia,18-39,F,40,20,Alta,3
+AT01594,2026-03-24,Oeiras,UBS Oeiras,Urgência,Ginecologia,40-59,F,63,34,Encaminhamento,4
+AT01798,2026-03-24,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,12-17,M,44,18,Alta,3
+AT00395,2026-03-25,Floriano,UPA Floriano,Exame,Ortopedia,60+,M,33,26,Alta,4
+AT00754,2026-03-25,Parnaíba,UPA Parnaíba,Procedimento,Psiquiatria,12-17,M,24,54,Evasão,4
+AT00831,2026-03-25,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,0-11,F,29,12,Retorno agendado,5
+AT01633,2026-03-25,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,M,70,27,Encaminhamento,3
+AT00317,2026-03-26,Teresina,UBS Dirceu,Consulta,Dermatologia,18-39,F,49,21,Alta,4
+AT00562,2026-03-26,Parnaíba,UPA Parnaíba,Consulta,Psiquiatria,40-59,M,47,18,Alta,3
+AT00992,2026-03-26,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,18-39,F,59,20,Alta,4
+AT01270,2026-03-26,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,M,13,31,Internação,5
+AT01604,2026-03-26,Parnaíba,UBS Centro,Consulta,Cardiologia,40-59,F,46,29,Alta,4
+AT00112,2026-03-27,Floriano,UBS Floriano,Procedimento,Dermatologia,40-59,F,37,38,Alta,5
+AT00204,2026-03-27,Parnaíba,UBS Centro,Consulta,Pediatria,40-59,M,50,9,Alta,5
+AT00245,2026-03-27,Teresina,UBS Dirceu,Exame,Pediatria,18-39,M,37,27,Alta,5
+AT00301,2026-03-27,Teresina,UPA Norte,Consulta,Psiquiatria,0-11,F,34,15,Encaminhamento,4
+AT00313,2026-03-27,Teresina,Hospital Regional,Urgência,Cardiologia,18-39,M,51,45,Encaminhamento,2
+AT00515,2026-03-27,Picos,UBS Picos Sul,Consulta,Odontologia,0-11,M,51,17,Encaminhamento,2
+AT00544,2026-03-27,Picos,Hospital Regional de Picos,Exame,Ginecologia,18-39,M,27,16,Retorno agendado,5
+AT00871,2026-03-27,Piripiri,UBS Piripiri,Consulta,Dermatologia,18-39,M,21,25,Alta,5
+AT00960,2026-03-27,Oeiras,UBS Oeiras,Consulta,Psiquiatria,40-59,F,34,15,Alta,3
+AT00985,2026-03-27,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,18-39,M,60,21,Encaminhamento,2
+AT01146,2026-03-27,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,21,42,Encaminhamento,4
+AT01370,2026-03-27,Oeiras,UBS Oeiras,Consulta,Pediatria,60+,F,55,16,Encaminhamento,3
+AT01632,2026-03-27,Teresina,Hospital Regional,Procedimento,Cardiologia,18-39,F,26,59,Alta,4
+AT01675,2026-03-27,Oeiras,UBS Oeiras,Consulta,Cardiologia,60+,F,49,21,Retorno agendado,2
+AT01734,2026-03-27,Teresina,Hospital Regional,Exame,Clínica Geral,0-11,M,30,17,Alta,3
+AT00425,2026-03-28,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,40-59,F,34,32,Alta,3
+AT00979,2026-03-28,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,40-59,F,25,27,Encaminhamento,4
+AT01373,2026-03-28,Teresina,UPA Norte,Exame,Ginecologia,60+,F,2,16,Alta,5
+AT01658,2026-03-28,Teresina,UBS Dirceu,Procedimento,Cardiologia,18-39,F,50,44,Alta,3
+AT00503,2026-03-29,Teresina,UPA Norte,Consulta,Ortopedia,40-59,M,54,24,Alta,2
+AT00699,2026-03-29,Picos,UBS Picos Sul,Consulta,Psiquiatria,18-39,F,55,32,Alta,4
+AT00858,2026-03-29,Picos,UBS Picos Sul,Consulta,Cardiologia,60+,M,51,22,Encaminhamento,1
+AT01029,2026-03-29,Floriano,UPA Floriano,Consulta,Psiquiatria,12-17,M,56,15,Alta,4
+AT00324,2026-03-30,Piripiri,UBS Piripiri,Consulta,Dermatologia,60+,F,33,14,Alta,4
+AT01109,2026-03-30,Teresina,Hospital Regional,Consulta,Ortopedia,18-39,F,51,21,Retorno agendado,3
+AT01137,2026-03-30,Teresina,Hospital Regional,Urgência,Psiquiatria,18-39,F,2,28,Encaminhamento,5
+AT01398,2026-03-30,Teresina,UPA Norte,Exame,Odontologia,0-11,M,41,15,Alta,1
+AT01651,2026-03-30,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,M,31,32,Alta,3
+AT01720,2026-03-30,Parnaíba,UBS Centro,Procedimento,Odontologia,40-59,M,25,51,Alta,2
+AT00109,2026-03-31,Teresina,Hospital Regional,Urgência,Clínica Geral,0-11,F,38,22,Alta,5
+AT00142,2026-03-31,Piripiri,UBS Piripiri,Consulta,Ortopedia,18-39,M,41,23,Alta,3
+AT00369,2026-03-31,Floriano,UPA Floriano,Consulta,Ginecologia,40-59,F,53,35,Alta,2
+AT00522,2026-03-31,Floriano,UBS Floriano,Urgência,Cardiologia,0-11,M,20,40,Encaminhamento,4
+AT00694,2026-03-31,Parnaíba,UPA Parnaíba,Procedimento,Psiquiatria,12-17,F,28,33,Alta,4
+AT00715,2026-03-31,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,F,30,29,Retorno agendado,4
+AT00896,2026-03-31,Floriano,UPA Floriano,Exame,Psiquiatria,18-39,F,44,20,Retorno agendado,3
+AT01414,2026-03-31,Teresina,Hospital Regional,Consulta,Odontologia,60+,F,42,24,Internação,2
+AT01451,2026-03-31,Piripiri,UBS Piripiri,Consulta,Ginecologia,0-11,M,16,13,Alta,5
+AT01499,2026-03-31,Teresina,UPA Norte,Exame,Ortopedia,0-11,F,27,15,Evasão,4
+AT01598,2026-03-31,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,60+,M,47,19,Encaminhamento,3
+AT00574,2026-04-01,Floriano,UBS Floriano,Retorno,Odontologia,60+,M,41,15,Alta,3
+AT00673,2026-04-01,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,18-39,F,25,31,Alta,5
+AT01021,2026-04-01,Corrente,UBS Corrente,Exame,Dermatologia,0-11,F,57,5,Encaminhamento,3
+AT01110,2026-04-01,Parnaíba,UBS Centro,Consulta,Clínica Geral,40-59,F,37,37,Retorno agendado,3
+AT01400,2026-04-01,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,M,48,24,Alta,3
+AT01661,2026-04-01,Campo Maior,UBS Campo Maior,Procedimento,Psiquiatria,18-39,F,25,35,Alta,4
+AT01729,2026-04-01,Parnaíba,UBS Centro,Exame,Cardiologia,40-59,F,35,19,Alta,4
+AT00494,2026-04-02,Floriano,UBS Floriano,Consulta,Psiquiatria,60+,M,50,24,Alta,5
+AT01239,2026-04-02,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,F,33,43,Encaminhamento,4
+AT01320,2026-04-02,Teresina,UBS Dirceu,Exame,Ortopedia,40-59,F,50,27,Alta,5
+AT01385,2026-04-02,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,M,26,23,Alta,4
+AT01640,2026-04-02,Picos,UBS Picos Sul,Consulta,Cardiologia,60+,M,36,29,Alta,5
+AT01676,2026-04-02,Teresina,UBS Dirceu,Consulta,Pediatria,60+,F,56,22,Retorno agendado,3
+AT00018,2026-04-03,Teresina,UPA Norte,Consulta,Pediatria,60+,F,38,50,Retorno agendado,5
+AT00081,2026-04-03,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,M,17,26,Alta,3
+AT00105,2026-04-03,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,12-17,M,60,27,Encaminhamento,2
+AT00177,2026-04-03,Piripiri,UBS Piripiri,Consulta,Psiquiatria,60+,F,13,27,Encaminhamento,4
+AT00300,2026-04-03,Piripiri,UBS Piripiri,Consulta,Cardiologia,18-39,F,52,20,Encaminhamento,4
+AT00382,2026-04-03,Picos,UBS Picos Sul,Exame,Ginecologia,60+,F,57,21,Alta,2
+AT00453,2026-04-03,Oeiras,UBS Oeiras,Urgência,Clínica Geral,12-17,M,37,41,Alta,4
+AT00492,2026-04-03,Parnaíba,UPA Parnaíba,Urgência,Ginecologia,40-59,M,18,36,Alta,3
+AT01038,2026-04-03,Teresina,Hospital Regional,Consulta,Cardiologia,40-59,F,63,27,Retorno agendado,5
+AT01160,2026-04-03,Teresina,UBS Dirceu,Consulta,Dermatologia,12-17,M,56,25,Alta,4
+AT01207,2026-04-03,Campo Maior,UBS Campo Maior,Consulta,Odontologia,0-11,F,58,5,Alta,4
+AT01595,2026-04-03,Corrente,UBS Corrente,Consulta,Cardiologia,40-59,M,53,11,Alta,4
+AT01390,2026-04-04,Parnaíba,UBS Centro,Consulta,Dermatologia,12-17,F,38,27,Encaminhamento,2
+AT00809,2026-04-05,Corrente,UBS Corrente,Exame,Odontologia,0-11,M,13,19,Encaminhamento,3
+AT00922,2026-04-05,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,18-39,M,61,33,Alta,4
+AT01006,2026-04-05,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,M,41,52,Evasão,2
+AT00135,2026-04-06,Parnaíba,UBS Centro,Consulta,Ginecologia,60+,M,52,9,Alta,4
+AT00169,2026-04-06,Teresina,UBS Dirceu,Exame,Ortopedia,18-39,F,48,32,Alta,5
+AT00220,2026-04-06,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,M,2,29,Alta,4
+AT00406,2026-04-06,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,40-59,F,26,43,Alta,2
+AT00604,2026-04-06,Parnaíba,UBS Centro,Consulta,Dermatologia,40-59,F,47,33,Retorno agendado,3
+AT00987,2026-04-06,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,10,42,Alta,5
+AT01199,2026-04-06,Campo Maior,UBS Campo Maior,Consulta,Odontologia,40-59,M,59,19,Alta,3
+AT01587,2026-04-06,Picos,Hospital Regional de Picos,Exame,Dermatologia,60+,F,45,23,Retorno agendado,2
+AT01664,2026-04-06,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,60+,F,19,18,Alta,2
+AT01725,2026-04-06,Picos,Hospital Regional de Picos,Consulta,Ginecologia,60+,F,54,5,Retorno agendado,4
+AT01735,2026-04-06,Teresina,UBS Dirceu,Consulta,Ginecologia,12-17,F,43,7,Alta,4
+AT01774,2026-04-06,Teresina,UPA Norte,Consulta,Psiquiatria,60+,M,52,32,Alta,4
+AT00186,2026-04-07,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,12-17,F,49,16,Internação,5
+AT00436,2026-04-07,Teresina,UPA Norte,Consulta,Ginecologia,40-59,F,17,13,Encaminhamento,3
+AT00611,2026-04-07,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,12-17,M,35,15,Encaminhamento,2
+AT00861,2026-04-07,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,F,45,15,Alta,3
+AT01622,2026-04-07,Teresina,UBS Dirceu,Consulta,Ortopedia,40-59,M,40,26,Alta,4
+AT00056,2026-04-08,Teresina,Hospital Regional,Consulta,Ortopedia,18-39,F,29,17,Alta,3
+AT00780,2026-04-08,Teresina,UBS Dirceu,Procedimento,Pediatria,18-39,M,34,60,Evasão,3
+AT01567,2026-04-08,Teresina,UPA Norte,Consulta,Psiquiatria,12-17,M,50,19,Encaminhamento,3
+AT00032,2026-04-09,Parnaíba,UBS Centro,Exame,Ginecologia,40-59,M,57,12,Retorno agendado,4
+AT00036,2026-04-09,Parnaíba,UBS Centro,Urgência,Ginecologia,18-39,F,39,22,Alta,4
+AT00337,2026-04-09,Teresina,UPA Norte,Procedimento,Cardiologia,12-17,F,65,47,Retorno agendado,2
+AT00665,2026-04-09,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,27,29,Alta,3
+AT00724,2026-04-09,Teresina,UBS Dirceu,Consulta,Pediatria,18-39,M,40,25,Alta,3
+AT00755,2026-04-09,Floriano,UBS Floriano,Consulta,Cardiologia,18-39,M,34,34,Alta,2
+AT00844,2026-04-09,Picos,UBS Picos Sul,Consulta,Cardiologia,60+,F,32,23,Alta,5
+AT01312,2026-04-09,Teresina,UPA Norte,Consulta,Clínica Geral,12-17,F,41,21,Alta,3
+AT01479,2026-04-09,Piripiri,UBS Piripiri,Consulta,Ortopedia,40-59,F,53,15,Encaminhamento,4
+AT01680,2026-04-09,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,F,42,12,Encaminhamento,3
+AT01757,2026-04-09,Parnaíba,UPA Parnaíba,Retorno,Ortopedia,40-59,F,20,22,Alta,4
+AT00051,2026-04-10,Floriano,UBS Floriano,Consulta,Ginecologia,40-59,M,56,13,Alta,5
+AT00059,2026-04-10,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,F,42,17,Encaminhamento,4
+AT00205,2026-04-10,Teresina,UPA Norte,Procedimento,Dermatologia,18-39,F,47,43,Alta,4
+AT00299,2026-04-10,Parnaíba,UBS Centro,Consulta,Psiquiatria,18-39,M,72,27,Alta,3
+AT00322,2026-04-10,Oeiras,UBS Oeiras,Consulta,Ortopedia,18-39,F,52,21,Encaminhamento,3
+AT00557,2026-04-10,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,18-39,M,43,15,Alta,3
+AT00587,2026-04-10,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,40-59,F,38,19,Encaminhamento,4
+AT00656,2026-04-10,Floriano,UBS Floriano,Consulta,Cardiologia,60+,F,39,21,Retorno agendado,3
+AT00731,2026-04-10,Floriano,UBS Floriano,Consulta,Pediatria,12-17,M,37,33,Internação,2
+AT00768,2026-04-10,Parnaíba,UPA Parnaíba,Consulta,Odontologia,18-39,M,38,35,Alta,4
+AT00770,2026-04-10,Teresina,UPA Norte,Consulta,Dermatologia,12-17,M,37,25,Internação,3
+AT00810,2026-04-10,Teresina,UPA Norte,Consulta,Dermatologia,40-59,F,53,28,Alta,3
+AT00827,2026-04-10,Floriano,UBS Floriano,Consulta,Dermatologia,18-39,M,76,23,Alta,4
+AT00928,2026-04-10,Campo Maior,UBS Campo Maior,Procedimento,Dermatologia,18-39,M,45,50,Alta,5
+AT01356,2026-04-10,Corrente,UBS Corrente,Consulta,Ortopedia,60+,M,60,20,Alta,4
+AT01153,2026-04-12,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,18-39,F,28,25,Encaminhamento,5
+AT01505,2026-04-12,Corrente,UBS Corrente,Exame,Psiquiatria,18-39,M,36,17,Alta,4
+AT00133,2026-04-13,Oeiras,UBS Oeiras,Procedimento,Psiquiatria,12-17,M,58,49,Retorno agendado,3
+AT00206,2026-04-13,Parnaíba,UPA Parnaíba,Retorno,Dermatologia,18-39,F,17,11,Alta,5
+AT00308,2026-04-13,Piripiri,UBS Piripiri,Consulta,Psiquiatria,18-39,F,36,21,Encaminhamento,4
+AT00328,2026-04-13,Teresina,UPA Norte,Retorno,Ginecologia,40-59,F,30,16,Encaminhamento,4
+AT00550,2026-04-13,Teresina,UBS Dirceu,Consulta,Cardiologia,60+,M,45,32,Alta,2
+AT00584,2026-04-13,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,40-59,F,31,35,Retorno agendado,5
+AT00881,2026-04-13,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,M,41,40,Alta,3
+AT00887,2026-04-13,Teresina,UPA Norte,Consulta,Pediatria,18-39,M,33,21,Alta,4
+AT01020,2026-04-13,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,M,37,24,Evasão,5
+AT01114,2026-04-13,Teresina,UPA Norte,Consulta,Ortopedia,18-39,M,17,19,Alta,5
+AT01444,2026-04-13,Picos,UBS Picos Sul,Exame,Odontologia,60+,M,25,31,Retorno agendado,3
+AT01570,2026-04-13,Picos,UBS Picos Sul,Procedimento,Ginecologia,12-17,M,27,70,Encaminhamento,3
+AT01591,2026-04-13,Parnaíba,UPA Parnaíba,Consulta,Pediatria,60+,F,48,25,Retorno agendado,2
+AT00377,2026-04-14,Campo Maior,UBS Campo Maior,Consulta,Pediatria,0-11,F,49,24,Retorno agendado,4
+AT00560,2026-04-14,Teresina,UBS Dirceu,Consulta,Ginecologia,40-59,F,64,7,Internação,3
+AT00708,2026-04-14,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,4,31,Alta,1
+AT00713,2026-04-14,Teresina,UBS Dirceu,Consulta,Dermatologia,40-59,F,37,24,Retorno agendado,3
+AT00781,2026-04-14,Picos,UBS Picos Sul,Consulta,Ortopedia,60+,M,24,28,Retorno agendado,5
+AT01189,2026-04-14,Piripiri,UBS Piripiri,Urgência,Ortopedia,60+,M,26,43,Alta,5
+AT01271,2026-04-14,Floriano,UPA Floriano,Consulta,Clínica Geral,0-11,M,28,12,Encaminhamento,4
+AT00071,2026-04-15,Teresina,UPA Norte,Procedimento,Odontologia,40-59,F,52,43,Alta,5
+AT00688,2026-04-15,Corrente,UBS Corrente,Consulta,Ortopedia,60+,M,33,14,Alta,4
+AT01246,2026-04-15,Parnaíba,UBS Centro,Retorno,Ortopedia,60+,M,36,31,Alta,3
+AT01279,2026-04-15,Piripiri,UBS Piripiri,Consulta,Ginecologia,60+,F,38,31,Retorno agendado,3
+AT01300,2026-04-15,Parnaíba,UBS Centro,Consulta,Ginecologia,18-39,F,56,28,Alta,5
+AT01620,2026-04-15,Piripiri,UBS Piripiri,Consulta,Psiquiatria,40-59,F,64,28,Alta,2
+AT01623,2026-04-15,Teresina,UPA Norte,Consulta,Psiquiatria,12-17,M,57,31,Alta,4
+AT01669,2026-04-15,Teresina,Hospital Regional,Urgência,Cardiologia,40-59,M,19,39,Encaminhamento,4
+AT00216,2026-04-16,Teresina,Hospital Regional,Exame,Pediatria,40-59,M,24,5,Alta,3
+AT00225,2026-04-16,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,60+,F,34,33,Alta,3
+AT01058,2026-04-16,Piripiri,UBS Piripiri,Consulta,Cardiologia,18-39,F,36,11,Encaminhamento,4
+AT01183,2026-04-16,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,5,43,Alta,5
+AT01222,2026-04-16,Picos,Hospital Regional de Picos,Consulta,Odontologia,40-59,M,44,16,Alta,4
+AT01232,2026-04-16,Parnaíba,UPA Parnaíba,Urgência,Psiquiatria,12-17,M,27,38,Alta,5
+AT01723,2026-04-16,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,F,2,34,Retorno agendado,4
+AT01800,2026-04-16,Oeiras,UBS Oeiras,Urgência,Psiquiatria,18-39,F,13,22,Alta,4
+AT00063,2026-04-17,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,40-59,M,27,37,Alta,5
+AT00208,2026-04-17,Teresina,Hospital Regional,Consulta,Psiquiatria,18-39,M,27,19,Encaminhamento,3
+AT00509,2026-04-17,Teresina,UPA Norte,Consulta,Cardiologia,40-59,F,29,5,Alta,3
+AT00548,2026-04-17,Teresina,Hospital Regional,Exame,Pediatria,40-59,F,64,30,Alta,4
+AT00602,2026-04-17,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,M,56,28,Retorno agendado,4
+AT00851,2026-04-17,Teresina,UBS Dirceu,Urgência,Pediatria,60+,F,5,29,Alta,4
+AT00900,2026-04-17,Picos,Hospital Regional de Picos,Consulta,Dermatologia,0-11,F,34,14,Alta,3
+AT00913,2026-04-17,Floriano,UBS Floriano,Consulta,Ortopedia,18-39,F,38,11,Alta,3
+AT01040,2026-04-17,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,F,44,25,Alta,2
+AT01253,2026-04-17,Teresina,UPA Norte,Consulta,Odontologia,40-59,F,47,16,Alta,4
+AT01352,2026-04-17,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,40-59,F,31,10,Alta,4
+AT01645,2026-04-17,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,12-17,M,58,38,Alta,2
+AT00026,2026-04-18,Teresina,Hospital Regional,Exame,Odontologia,0-11,M,39,17,Retorno agendado,5
+AT00029,2026-04-18,Floriano,UPA Floriano,Exame,Psiquiatria,12-17,F,59,15,Retorno agendado,4
+AT00966,2026-04-18,Oeiras,UBS Oeiras,Consulta,Odontologia,12-17,F,10,30,Evasão,4
+AT00824,2026-04-19,Corrente,UBS Corrente,Consulta,Cardiologia,18-39,M,55,24,Retorno agendado,3
+AT00024,2026-04-20,Parnaíba,UPA Parnaíba,Procedimento,Pediatria,12-17,M,39,55,Alta,3
+AT00259,2026-04-20,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,M,65,24,Alta,3
+AT01317,2026-04-20,Oeiras,UBS Oeiras,Consulta,Ginecologia,0-11,F,31,28,Retorno agendado,5
+AT00128,2026-04-21,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,18-39,M,29,22,Alta,4
+AT00359,2026-04-21,Parnaíba,UBS Centro,Exame,Cardiologia,40-59,M,37,26,Alta,4
+AT00637,2026-04-21,Teresina,Hospital Regional,Consulta,Pediatria,18-39,M,39,21,Retorno agendado,5
+AT00829,2026-04-21,Teresina,UPA Norte,Retorno,Clínica Geral,60+,F,20,20,Encaminhamento,4
+AT01358,2026-04-21,Teresina,Hospital Regional,Consulta,Ortopedia,60+,F,49,16,Retorno agendado,5
+AT01014,2026-04-22,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,M,58,42,Alta,5
+AT01136,2026-04-22,Teresina,UPA Norte,Urgência,Psiquiatria,40-59,M,38,38,Alta,4
+AT01297,2026-04-22,Teresina,UPA Norte,Urgência,Pediatria,12-17,F,26,33,Retorno agendado,4
+AT00040,2026-04-23,Teresina,Hospital Regional,Consulta,Clínica Geral,0-11,F,15,5,Retorno agendado,3
+AT00263,2026-04-23,Picos,Hospital Regional de Picos,Consulta,Cardiologia,60+,F,54,31,Encaminhamento,4
+AT00788,2026-04-23,Piripiri,UBS Piripiri,Consulta,Clínica Geral,40-59,F,36,5,Encaminhamento,3
+AT00845,2026-04-23,Teresina,Hospital Regional,Procedimento,Ginecologia,40-59,M,38,55,Encaminhamento,5
+AT00911,2026-04-23,Parnaíba,UBS Centro,Procedimento,Ginecologia,40-59,F,47,45,Alta,4
+AT00015,2026-04-24,Teresina,Hospital Regional,Consulta,Ortopedia,0-11,M,68,22,Alta,3
+AT00057,2026-04-24,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,18-39,M,26,23,Alta,2
+AT00184,2026-04-24,Floriano,UPA Floriano,Procedimento,Psiquiatria,0-11,F,44,60,Alta,3
+AT00296,2026-04-24,Floriano,UPA Floriano,Procedimento,Dermatologia,60+,F,20,34,Alta,4
+AT00421,2026-04-24,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,M,5,38,Alta,3
+AT00796,2026-04-24,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,18-39,F,62,24,Alta,5
+AT00804,2026-04-24,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,16,55,Encaminhamento,4
+AT00942,2026-04-24,Floriano,UPA Floriano,Consulta,Dermatologia,18-39,F,37,20,Encaminhamento,5
+AT01018,2026-04-24,Picos,UBS Picos Sul,Urgência,Clínica Geral,40-59,M,17,32,Encaminhamento,5
+AT01096,2026-04-24,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,F,16,27,Alta,4
+AT01097,2026-04-24,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,40-59,F,73,18,Alta,2
+AT01122,2026-04-24,Teresina,UPA Norte,Procedimento,Odontologia,12-17,M,27,59,Internação,4
+AT01546,2026-04-24,Teresina,UPA Norte,Consulta,Clínica Geral,60+,F,78,11,Alta,2
+AT00062,2026-04-26,Parnaíba,UBS Centro,Consulta,Psiquiatria,40-59,F,90,18,Internação,4
+AT01739,2026-04-26,Parnaíba,UPA Parnaíba,Urgência,Ginecologia,60+,M,24,33,Alta,4
+AT00420,2026-04-27,Piripiri,UBS Piripiri,Urgência,Clínica Geral,40-59,F,14,34,Alta,4
+AT00684,2026-04-27,Teresina,Hospital Regional,Consulta,Ortopedia,40-59,M,42,8,Alta,3
+AT01028,2026-04-27,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,17,42,Alta,4
+AT01522,2026-04-27,Corrente,UBS Corrente,Consulta,Cardiologia,0-11,M,59,22,Alta,3
+AT01529,2026-04-27,Parnaíba,UBS Centro,Consulta,Cardiologia,60+,F,31,20,Alta,5
+AT01627,2026-04-27,Picos,Hospital Regional de Picos,Procedimento,Cardiologia,18-39,M,50,58,Encaminhamento,4
+AT01797,2026-04-27,Picos,UBS Picos Sul,Procedimento,Ginecologia,18-39,F,52,36,Alta,3
+AT00596,2026-04-28,Teresina,UBS Dirceu,Consulta,Odontologia,60+,F,35,5,Alta,5
+AT00761,2026-04-28,Teresina,UPA Norte,Procedimento,Psiquiatria,18-39,F,43,34,Alta,3
+AT00802,2026-04-28,Parnaíba,UBS Centro,Consulta,Ortopedia,0-11,F,60,20,Alta,3
+AT01318,2026-04-28,Piripiri,UBS Piripiri,Urgência,Clínica Geral,60+,F,11,27,Alta,3
+AT01383,2026-04-28,Floriano,UPA Floriano,Retorno,Ginecologia,18-39,F,17,14,Encaminhamento,5
+AT01433,2026-04-28,Corrente,UBS Corrente,Consulta,Ortopedia,18-39,F,32,25,Alta,3
+AT00166,2026-04-29,Picos,UBS Picos Sul,Procedimento,Cardiologia,60+,F,37,36,Evasão,4
+AT00215,2026-04-29,Piripiri,UBS Piripiri,Consulta,Psiquiatria,18-39,F,25,29,Encaminhamento,5
+AT00527,2026-04-29,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,40-59,M,30,10,Alta,2
+AT00776,2026-04-29,Teresina,UBS Dirceu,Consulta,Psiquiatria,18-39,M,47,17,Internação,3
+AT00790,2026-04-29,Piripiri,UBS Piripiri,Consulta,Odontologia,12-17,F,64,26,Alta,3
+AT01693,2026-04-29,Parnaíba,UPA Parnaíba,Consulta,Pediatria,12-17,F,29,20,Alta,4
+AT00002,2026-04-30,Parnaíba,UPA Parnaíba,Urgência,Psiquiatria,60+,F,20,36,Encaminhamento,5
+AT00095,2026-04-30,Teresina,UPA Norte,Exame,Clínica Geral,40-59,F,27,40,Encaminhamento,5
+AT00262,2026-04-30,Corrente,UBS Corrente,Consulta,Ortopedia,60+,F,71,20,Encaminhamento,5
+AT00990,2026-04-30,Piripiri,UBS Piripiri,Consulta,Ginecologia,0-11,F,24,29,Retorno agendado,4
+AT01456,2026-04-30,Picos,Hospital Regional de Picos,Retorno,Dermatologia,12-17,F,49,13,Alta,3
+AT00016,2026-05-01,Parnaíba,UPA Parnaíba,Urgência,Odontologia,18-39,F,27,35,Alta,5
+AT00019,2026-05-01,Parnaíba,UPA Parnaíba,Exame,Clínica Geral,40-59,M,35,18,Alta,2
+AT00164,2026-05-01,Floriano,UBS Floriano,Urgência,Clínica Geral,0-11,F,52,24,Alta,4
+AT00402,2026-05-01,Floriano,UPA Floriano,Consulta,Ginecologia,18-39,F,58,15,Alta,3
+AT00408,2026-05-01,Teresina,Hospital Regional,Exame,Ortopedia,40-59,M,41,8,Alta,3
+AT00918,2026-05-01,Teresina,Hospital Regional,Retorno,Pediatria,18-39,M,18,28,Alta,4
+AT00946,2026-05-01,Floriano,UPA Floriano,Consulta,Cardiologia,60+,M,40,33,Alta,2
+AT01071,2026-05-01,Teresina,Hospital Regional,Consulta,Dermatologia,60+,M,56,36,Encaminhamento,4
+AT01174,2026-05-01,Teresina,UBS Dirceu,Retorno,Dermatologia,0-11,M,30,21,Alta,4
+AT01187,2026-05-01,Parnaíba,UBS Centro,Consulta,Odontologia,18-39,F,66,26,Alta,3
+AT01259,2026-05-01,Parnaíba,UBS Centro,Procedimento,Psiquiatria,40-59,F,27,45,Alta,4
+AT01294,2026-05-01,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,M,43,17,Alta,4
+AT01416,2026-05-01,Picos,UBS Picos Sul,Consulta,Cardiologia,60+,F,38,18,Alta,4
+AT01511,2026-05-01,Oeiras,UBS Oeiras,Consulta,Dermatologia,60+,M,7,27,Alta,3
+AT01597,2026-05-01,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,F,48,10,Encaminhamento,3
+AT01613,2026-05-01,Corrente,UBS Corrente,Urgência,Dermatologia,18-39,M,14,30,Encaminhamento,4
+AT01775,2026-05-01,Teresina,Hospital Regional,Urgência,Clínica Geral,12-17,M,29,35,Alta,5
+AT00479,2026-05-02,Teresina,Hospital Regional,Urgência,Clínica Geral,60+,F,41,37,Alta,3
+AT01721,2026-05-02,Piripiri,UBS Piripiri,Consulta,Odontologia,18-39,F,53,26,Encaminhamento,4
+AT00351,2026-05-03,Campo Maior,UBS Campo Maior,Exame,Cardiologia,60+,M,26,19,Retorno agendado,5
+AT00013,2026-05-04,Campo Maior,UBS Campo Maior,Consulta,Odontologia,40-59,F,61,5,Alta,3
+AT00289,2026-05-04,Parnaíba,UBS Centro,Consulta,Odontologia,40-59,F,33,18,Alta,5
+AT01119,2026-05-04,Floriano,UPA Floriano,Retorno,Psiquiatria,12-17,F,36,8,Encaminhamento,4
+AT01306,2026-05-04,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,60+,F,55,20,Alta,3
+AT01520,2026-05-04,Teresina,UBS Dirceu,Consulta,Dermatologia,40-59,F,35,24,Alta,4
+AT00159,2026-05-05,Teresina,Hospital Regional,Consulta,Clínica Geral,18-39,M,30,25,Retorno agendado,3
+AT00860,2026-05-05,Floriano,UBS Floriano,Urgência,Clínica Geral,40-59,M,36,29,Retorno agendado,4
+AT01299,2026-05-05,Parnaíba,UBS Centro,Consulta,Ginecologia,0-11,M,61,22,Alta,5
+AT01615,2026-05-05,Campo Maior,UBS Campo Maior,Consulta,Odontologia,0-11,F,40,32,Alta,3
+AT01673,2026-05-05,Teresina,UBS Dirceu,Consulta,Dermatologia,60+,M,51,34,Encaminhamento,2
+AT00054,2026-05-06,Campo Maior,UBS Campo Maior,Consulta,Odontologia,40-59,M,28,22,Alta,5
+AT00541,2026-05-06,Teresina,UBS Dirceu,Consulta,Pediatria,18-39,M,33,17,Internação,3
+AT00820,2026-05-06,Floriano,UBS Floriano,Consulta,Pediatria,18-39,F,28,20,Alta,4
+AT00993,2026-05-06,Teresina,Hospital Regional,Exame,Dermatologia,18-39,F,43,18,Retorno agendado,4
+AT01033,2026-05-06,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,F,56,21,Retorno agendado,3
+AT01278,2026-05-06,Corrente,UBS Corrente,Consulta,Ginecologia,18-39,F,42,25,Retorno agendado,4
+AT01648,2026-05-06,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,F,47,30,Alta,3
+AT00049,2026-05-07,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,17,35,Alta,5
+AT00516,2026-05-07,Teresina,UBS Dirceu,Urgência,Cardiologia,18-39,F,27,49,Alta,3
+AT00661,2026-05-07,Teresina,UPA Norte,Retorno,Clínica Geral,40-59,M,37,6,Encaminhamento,4
+AT00774,2026-05-07,Floriano,UPA Floriano,Consulta,Pediatria,12-17,F,59,19,Alta,2
+AT01164,2026-05-07,Teresina,UBS Dirceu,Urgência,Dermatologia,18-39,M,54,23,Alta,2
+AT01214,2026-05-07,Picos,Hospital Regional de Picos,Exame,Dermatologia,18-39,M,17,31,Alta,3
+AT00058,2026-05-08,Floriano,UPA Floriano,Consulta,Cardiologia,18-39,M,56,26,Evasão,5
+AT00146,2026-05-08,Corrente,UBS Corrente,Consulta,Ginecologia,40-59,F,40,19,Alta,3
+AT00288,2026-05-08,Teresina,UPA Norte,Procedimento,Ortopedia,18-39,F,37,47,Encaminhamento,5
+AT00447,2026-05-08,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,M,31,16,Alta,4
+AT00660,2026-05-08,Teresina,UBS Dirceu,Consulta,Pediatria,0-11,M,2,30,Retorno agendado,4
+AT00902,2026-05-08,Teresina,UPA Norte,Retorno,Pediatria,18-39,M,35,9,Alta,3
+AT00976,2026-05-08,Teresina,Hospital Regional,Exame,Odontologia,18-39,M,35,29,Encaminhamento,4
+AT01062,2026-05-08,Teresina,UPA Norte,Consulta,Cardiologia,0-11,F,39,27,Retorno agendado,4
+AT01069,2026-05-08,Floriano,UPA Floriano,Urgência,Clínica Geral,60+,M,9,29,Alta,5
+AT01233,2026-05-08,Floriano,UBS Floriano,Consulta,Odontologia,0-11,F,67,19,Alta,2
+AT01257,2026-05-08,Parnaíba,UPA Parnaíba,Procedimento,Dermatologia,18-39,M,27,54,Internação,3
+AT01331,2026-05-08,Parnaíba,UBS Centro,Urgência,Clínica Geral,12-17,M,15,28,Alta,4
+AT01439,2026-05-08,Teresina,UPA Norte,Urgência,Pediatria,40-59,F,28,35,Alta,5
+AT01488,2026-05-08,Piripiri,UBS Piripiri,Consulta,Psiquiatria,18-39,M,43,21,Alta,5
+AT00649,2026-05-09,Parnaíba,UBS Centro,Exame,Ortopedia,40-59,M,19,13,Alta,5
+AT01374,2026-05-09,Parnaíba,UPA Parnaíba,Procedimento,Odontologia,18-39,F,46,49,Alta,2
+AT00778,2026-05-10,Teresina,UBS Dirceu,Consulta,Clínica Geral,0-11,M,61,16,Encaminhamento,2
+AT00363,2026-05-11,Parnaíba,UPA Parnaíba,Procedimento,Pediatria,40-59,F,33,66,Alta,3
+AT01346,2026-05-11,Oeiras,UBS Oeiras,Consulta,Psiquiatria,18-39,F,52,24,Encaminhamento,3
+AT00373,2026-05-12,Campo Maior,UBS Campo Maior,Urgência,Odontologia,18-39,F,28,21,Alta,5
+AT01784,2026-05-12,Floriano,UPA Floriano,Consulta,Cardiologia,12-17,F,30,23,Alta,5
+AT00358,2026-05-13,Oeiras,UBS Oeiras,Urgência,Clínica Geral,40-59,M,38,47,Internação,4
+AT00374,2026-05-13,Teresina,Hospital Regional,Exame,Ortopedia,18-39,M,30,15,Alta,3
+AT00468,2026-05-13,Oeiras,UBS Oeiras,Consulta,Dermatologia,18-39,F,24,25,Alta,2
+AT00609,2026-05-13,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,M,52,22,Alta,4
+AT00984,2026-05-13,Floriano,UPA Floriano,Consulta,Dermatologia,40-59,M,54,15,Retorno agendado,3
+AT01026,2026-05-13,Picos,UBS Picos Sul,Exame,Cardiologia,60+,M,21,16,Encaminhamento,4
+AT01120,2026-05-13,Oeiras,UBS Oeiras,Urgência,Ginecologia,40-59,M,21,39,Alta,5
+AT01465,2026-05-13,Parnaíba,UPA Parnaíba,Retorno,Odontologia,0-11,F,25,13,Alta,5
+AT01593,2026-05-13,Piripiri,UBS Piripiri,Consulta,Odontologia,12-17,F,45,17,Alta,4
+AT00294,2026-05-14,Floriano,UPA Floriano,Consulta,Ortopedia,60+,M,46,33,Encaminhamento,2
+AT00583,2026-05-14,Parnaíba,UBS Centro,Consulta,Dermatologia,40-59,F,41,22,Alta,5
+AT00593,2026-05-14,Teresina,UBS Dirceu,Procedimento,Odontologia,0-11,F,48,55,Internação,3
+AT00838,2026-05-14,Campo Maior,UBS Campo Maior,Procedimento,Ortopedia,0-11,F,45,51,Alta,4
+AT01235,2026-05-14,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,0-11,F,68,5,Alta,2
+AT01392,2026-05-14,Teresina,Hospital Regional,Procedimento,Cardiologia,60+,M,31,42,Alta,4
+AT01473,2026-05-14,Corrente,UBS Corrente,Consulta,Cardiologia,18-39,M,41,10,Alta,5
+AT01753,2026-05-14,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,18-39,M,40,27,Alta,3
+AT00011,2026-05-15,Corrente,UBS Corrente,Consulta,Pediatria,12-17,F,53,17,Alta,3
+AT00271,2026-05-15,Floriano,UPA Floriano,Consulta,Pediatria,12-17,M,44,19,Alta,3
+AT00277,2026-05-15,Picos,UBS Picos Sul,Consulta,Psiquiatria,18-39,M,33,28,Alta,4
+AT00368,2026-05-15,Teresina,UPA Norte,Urgência,Psiquiatria,40-59,F,25,27,Internação,3
+AT00381,2026-05-15,Teresina,UBS Dirceu,Retorno,Dermatologia,18-39,M,18,22,Alta,4
+AT00590,2026-05-15,Teresina,UBS Dirceu,Procedimento,Dermatologia,0-11,M,25,39,Alta,3
+AT00771,2026-05-15,Parnaíba,UBS Centro,Exame,Cardiologia,60+,M,23,30,Alta,5
+AT00916,2026-05-15,Campo Maior,UBS Campo Maior,Exame,Dermatologia,60+,F,22,16,Retorno agendado,3
+AT01149,2026-05-15,Parnaíba,UPA Parnaíba,Exame,Dermatologia,40-59,F,55,5,Alta,4
+AT01361,2026-05-15,Picos,Hospital Regional de Picos,Consulta,Pediatria,0-11,F,54,19,Encaminhamento,2
+AT01624,2026-05-15,Floriano,UBS Floriano,Consulta,Odontologia,40-59,M,67,20,Encaminhamento,2
+AT01666,2026-05-15,Teresina,UPA Norte,Consulta,Odontologia,60+,F,44,25,Alta,3
+AT01717,2026-05-15,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,18-39,M,72,38,Alta,3
+AT01796,2026-05-15,Piripiri,UBS Piripiri,Consulta,Ortopedia,12-17,M,46,9,Alta,4
+AT00158,2026-05-16,Piripiri,UBS Piripiri,Urgência,Clínica Geral,40-59,M,2,40,Alta,5
+AT00161,2026-05-16,Teresina,UPA Norte,Consulta,Ginecologia,12-17,M,51,43,Alta,3
+AT00681,2026-05-16,Teresina,UPA Norte,Consulta,Pediatria,0-11,F,52,5,Alta,4
+AT00600,2026-05-18,Picos,UBS Picos Sul,Consulta,Clínica Geral,18-39,F,37,11,Alta,2
+AT00615,2026-05-18,Oeiras,UBS Oeiras,Procedimento,Pediatria,0-11,M,4,50,Encaminhamento,3
+AT01219,2026-05-18,Oeiras,UBS Oeiras,Urgência,Clínica Geral,60+,F,36,31,Retorno agendado,4
+AT01226,2026-05-18,Teresina,UPA Norte,Procedimento,Psiquiatria,40-59,F,39,54,Alta,5
+AT01397,2026-05-18,Piripiri,UBS Piripiri,Exame,Ortopedia,60+,F,29,20,Alta,4
+AT00507,2026-05-19,Picos,Hospital Regional de Picos,Consulta,Cardiologia,60+,M,41,20,Alta,4
+AT00879,2026-05-19,Teresina,Hospital Regional,Consulta,Pediatria,40-59,M,44,23,Alta,4
+AT00965,2026-05-19,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,M,19,46,Alta,5
+AT00244,2026-05-20,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,M,17,42,Retorno agendado,4
+AT00464,2026-05-20,Teresina,UBS Dirceu,Consulta,Pediatria,18-39,F,56,24,Internação,4
+AT01168,2026-05-20,Corrente,UBS Corrente,Retorno,Ortopedia,60+,F,31,20,Alta,3
+AT01727,2026-05-20,Teresina,UPA Norte,Consulta,Dermatologia,40-59,M,56,21,Alta,3
+AT01754,2026-05-20,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,18-39,F,46,30,Retorno agendado,4
+AT00292,2026-05-21,Parnaíba,UBS Centro,Exame,Odontologia,40-59,M,35,17,Alta,5
+AT00582,2026-05-21,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,18-39,F,58,28,Retorno agendado,3
+AT00657,2026-05-21,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,F,31,6,Retorno agendado,5
+AT00783,2026-05-21,Floriano,UBS Floriano,Consulta,Clínica Geral,40-59,F,51,10,Alta,3
+AT00919,2026-05-21,Teresina,Hospital Regional,Consulta,Clínica Geral,12-17,M,58,29,Alta,3
+AT00074,2026-05-22,Piripiri,UBS Piripiri,Consulta,Ginecologia,18-39,M,63,24,Retorno agendado,2
+AT00260,2026-05-22,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,M,37,48,Alta,3
+AT00432,2026-05-22,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,F,3,19,Alta,5
+AT00970,2026-05-22,Corrente,UBS Corrente,Consulta,Clínica Geral,0-11,F,62,27,Alta,1
+AT01102,2026-05-22,Picos,UBS Picos Sul,Urgência,Clínica Geral,60+,F,49,29,Encaminhamento,1
+AT01227,2026-05-22,Teresina,UPA Norte,Consulta,Ginecologia,40-59,F,57,18,Alta,3
+AT01241,2026-05-22,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,M,21,33,Encaminhamento,4
+AT01403,2026-05-22,Teresina,Hospital Regional,Consulta,Dermatologia,12-17,F,48,15,Alta,3
+AT01440,2026-05-22,Piripiri,UBS Piripiri,Consulta,Psiquiatria,18-39,M,30,12,Alta,4
+AT01504,2026-05-22,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,18-39,F,55,5,Alta,5
+AT01657,2026-05-22,Picos,UBS Picos Sul,Consulta,Ortopedia,18-39,F,59,28,Encaminhamento,5
+AT00973,2026-05-23,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,0-11,M,37,12,Retorno agendado,3
+AT00207,2026-05-24,Parnaíba,UPA Parnaíba,Procedimento,Ortopedia,60+,M,24,44,Internação,3
+AT01085,2026-05-24,Piripiri,UBS Piripiri,Urgência,Clínica Geral,40-59,M,19,29,Alta,4
+AT00118,2026-05-25,Parnaíba,UBS Centro,Urgência,Clínica Geral,18-39,M,23,30,Alta,3
+AT00124,2026-05-25,Piripiri,UBS Piripiri,Retorno,Ortopedia,18-39,M,35,16,Retorno agendado,3
+AT00336,2026-05-25,Teresina,Hospital Regional,Exame,Dermatologia,18-39,M,65,8,Retorno agendado,3
+AT01654,2026-05-25,Corrente,UBS Corrente,Urgência,Pediatria,12-17,F,38,24,Alta,3
+AT00123,2026-05-26,Piripiri,UBS Piripiri,Consulta,Ortopedia,18-39,M,35,35,Alta,2
+AT00386,2026-05-26,Teresina,Hospital Regional,Consulta,Odontologia,18-39,F,63,28,Retorno agendado,3
+AT00465,2026-05-26,Picos,UBS Picos Sul,Consulta,Dermatologia,0-11,M,40,21,Alta,5
+AT00529,2026-05-26,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,F,15,33,Alta,5
+AT00853,2026-05-26,Teresina,Hospital Regional,Retorno,Odontologia,60+,F,23,30,Alta,2
+AT00938,2026-05-26,Teresina,UBS Dirceu,Consulta,Odontologia,60+,M,44,22,Evasão,4
+AT01384,2026-05-26,Teresina,Hospital Regional,Consulta,Odontologia,0-11,M,67,34,Alta,3
+AT01407,2026-05-26,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,F,29,29,Alta,4
+AT00043,2026-05-27,Teresina,UBS Dirceu,Consulta,Pediatria,0-11,M,52,26,Alta,3
+AT01437,2026-05-27,Teresina,UPA Norte,Consulta,Dermatologia,40-59,M,57,17,Alta,1
+AT00064,2026-05-28,Floriano,UPA Floriano,Consulta,Ortopedia,40-59,F,45,34,Alta,3
+AT00154,2026-05-28,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,F,56,27,Internação,2
+AT00163,2026-05-28,Corrente,UBS Corrente,Consulta,Odontologia,18-39,M,31,10,Alta,4
+AT00452,2026-05-28,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,M,40,31,Alta,3
+AT00537,2026-05-28,Teresina,Hospital Regional,Retorno,Psiquiatria,12-17,M,27,6,Alta,4
+AT00554,2026-05-28,Picos,UBS Picos Sul,Consulta,Odontologia,40-59,M,60,26,Encaminhamento,4
+AT00877,2026-05-28,Teresina,UBS Dirceu,Consulta,Clínica Geral,0-11,M,50,36,Encaminhamento,4
+AT01409,2026-05-28,Teresina,UPA Norte,Consulta,Cardiologia,60+,F,37,7,Alta,4
+AT01538,2026-05-28,Corrente,UBS Corrente,Retorno,Clínica Geral,0-11,M,54,19,Alta,5
+AT00073,2026-05-29,Teresina,UBS Dirceu,Retorno,Ortopedia,40-59,F,21,16,Retorno agendado,4
+AT00766,2026-05-29,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,F,2,28,Retorno agendado,5
+AT01063,2026-05-29,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,12-17,F,80,13,Encaminhamento,3
+AT01127,2026-05-29,Teresina,Hospital Regional,Consulta,Odontologia,18-39,F,60,23,Alta,4
+AT01469,2026-05-29,Teresina,Hospital Regional,Consulta,Pediatria,0-11,F,20,24,Encaminhamento,5
+AT01685,2026-05-29,Teresina,UBS Dirceu,Consulta,Psiquiatria,18-39,M,40,28,Alta,4
+AT01700,2026-05-29,Piripiri,UBS Piripiri,Urgência,Odontologia,40-59,M,21,27,Retorno agendado,3
+AT01713,2026-05-29,Teresina,Hospital Regional,Consulta,Psiquiatria,18-39,F,49,16,Alta,3
+AT01714,2026-05-29,Teresina,Hospital Regional,Urgência,Ortopedia,0-11,F,25,30,Alta,4
+AT01767,2026-05-29,Campo Maior,UBS Campo Maior,Urgência,Dermatologia,18-39,M,40,35,Evasão,5
+AT00483,2026-05-30,Picos,Hospital Regional de Picos,Consulta,Cardiologia,18-39,M,15,21,Alta,4
+AT01614,2026-05-30,Teresina,UBS Dirceu,Exame,Ginecologia,60+,F,56,11,Encaminhamento,3
+AT00849,2026-05-31,Campo Maior,UBS Campo Maior,Consulta,Pediatria,0-11,M,50,28,Alta,4
+AT00925,2026-05-31,Teresina,UPA Norte,Consulta,Cardiologia,18-39,M,47,21,Retorno agendado,2
+AT01477,2026-05-31,Corrente,UBS Corrente,Exame,Psiquiatria,12-17,M,20,21,Alta,3
+AT00084,2026-06-01,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,F,54,10,Retorno agendado,3
+AT00172,2026-06-01,Teresina,UPA Norte,Consulta,Cardiologia,60+,M,53,13,Alta,3
+AT00606,2026-06-01,Picos,UBS Picos Sul,Procedimento,Pediatria,18-39,M,46,41,Alta,3
+AT01221,2026-06-01,Teresina,Hospital Regional,Consulta,Dermatologia,40-59,M,49,30,Encaminhamento,3
+AT01332,2026-06-01,Floriano,UPA Floriano,Consulta,Cardiologia,40-59,F,67,38,Alta,3
+AT01682,2026-06-01,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,M,58,16,Alta,4
+AT00218,2026-06-02,Oeiras,UBS Oeiras,Urgência,Clínica Geral,18-39,F,17,35,Alta,4
+AT00449,2026-06-02,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,F,53,21,Internação,3
+AT01003,2026-06-02,Floriano,UBS Floriano,Consulta,Clínica Geral,0-11,F,30,20,Encaminhamento,4
+AT00080,2026-06-03,Oeiras,UBS Oeiras,Consulta,Clínica Geral,12-17,M,51,19,Alta,4
+AT00419,2026-06-03,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,F,56,18,Retorno agendado,4
+AT00499,2026-06-03,Floriano,UBS Floriano,Urgência,Clínica Geral,12-17,F,43,40,Alta,3
+AT00683,2026-06-03,Teresina,UBS Dirceu,Exame,Psiquiatria,40-59,F,61,13,Retorno agendado,3
+AT00753,2026-06-03,Campo Maior,UBS Campo Maior,Retorno,Ortopedia,40-59,M,19,11,Alta,4
+AT00769,2026-06-03,Teresina,UPA Norte,Consulta,Ginecologia,18-39,M,57,27,Alta,4
+AT01061,2026-06-03,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,F,46,20,Alta,5
+AT01144,2026-06-03,Floriano,UBS Floriano,Consulta,Ortopedia,40-59,F,15,28,Alta,4
+AT01244,2026-06-03,Parnaíba,UBS Centro,Consulta,Clínica Geral,40-59,M,54,24,Retorno agendado,5
+AT01507,2026-06-03,Campo Maior,UBS Campo Maior,Urgência,Ortopedia,18-39,M,25,34,Encaminhamento,3
+AT00171,2026-06-04,Picos,UBS Picos Sul,Consulta,Dermatologia,18-39,M,43,19,Encaminhamento,4
+AT00460,2026-06-04,Teresina,UBS Dirceu,Exame,Ortopedia,0-11,M,35,25,Retorno agendado,3
+AT00721,2026-06-04,Parnaíba,UBS Centro,Urgência,Pediatria,18-39,F,40,41,Retorno agendado,4
+AT00366,2026-06-05,Piripiri,UBS Piripiri,Urgência,Pediatria,40-59,F,8,34,Alta,3
+AT00474,2026-06-05,Oeiras,UBS Oeiras,Urgência,Pediatria,18-39,F,14,25,Retorno agendado,3
+AT00906,2026-06-05,Piripiri,UBS Piripiri,Consulta,Clínica Geral,12-17,M,46,35,Encaminhamento,4
+AT01092,2026-06-05,Floriano,UPA Floriano,Consulta,Odontologia,12-17,M,62,13,Alta,2
+AT01198,2026-06-05,Parnaíba,UPA Parnaíba,Consulta,Pediatria,0-11,M,39,26,Alta,3
+AT01252,2026-06-05,Teresina,UPA Norte,Consulta,Ortopedia,12-17,M,64,9,Evasão,4
+AT01405,2026-06-05,Teresina,Hospital Regional,Procedimento,Pediatria,60+,M,47,48,Retorno agendado,5
+AT01417,2026-06-05,Teresina,Hospital Regional,Urgência,Odontologia,40-59,M,30,49,Retorno agendado,3
+AT00232,2026-06-06,Piripiri,UBS Piripiri,Urgência,Clínica Geral,40-59,M,35,35,Alta,4
+AT00636,2026-06-06,Teresina,UBS Dirceu,Consulta,Cardiologia,0-11,M,58,28,Retorno agendado,4
+AT01738,2026-06-06,Parnaíba,UBS Centro,Procedimento,Psiquiatria,12-17,M,58,45,Alta,3
+AT01027,2026-06-07,Teresina,Hospital Regional,Consulta,Odontologia,40-59,M,40,17,Alta,4
+AT01288,2026-06-07,Parnaíba,UPA Parnaíba,Retorno,Dermatologia,0-11,F,58,16,Alta,4
+AT01438,2026-06-07,Parnaíba,UBS Centro,Consulta,Psiquiatria,18-39,F,45,32,Alta,2
+AT00434,2026-06-08,Floriano,UBS Floriano,Consulta,Cardiologia,12-17,F,28,16,Alta,3
+AT00640,2026-06-08,Picos,UBS Picos Sul,Urgência,Clínica Geral,40-59,F,3,44,Encaminhamento,4
+AT01103,2026-06-08,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,0-11,F,56,29,Encaminhamento,3
+AT00248,2026-06-09,Teresina,Hospital Regional,Consulta,Dermatologia,18-39,F,40,25,Alta,5
+AT00565,2026-06-09,Picos,UBS Picos Sul,Exame,Pediatria,60+,M,33,19,Alta,3
+AT01111,2026-06-09,Oeiras,UBS Oeiras,Consulta,Cardiologia,12-17,M,37,19,Retorno agendado,4
+AT01237,2026-06-09,Teresina,UPA Norte,Consulta,Pediatria,60+,F,30,14,Alta,4
+AT01363,2026-06-09,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,0-11,M,62,38,Alta,3
+AT00023,2026-06-10,Teresina,UBS Dirceu,Consulta,Ginecologia,40-59,F,11,26,Alta,4
+AT00101,2026-06-10,Floriano,UPA Floriano,Retorno,Odontologia,40-59,F,55,21,Alta,4
+AT00330,2026-06-10,Corrente,UBS Corrente,Consulta,Ginecologia,60+,M,33,26,Retorno agendado,5
+AT00850,2026-06-10,Teresina,UBS Dirceu,Urgência,Ortopedia,60+,F,11,21,Alta,4
+AT00855,2026-06-10,Parnaíba,UPA Parnaíba,Consulta,Odontologia,60+,F,23,22,Alta,5
+AT00962,2026-06-10,Corrente,UBS Corrente,Consulta,Odontologia,60+,F,45,6,Retorno agendado,3
+AT01513,2026-06-10,Corrente,UBS Corrente,Consulta,Odontologia,18-39,F,43,25,Encaminhamento,3
+AT00812,2026-06-11,Teresina,UBS Dirceu,Consulta,Dermatologia,18-39,M,85,22,Encaminhamento,1
+AT00943,2026-06-11,Oeiras,UBS Oeiras,Consulta,Dermatologia,60+,F,52,31,Alta,4
+AT01448,2026-06-11,Teresina,Hospital Regional,Consulta,Cardiologia,18-39,M,54,32,Encaminhamento,4
+AT00144,2026-06-12,Floriano,UPA Floriano,Consulta,Dermatologia,40-59,F,27,32,Encaminhamento,5
+AT00286,2026-06-12,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,M,43,29,Retorno agendado,3
+AT00409,2026-06-12,Picos,UBS Picos Sul,Consulta,Cardiologia,0-11,M,46,23,Encaminhamento,4
+AT00643,2026-06-12,Parnaíba,UPA Parnaíba,Consulta,Pediatria,12-17,M,33,20,Encaminhamento,4
+AT00706,2026-06-12,Corrente,UBS Corrente,Consulta,Clínica Geral,18-39,F,23,13,Alta,3
+AT00709,2026-06-12,Floriano,UBS Floriano,Consulta,Psiquiatria,18-39,F,37,16,Alta,5
+AT01009,2026-06-12,Teresina,UPA Norte,Consulta,Dermatologia,18-39,M,48,32,Encaminhamento,3
+AT01128,2026-06-12,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,M,28,18,Alta,3
+AT01157,2026-06-12,Piripiri,UBS Piripiri,Consulta,Ginecologia,40-59,F,46,15,Encaminhamento,4
+AT01399,2026-06-12,Teresina,Hospital Regional,Consulta,Cardiologia,40-59,F,37,11,Encaminhamento,5
+AT01496,2026-06-12,Picos,UBS Picos Sul,Consulta,Ginecologia,60+,M,33,31,Evasão,3
+AT01578,2026-06-12,Oeiras,UBS Oeiras,Urgência,Clínica Geral,40-59,F,56,29,Alta,3
+AT01636,2026-06-12,Picos,Hospital Regional de Picos,Consulta,Ginecologia,40-59,F,35,17,Internação,2
+AT01689,2026-06-12,Teresina,Hospital Regional,Urgência,Clínica Geral,0-11,M,29,31,Alta,4
+AT01708,2026-06-12,Floriano,UBS Floriano,Urgência,Clínica Geral,0-11,F,28,22,Internação,3
+AT00737,2026-06-13,Piripiri,UBS Piripiri,Consulta,Ortopedia,60+,M,46,22,Retorno agendado,4
+AT00099,2026-06-14,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,M,21,27,Alta,3
+AT01215,2026-06-14,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,M,2,39,Encaminhamento,4
+AT00266,2026-06-15,Teresina,UPA Norte,Urgência,Pediatria,60+,M,7,44,Encaminhamento,3
+AT00444,2026-06-15,Floriano,UBS Floriano,Urgência,Clínica Geral,18-39,M,12,41,Encaminhamento,5
+AT00455,2026-06-15,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,M,21,24,Retorno agendado,4
+AT00591,2026-06-15,Corrente,UBS Corrente,Urgência,Psiquiatria,18-39,F,23,28,Alta,4
+AT00658,2026-06-15,Parnaíba,UBS Centro,Consulta,Odontologia,0-11,F,45,12,Alta,3
+AT00742,2026-06-15,Piripiri,UBS Piripiri,Exame,Ginecologia,0-11,M,57,13,Alta,3
+AT01045,2026-06-16,Floriano,UPA Floriano,Retorno,Clínica Geral,18-39,M,32,7,Alta,5
+AT01298,2026-06-16,Corrente,UBS Corrente,Urgência,Odontologia,12-17,M,31,26,Alta,2
+AT00253,2026-06-17,Teresina,UBS Dirceu,Consulta,Ortopedia,18-39,M,61,32,Alta,4
+AT01005,2026-06-17,Parnaíba,UPA Parnaíba,Urgência,Pediatria,40-59,M,2,50,Alta,5
+AT01056,2026-06-17,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,18-39,F,23,47,Encaminhamento,5
+AT01255,2026-06-17,Picos,Hospital Regional de Picos,Exame,Ortopedia,18-39,M,35,19,Internação,3
+AT01260,2026-06-17,Picos,UBS Picos Sul,Consulta,Pediatria,40-59,M,35,22,Retorno agendado,4
+AT01420,2026-06-17,Teresina,Hospital Regional,Procedimento,Ortopedia,40-59,F,43,51,Alta,4
+AT01519,2026-06-17,Oeiras,UBS Oeiras,Consulta,Pediatria,12-17,M,23,23,Encaminhamento,5
+AT01710,2026-06-17,Campo Maior,UBS Campo Maior,Exame,Pediatria,60+,M,44,24,Alta,4
+AT00120,2026-06-18,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,12-17,F,37,30,Alta,4
+AT00682,2026-06-18,Teresina,Hospital Regional,Exame,Ginecologia,0-11,M,38,21,Alta,5
+AT00822,2026-06-18,Teresina,UBS Dirceu,Retorno,Odontologia,0-11,M,53,18,Alta,5
+AT01010,2026-06-18,Picos,Hospital Regional de Picos,Procedimento,Clínica Geral,60+,F,19,46,Alta,5
+AT01037,2026-06-18,Parnaíba,UBS Centro,Retorno,Ginecologia,18-39,M,28,24,Alta,3
+AT01779,2026-06-18,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,0-11,M,38,33,Retorno agendado,3
+AT00038,2026-06-19,Corrente,UBS Corrente,Urgência,Clínica Geral,18-39,M,18,35,Alta,4
+AT00185,2026-06-19,Floriano,UPA Floriano,Exame,Pediatria,40-59,F,7,14,Retorno agendado,5
+AT00258,2026-06-19,Teresina,UBS Dirceu,Consulta,Psiquiatria,0-11,M,57,25,Alta,2
+AT00298,2026-06-19,Parnaíba,UBS Centro,Consulta,Pediatria,40-59,F,36,6,Alta,4
+AT00339,2026-06-19,Teresina,UPA Norte,Consulta,Ginecologia,18-39,M,26,18,Alta,4
+AT00385,2026-06-19,Teresina,Hospital Regional,Procedimento,Ginecologia,40-59,F,31,56,Internação,3
+AT00427,2026-06-19,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,M,25,18,Alta,5
+AT00454,2026-06-19,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,0-11,M,21,19,Alta,3
+AT00798,2026-06-19,Floriano,UBS Floriano,Procedimento,Ginecologia,60+,M,24,45,Retorno agendado,3
+AT01147,2026-06-19,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,M,41,27,Encaminhamento,3
+AT01148,2026-06-19,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,F,47,26,Alta,4
+AT01248,2026-06-19,Teresina,Hospital Regional,Consulta,Pediatria,18-39,F,27,29,Alta,5
+AT01442,2026-06-19,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,F,49,16,Encaminhamento,3
+AT01446,2026-06-19,Picos,UBS Picos Sul,Exame,Pediatria,40-59,F,43,28,Retorno agendado,4
+AT01526,2026-06-19,Teresina,Hospital Regional,Urgência,Clínica Geral,60+,F,42,33,Internação,3
+AT01553,2026-06-19,Teresina,Hospital Regional,Procedimento,Odontologia,40-59,F,33,41,Encaminhamento,4
+AT01758,2026-06-19,Teresina,UPA Norte,Urgência,Cardiologia,18-39,F,25,39,Alta,1
+AT01267,2026-06-20,Picos,Hospital Regional de Picos,Consulta,Pediatria,18-39,F,65,16,Retorno agendado,2
+AT00127,2026-06-21,Teresina,UBS Dirceu,Procedimento,Odontologia,0-11,F,37,45,Alta,3
+AT00147,2026-06-22,Campo Maior,UBS Campo Maior,Exame,Clínica Geral,12-17,M,66,27,Alta,3
+AT00387,2026-06-22,Parnaíba,UBS Centro,Exame,Pediatria,40-59,M,47,21,Alta,3
+AT00422,2026-06-22,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,24,34,Encaminhamento,5
+AT00619,2026-06-22,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,40-59,M,2,24,Retorno agendado,5
+AT00680,2026-06-22,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,F,49,24,Alta,3
+AT01001,2026-06-22,Corrente,UBS Corrente,Consulta,Odontologia,18-39,F,29,25,Retorno agendado,5
+AT01203,2026-06-22,Teresina,UBS Dirceu,Consulta,Ginecologia,0-11,F,22,17,Alta,3
+AT01347,2026-06-22,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,F,38,21,Internação,4
+AT01480,2026-06-22,Floriano,UBS Floriano,Consulta,Dermatologia,60+,F,15,16,Encaminhamento,3
+AT01621,2026-06-22,Picos,Hospital Regional de Picos,Retorno,Psiquiatria,0-11,M,35,14,Alta,3
+AT01750,2026-06-22,Teresina,UPA Norte,Procedimento,Psiquiatria,18-39,F,15,43,Alta,4
+AT00745,2026-06-23,Picos,UBS Picos Sul,Urgência,Clínica Geral,60+,M,35,36,Encaminhamento,2
+AT00794,2026-06-23,Campo Maior,UBS Campo Maior,Consulta,Odontologia,60+,M,29,23,Alta,2
+AT01536,2026-06-23,Teresina,UBS Dirceu,Consulta,Odontologia,12-17,F,31,29,Alta,4
+AT01554,2026-06-23,Oeiras,UBS Oeiras,Consulta,Ortopedia,40-59,F,38,42,Alta,5
+AT01605,2026-06-23,Floriano,UPA Floriano,Urgência,Clínica Geral,40-59,M,26,46,Alta,4
+AT00471,2026-06-24,Teresina,Hospital Regional,Urgência,Psiquiatria,40-59,M,12,31,Alta,4
+AT00498,2026-06-24,Teresina,UBS Dirceu,Exame,Ginecologia,0-11,M,52,15,Encaminhamento,3
+AT01095,2026-06-24,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,18-39,F,74,34,Alta,4
+AT01705,2026-06-24,Piripiri,UBS Piripiri,Exame,Ortopedia,60+,M,2,5,Alta,4
+AT00117,2026-06-25,Corrente,UBS Corrente,Consulta,Cardiologia,40-59,M,67,25,Alta,4
+AT00214,2026-06-25,Floriano,UBS Floriano,Procedimento,Ortopedia,18-39,M,27,39,Internação,4
+AT00233,2026-06-25,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,18-39,M,25,38,Alta,4
+AT00325,2026-06-25,Corrente,UBS Corrente,Exame,Cardiologia,40-59,M,15,24,Encaminhamento,4
+AT00360,2026-06-25,Oeiras,UBS Oeiras,Consulta,Psiquiatria,40-59,M,60,22,Retorno agendado,3
+AT00727,2026-06-25,Corrente,UBS Corrente,Procedimento,Psiquiatria,0-11,M,36,51,Retorno agendado,3
+AT00908,2026-06-25,Parnaíba,UPA Parnaíba,Consulta,Pediatria,40-59,F,57,17,Evasão,3
+AT01393,2026-06-25,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,F,52,17,Retorno agendado,2
+AT01428,2026-06-25,Floriano,UPA Floriano,Procedimento,Ortopedia,12-17,M,60,61,Alta,3
+AT01568,2026-06-25,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,F,53,29,Alta,4
+AT00162,2026-06-26,Oeiras,UBS Oeiras,Consulta,Psiquiatria,18-39,F,56,28,Alta,3
+AT00178,2026-06-26,Corrente,UBS Corrente,Consulta,Ortopedia,60+,M,49,28,Encaminhamento,2
+AT00199,2026-06-26,Parnaíba,UPA Parnaíba,Consulta,Psiquiatria,18-39,F,58,20,Alta,2
+AT00355,2026-06-26,Parnaíba,UBS Centro,Procedimento,Clínica Geral,40-59,F,31,49,Alta,4
+AT00486,2026-06-26,Teresina,UBS Dirceu,Exame,Pediatria,18-39,M,49,26,Encaminhamento,4
+AT00536,2026-06-26,Teresina,UBS Dirceu,Procedimento,Pediatria,40-59,M,63,53,Retorno agendado,5
+AT01090,2026-06-26,Teresina,UPA Norte,Consulta,Clínica Geral,40-59,F,22,16,Alta,5
+AT01155,2026-06-26,Piripiri,UBS Piripiri,Urgência,Ginecologia,60+,F,23,39,Alta,5
+AT01234,2026-06-26,Teresina,UPA Norte,Consulta,Odontologia,18-39,F,36,24,Alta,3
+AT01301,2026-06-26,Teresina,UPA Norte,Urgência,Clínica Geral,60+,F,10,36,Encaminhamento,4
+AT01368,2026-06-26,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,F,36,28,Evasão,3
+AT01372,2026-06-26,Parnaíba,UPA Parnaíba,Consulta,Pediatria,18-39,F,43,29,Encaminhamento,3
+AT01551,2026-06-26,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,F,31,42,Alta,4
+AT01679,2026-06-26,Floriano,UPA Floriano,Consulta,Dermatologia,18-39,M,43,20,Encaminhamento,4
+AT01687,2026-06-26,Teresina,Hospital Regional,Consulta,Ortopedia,0-11,M,27,29,Alta,5
+AT00569,2026-06-27,Floriano,UPA Floriano,Consulta,Ginecologia,40-59,M,27,26,Encaminhamento,4
+AT00974,2026-06-27,Teresina,Hospital Regional,Procedimento,Ortopedia,40-59,F,45,46,Alta,4
+AT00126,2026-06-28,Parnaíba,UBS Centro,Consulta,Ortopedia,18-39,M,57,19,Retorno agendado,3
+AT00564,2026-06-28,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,18-39,F,50,17,Alta,4
+AT00758,2026-06-28,Campo Maior,UBS Campo Maior,Urgência,Cardiologia,12-17,M,19,29,Alta,5
+AT01247,2026-06-29,Parnaíba,UBS Centro,Procedimento,Psiquiatria,0-11,M,51,53,Alta,4
+AT01412,2026-06-29,Parnaíba,UBS Centro,Consulta,Dermatologia,0-11,F,58,16,Retorno agendado,3
+AT01740,2026-06-29,Teresina,UPA Norte,Consulta,Pediatria,60+,F,43,18,Alta,3
+AT00045,2026-06-30,Teresina,UBS Dirceu,Exame,Psiquiatria,18-39,M,11,14,Alta,5
+AT00264,2026-06-30,Corrente,UBS Corrente,Urgência,Clínica Geral,18-39,M,3,51,Alta,4
+AT00327,2026-06-30,Picos,Hospital Regional de Picos,Urgência,Ginecologia,18-39,F,36,29,Encaminhamento,4
+AT00872,2026-06-30,Teresina,UBS Dirceu,Procedimento,Odontologia,40-59,F,39,59,Alta,4
+AT00923,2026-06-30,Picos,UBS Picos Sul,Urgência,Clínica Geral,18-39,M,39,39,Retorno agendado,3
+AT01015,2026-06-30,Piripiri,UBS Piripiri,Procedimento,Ginecologia,60+,M,33,56,Alta,5
+AT00321,2026-07-01,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,40-59,M,43,19,Alta,4
+AT00431,2026-07-01,Picos,UBS Picos Sul,Retorno,Ginecologia,60+,F,37,5,Internação,5
+AT00458,2026-07-01,Teresina,UPA Norte,Consulta,Clínica Geral,40-59,F,44,17,Alta,4
+AT00553,2026-07-01,Corrente,UBS Corrente,Consulta,Ortopedia,18-39,M,23,29,Encaminhamento,3
+AT00592,2026-07-01,Corrente,UBS Corrente,Consulta,Psiquiatria,18-39,F,47,19,Alta,4
+AT01042,2026-07-01,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,0-11,M,33,9,Alta,3
+AT01778,2026-07-01,Floriano,UBS Floriano,Urgência,Clínica Geral,60+,M,8,29,Retorno agendado,4
+AT00391,2026-07-02,Campo Maior,UBS Campo Maior,Exame,Odontologia,60+,F,53,16,Alta,3
+AT00813,2026-07-02,Corrente,UBS Corrente,Consulta,Pediatria,18-39,F,19,21,Alta,5
+AT01099,2026-07-02,Teresina,Hospital Regional,Consulta,Ortopedia,60+,M,50,11,Alta,5
+AT01561,2026-07-02,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,0-11,F,27,22,Alta,2
+AT00130,2026-07-03,Picos,UBS Picos Sul,Consulta,Odontologia,18-39,F,60,29,Alta,3
+AT00188,2026-07-03,Parnaíba,UPA Parnaíba,Exame,Odontologia,12-17,M,46,18,Alta,3
+AT00437,2026-07-03,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,F,41,14,Alta,4
+AT00547,2026-07-03,Parnaíba,UBS Centro,Consulta,Ginecologia,12-17,F,72,24,Alta,3
+AT00975,2026-07-03,Teresina,UBS Dirceu,Consulta,Dermatologia,40-59,M,60,17,Alta,4
+AT01076,2026-07-03,Floriano,UBS Floriano,Consulta,Pediatria,60+,F,26,17,Retorno agendado,3
+AT01104,2026-07-03,Picos,UBS Picos Sul,Urgência,Clínica Geral,18-39,F,13,33,Retorno agendado,3
+AT01265,2026-07-03,Corrente,UBS Corrente,Consulta,Psiquiatria,40-59,F,14,31,Alta,4
+AT01292,2026-07-03,Teresina,UPA Norte,Urgência,Clínica Geral,12-17,F,24,35,Encaminhamento,3
+AT01401,2026-07-03,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,18-39,M,62,17,Retorno agendado,4
+AT01495,2026-07-03,Parnaíba,UPA Parnaíba,Exame,Dermatologia,40-59,F,28,9,Alta,3
+AT01527,2026-07-03,Picos,UBS Picos Sul,Consulta,Cardiologia,18-39,M,40,23,Alta,5
+AT01540,2026-07-03,Teresina,UPA Norte,Procedimento,Dermatologia,0-11,F,27,54,Alta,4
+AT00210,2026-07-04,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,40-59,F,30,17,Alta,3
+AT00311,2026-07-04,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,M,53,22,Retorno agendado,3
+AT00429,2026-07-04,Teresina,Hospital Regional,Consulta,Psiquiatria,40-59,F,21,21,Alta,5
+AT00610,2026-07-04,Corrente,UBS Corrente,Exame,Pediatria,0-11,F,50,18,Encaminhamento,3
+AT00617,2026-07-04,Piripiri,UBS Piripiri,Urgência,Clínica Geral,40-59,F,24,23,Encaminhamento,4
+AT01468,2026-07-04,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,F,42,24,Retorno agendado,4
+AT00779,2026-07-05,Picos,Hospital Regional de Picos,Consulta,Ginecologia,40-59,F,48,29,Alta,4
+AT00510,2026-07-06,Teresina,UBS Dirceu,Consulta,Odontologia,60+,F,46,34,Alta,4
+AT00862,2026-07-06,Parnaíba,UBS Centro,Exame,Ortopedia,18-39,F,37,18,Encaminhamento,3
+AT01421,2026-07-06,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,60+,M,49,22,Alta,3
+AT01478,2026-07-06,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,M,59,9,Internação,3
+AT01571,2026-07-06,Picos,UBS Picos Sul,Consulta,Ortopedia,40-59,M,48,21,Retorno agendado,3
+AT01589,2026-07-06,Campo Maior,UBS Campo Maior,Exame,Ortopedia,0-11,M,45,24,Alta,4
+AT01790,2026-07-06,Piripiri,UBS Piripiri,Urgência,Clínica Geral,60+,M,33,36,Alta,3
+AT00393,2026-07-07,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,40-59,M,19,20,Internação,4
+AT01208,2026-07-07,Piripiri,UBS Piripiri,Consulta,Dermatologia,18-39,M,50,19,Alta,3
+AT01564,2026-07-07,Parnaíba,UBS Centro,Retorno,Psiquiatria,18-39,F,3,24,Alta,3
+AT00143,2026-07-08,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,F,3,64,Alta,4
+AT00331,2026-07-08,Piripiri,UBS Piripiri,Exame,Ortopedia,12-17,F,32,22,Alta,3
+AT00579,2026-07-08,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,F,37,25,Alta,5
+AT00799,2026-07-08,Oeiras,UBS Oeiras,Exame,Cardiologia,40-59,M,36,13,Retorno agendado,4
+AT01132,2026-07-08,Piripiri,UBS Piripiri,Exame,Cardiologia,60+,F,2,25,Evasão,4
+AT01172,2026-07-08,Teresina,Hospital Regional,Consulta,Clínica Geral,18-39,M,47,14,Alta,2
+AT01185,2026-07-08,Teresina,UPA Norte,Retorno,Dermatologia,60+,M,43,18,Alta,5
+AT00028,2026-07-09,Picos,UBS Picos Sul,Consulta,Clínica Geral,40-59,F,45,15,Retorno agendado,5
+AT00052,2026-07-09,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,M,74,23,Encaminhamento,3
+AT00362,2026-07-09,Campo Maior,UBS Campo Maior,Consulta,Odontologia,40-59,F,34,23,Alta,3
+AT00865,2026-07-09,Teresina,Hospital Regional,Consulta,Psiquiatria,40-59,M,48,26,Alta,4
+AT01002,2026-07-09,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,F,32,30,Alta,4
+AT01019,2026-07-09,Teresina,Hospital Regional,Procedimento,Psiquiatria,18-39,F,11,44,Alta,4
+AT01125,2026-07-09,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,40-59,F,35,13,Alta,5
+AT01612,2026-07-09,Picos,UBS Picos Sul,Consulta,Dermatologia,18-39,F,60,29,Alta,4
+AT00139,2026-07-10,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,M,7,41,Alta,4
+AT00200,2026-07-10,Floriano,UPA Floriano,Consulta,Ginecologia,0-11,F,25,25,Alta,2
+AT00378,2026-07-10,Picos,Hospital Regional de Picos,Procedimento,Ginecologia,60+,M,35,26,Alta,4
+AT00671,2026-07-10,Teresina,UPA Norte,Consulta,Pediatria,40-59,M,33,29,Alta,4
+AT00674,2026-07-10,Floriano,UPA Floriano,Procedimento,Pediatria,0-11,F,62,62,Alta,4
+AT01150,2026-07-10,Picos,UBS Picos Sul,Exame,Pediatria,60+,F,36,19,Alta,4
+AT01191,2026-07-10,Floriano,UBS Floriano,Consulta,Dermatologia,40-59,F,28,27,Retorno agendado,2
+AT01200,2026-07-10,Parnaíba,UBS Centro,Urgência,Clínica Geral,18-39,M,36,25,Alta,1
+AT01462,2026-07-10,Teresina,UBS Dirceu,Procedimento,Psiquiatria,18-39,F,17,58,Alta,4
+AT01601,2026-07-10,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,M,38,25,Alta,4
+AT01668,2026-07-10,Corrente,UBS Corrente,Consulta,Cardiologia,60+,F,42,16,Alta,3
+AT01334,2026-07-11,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,40-59,F,33,20,Alta,3
+AT01644,2026-07-11,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,F,55,26,Alta,5
+AT00901,2026-07-12,Picos,UBS Picos Sul,Exame,Ginecologia,0-11,M,49,23,Retorno agendado,4
+AT00944,2026-07-12,Teresina,UPA Norte,Consulta,Cardiologia,18-39,F,27,16,Alta,4
+AT00994,2026-07-12,Floriano,UBS Floriano,Consulta,Dermatologia,40-59,M,56,22,Retorno agendado,3
+AT01794,2026-07-12,Floriano,UPA Floriano,Consulta,Psiquiatria,18-39,M,27,28,Encaminhamento,4
+AT00272,2026-07-13,Teresina,UBS Dirceu,Consulta,Odontologia,40-59,F,50,24,Alta,2
+AT00354,2026-07-13,Teresina,Hospital Regional,Procedimento,Pediatria,60+,M,31,42,Alta,4
+AT00638,2026-07-13,Parnaíba,UPA Parnaíba,Exame,Odontologia,12-17,M,39,18,Alta,2
+AT00675,2026-07-13,Floriano,UPA Floriano,Urgência,Ortopedia,18-39,F,47,28,Alta,2
+AT00701,2026-07-13,Piripiri,UBS Piripiri,Consulta,Ortopedia,60+,F,45,23,Alta,4
+AT00874,2026-07-13,Floriano,UPA Floriano,Procedimento,Odontologia,12-17,M,37,66,Retorno agendado,3
+AT00926,2026-07-13,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,60+,F,7,35,Alta,3
+AT01251,2026-07-13,Teresina,Hospital Regional,Consulta,Ginecologia,18-39,F,60,32,Alta,4
+AT01461,2026-07-13,Teresina,UBS Dirceu,Urgência,Psiquiatria,40-59,M,33,45,Retorno agendado,5
+AT01562,2026-07-13,Campo Maior,UBS Campo Maior,Exame,Cardiologia,12-17,F,2,5,Alta,3
+AT01649,2026-07-13,Teresina,Hospital Regional,Consulta,Clínica Geral,0-11,F,33,13,Alta,4
+AT00195,2026-07-14,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,F,43,18,Retorno agendado,4
+AT00915,2026-07-14,Teresina,UBS Dirceu,Consulta,Ginecologia,40-59,M,69,24,Retorno agendado,5
+AT01231,2026-07-14,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,M,16,28,Retorno agendado,4
+AT01502,2026-07-14,Teresina,UPA Norte,Consulta,Odontologia,40-59,M,76,21,Alta,2
+AT00735,2026-07-15,Floriano,UPA Floriano,Exame,Ortopedia,40-59,F,34,24,Encaminhamento,4
+AT00789,2026-07-15,Corrente,UBS Corrente,Procedimento,Ortopedia,60+,M,44,44,Alta,3
+AT01087,2026-07-15,Teresina,UPA Norte,Urgência,Pediatria,40-59,M,18,33,Retorno agendado,4
+AT01450,2026-07-15,Corrente,UBS Corrente,Consulta,Ginecologia,40-59,F,55,30,Alta,3
+AT01474,2026-07-15,Oeiras,UBS Oeiras,Consulta,Pediatria,40-59,F,53,13,Retorno agendado,3
+AT01642,2026-07-15,Campo Maior,UBS Campo Maior,Procedimento,Clínica Geral,12-17,M,60,44,Alta,2
+AT00580,2026-07-16,Teresina,Hospital Regional,Consulta,Pediatria,18-39,F,36,16,Retorno agendado,3
+AT00848,2026-07-16,Parnaíba,UBS Centro,Consulta,Pediatria,60+,M,34,6,Alta,4
+AT00914,2026-07-16,Teresina,UPA Norte,Consulta,Psiquiatria,18-39,F,47,6,Alta,3
+AT00937,2026-07-16,Teresina,UPA Norte,Retorno,Clínica Geral,18-39,M,39,5,Alta,4
+AT01228,2026-07-16,Teresina,Hospital Regional,Consulta,Cardiologia,60+,M,48,33,Retorno agendado,4
+AT01503,2026-07-16,Piripiri,UBS Piripiri,Consulta,Ortopedia,60+,F,54,18,Encaminhamento,3
+AT01722,2026-07-16,Campo Maior,UBS Campo Maior,Exame,Clínica Geral,40-59,F,55,23,Alta,5
+AT01782,2026-07-16,Teresina,UBS Dirceu,Exame,Ortopedia,0-11,M,18,5,Alta,4
+AT00290,2026-07-17,Teresina,Hospital Regional,Exame,Ortopedia,40-59,M,62,25,Encaminhamento,2
+AT00316,2026-07-17,Teresina,Hospital Regional,Procedimento,Clínica Geral,18-39,M,29,68,Retorno agendado,4
+AT00459,2026-07-17,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,M,40,36,Alta,3
+AT01159,2026-07-17,Parnaíba,UPA Parnaíba,Procedimento,Dermatologia,18-39,F,17,60,Alta,4
+AT01230,2026-07-17,Parnaíba,UPA Parnaíba,Consulta,Pediatria,12-17,M,38,14,Retorno agendado,4
+AT01364,2026-07-17,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,F,46,26,Alta,4
+AT01389,2026-07-17,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,18-39,M,33,39,Alta,2
+AT01577,2026-07-17,Teresina,UBS Dirceu,Consulta,Ginecologia,60+,F,33,13,Alta,4
+AT01599,2026-07-17,Teresina,Hospital Regional,Consulta,Odontologia,60+,F,57,23,Alta,2
+AT00279,2026-07-18,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,20,42,Alta,4
+AT00677,2026-07-18,Floriano,UPA Floriano,Consulta,Odontologia,60+,M,55,33,Alta,2
+AT01492,2026-07-18,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,40-59,F,46,32,Alta,4
+AT00577,2026-07-19,Piripiri,UBS Piripiri,Consulta,Pediatria,40-59,M,62,40,Alta,3
+AT00837,2026-07-19,Teresina,UBS Dirceu,Consulta,Psiquiatria,40-59,M,47,34,Retorno agendado,4
+AT01167,2026-07-19,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,M,27,26,Alta,4
+AT01283,2026-07-19,Parnaíba,UBS Centro,Consulta,Ortopedia,60+,F,32,15,Retorno agendado,2
+AT00212,2026-07-20,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,60+,F,69,15,Alta,3
+AT00241,2026-07-20,Picos,UBS Picos Sul,Consulta,Psiquiatria,18-39,M,41,6,Alta,4
+AT00875,2026-07-20,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,40-59,M,24,16,Alta,4
+AT00947,2026-07-20,Picos,Hospital Regional de Picos,Consulta,Ortopedia,60+,M,68,32,Alta,3
+AT01080,2026-07-20,Picos,UBS Picos Sul,Exame,Pediatria,12-17,M,2,20,Alta,5
+AT01263,2026-07-20,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,0-11,M,31,15,Alta,4
+AT01545,2026-07-20,Teresina,UPA Norte,Consulta,Ginecologia,40-59,F,47,24,Alta,4
+AT00152,2026-07-21,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,40-59,M,44,28,Alta,4
+AT00155,2026-07-21,Parnaíba,UBS Centro,Urgência,Clínica Geral,0-11,M,37,43,Retorno agendado,3
+AT00227,2026-07-21,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,M,48,41,Alta,4
+AT00252,2026-07-21,Teresina,Hospital Regional,Consulta,Cardiologia,18-39,M,43,22,Encaminhamento,4
+AT00581,2026-07-21,Oeiras,UBS Oeiras,Consulta,Ortopedia,18-39,M,36,37,Encaminhamento,4
+AT00586,2026-07-21,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,F,21,32,Internação,3
+AT00884,2026-07-21,Teresina,Hospital Regional,Consulta,Odontologia,18-39,F,62,23,Alta,3
+AT00972,2026-07-21,Parnaíba,UBS Centro,Urgência,Clínica Geral,0-11,F,32,38,Internação,3
+AT01180,2026-07-21,Teresina,UBS Dirceu,Consulta,Odontologia,18-39,M,64,12,Alta,2
+AT01380,2026-07-21,Floriano,UPA Floriano,Consulta,Dermatologia,0-11,M,64,13,Alta,3
+AT01565,2026-07-21,Oeiras,UBS Oeiras,Urgência,Dermatologia,18-39,F,16,40,Alta,4
+AT00089,2026-07-22,Teresina,Hospital Regional,Consulta,Dermatologia,60+,F,34,11,Encaminhamento,2
+AT00267,2026-07-22,Picos,Hospital Regional de Picos,Consulta,Cardiologia,18-39,M,69,20,Alta,2
+AT00441,2026-07-22,Corrente,UBS Corrente,Urgência,Clínica Geral,18-39,M,21,33,Alta,4
+AT00556,2026-07-22,Parnaíba,UPA Parnaíba,Consulta,Psiquiatria,0-11,F,39,13,Alta,4
+AT01196,2026-07-22,Picos,Hospital Regional de Picos,Consulta,Dermatologia,60+,F,51,21,Encaminhamento,2
+AT01242,2026-07-22,Picos,Hospital Regional de Picos,Procedimento,Odontologia,18-39,M,39,68,Encaminhamento,3
+AT01494,2026-07-22,Parnaíba,UBS Centro,Consulta,Pediatria,12-17,M,48,26,Alta,3
+AT00167,2026-07-23,Piripiri,UBS Piripiri,Procedimento,Ginecologia,60+,M,41,49,Alta,3
+AT00722,2026-07-23,Floriano,UBS Floriano,Retorno,Odontologia,40-59,M,3,18,Encaminhamento,4
+AT00996,2026-07-23,Oeiras,UBS Oeiras,Consulta,Ortopedia,0-11,M,30,28,Encaminhamento,4
+AT01123,2026-07-23,Teresina,UBS Dirceu,Consulta,Ginecologia,60+,M,50,24,Alta,4
+AT01269,2026-07-23,Piripiri,UBS Piripiri,Consulta,Dermatologia,40-59,F,44,9,Alta,2
+AT01759,2026-07-23,Teresina,UPA Norte,Consulta,Cardiologia,0-11,F,47,28,Alta,3
+AT00211,2026-07-24,Corrente,UBS Corrente,Retorno,Psiquiatria,40-59,F,35,17,Alta,4
+AT00257,2026-07-24,Picos,UBS Picos Sul,Urgência,Clínica Geral,18-39,F,26,33,Alta,5
+AT00418,2026-07-24,Picos,UBS Picos Sul,Urgência,Odontologia,40-59,F,39,41,Alta,5
+AT01107,2026-07-24,Teresina,Hospital Regional,Urgência,Clínica Geral,60+,F,25,25,Encaminhamento,5
+AT01113,2026-07-24,Teresina,UBS Dirceu,Exame,Pediatria,40-59,M,38,15,Encaminhamento,2
+AT01134,2026-07-24,Teresina,Hospital Regional,Consulta,Ortopedia,60+,M,28,19,Retorno agendado,3
+AT01652,2026-07-24,Teresina,Hospital Regional,Consulta,Dermatologia,18-39,M,51,21,Encaminhamento,4
+AT01712,2026-07-24,Teresina,UPA Norte,Exame,Clínica Geral,40-59,M,47,14,Alta,2
+AT01770,2026-07-24,Floriano,UPA Floriano,Exame,Pediatria,40-59,M,26,18,Encaminhamento,3
+AT00678,2026-07-25,Piripiri,UBS Piripiri,Consulta,Ortopedia,12-17,M,42,16,Retorno agendado,4
+AT00728,2026-07-25,Oeiras,UBS Oeiras,Consulta,Pediatria,40-59,F,55,26,Alta,3
+AT01683,2026-07-25,Parnaíba,UBS Centro,Procedimento,Psiquiatria,40-59,M,56,60,Retorno agendado,5
+AT00194,2026-07-27,Parnaíba,UPA Parnaíba,Retorno,Ortopedia,0-11,F,44,10,Alta,5
+AT00256,2026-07-27,Campo Maior,UBS Campo Maior,Consulta,Pediatria,0-11,F,48,23,Alta,3
+AT00476,2026-07-27,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,M,28,37,Alta,5
+AT00558,2026-07-27,Corrente,UBS Corrente,Consulta,Odontologia,18-39,F,25,26,Alta,4
+AT00867,2026-07-27,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,40-59,M,35,22,Encaminhamento,4
+AT01256,2026-07-27,Teresina,Hospital Regional,Consulta,Ginecologia,18-39,F,46,25,Retorno agendado,4
+AT01327,2026-07-27,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,0-11,M,50,12,Retorno agendado,4
+AT00518,2026-07-28,Corrente,UBS Corrente,Consulta,Ortopedia,18-39,M,55,19,Alta,3
+AT01022,2026-07-28,Campo Maior,UBS Campo Maior,Exame,Pediatria,60+,F,58,22,Encaminhamento,1
+AT01340,2026-07-28,Campo Maior,UBS Campo Maior,Retorno,Odontologia,18-39,M,44,15,Internação,3
+AT01341,2026-07-28,Piripiri,UBS Piripiri,Consulta,Cardiologia,18-39,M,45,23,Alta,4
+AT01345,2026-07-28,Teresina,Hospital Regional,Consulta,Ortopedia,18-39,M,31,16,Alta,5
+AT00438,2026-07-29,Piripiri,UBS Piripiri,Procedimento,Psiquiatria,12-17,F,26,52,Alta,5
+AT00639,2026-07-29,Parnaíba,UBS Centro,Consulta,Clínica Geral,60+,F,75,17,Alta,3
+AT01043,2026-07-29,Teresina,UPA Norte,Retorno,Ginecologia,18-39,M,53,16,Alta,4
+AT01158,2026-07-29,Parnaíba,UBS Centro,Consulta,Psiquiatria,18-39,F,44,5,Encaminhamento,4
+AT00076,2026-07-30,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,F,66,13,Alta,4
+AT00226,2026-07-30,Oeiras,UBS Oeiras,Exame,Cardiologia,12-17,M,46,16,Retorno agendado,3
+AT00572,2026-07-30,Teresina,UPA Norte,Urgência,Ginecologia,18-39,F,31,40,Alta,3
+AT00585,2026-07-30,Piripiri,UBS Piripiri,Consulta,Cardiologia,12-17,M,43,34,Alta,4
+AT00873,2026-07-30,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,F,45,35,Retorno agendado,4
+AT00912,2026-07-30,Floriano,UPA Floriano,Consulta,Ortopedia,40-59,M,36,35,Encaminhamento,3
+AT00950,2026-07-30,Parnaíba,UBS Centro,Consulta,Ginecologia,40-59,M,39,27,Encaminhamento,3
+AT01453,2026-07-30,Teresina,UPA Norte,Urgência,Ginecologia,40-59,F,53,45,Alta,5
+AT00107,2026-07-31,Piripiri,UBS Piripiri,Consulta,Pediatria,0-11,M,40,33,Evasão,2
+AT00457,2026-07-31,Oeiras,UBS Oeiras,Exame,Ginecologia,40-59,M,14,13,Encaminhamento,4
+AT00505,2026-07-31,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,12-17,M,62,32,Alta,3
+AT00842,2026-07-31,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,F,66,17,Alta,4
+AT00924,2026-07-31,Parnaíba,UBS Centro,Consulta,Dermatologia,60+,M,44,16,Alta,3
+AT01047,2026-07-31,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,M,10,31,Encaminhamento,4
+AT01618,2026-07-31,Parnaíba,UBS Centro,Exame,Cardiologia,18-39,F,35,20,Alta,3
+AT01716,2026-07-31,Teresina,UPA Norte,Urgência,Dermatologia,40-59,M,23,31,Alta,3
+AT00835,2026-08-01,Teresina,UBS Dirceu,Consulta,Clínica Geral,40-59,M,53,28,Alta,4
+AT01678,2026-08-01,Teresina,UPA Norte,Procedimento,Odontologia,0-11,F,44,54,Alta,2
+AT01732,2026-08-01,Teresina,UBS Dirceu,Consulta,Clínica Geral,40-59,F,41,30,Alta,4
+AT01274,2026-08-02,Oeiras,UBS Oeiras,Procedimento,Ortopedia,40-59,F,51,43,Retorno agendado,4
+AT00151,2026-08-03,Teresina,UPA Norte,Exame,Dermatologia,60+,M,38,22,Alta,5
+AT00180,2026-08-03,Picos,UBS Picos Sul,Consulta,Pediatria,40-59,F,73,23,Alta,3
+AT00219,2026-08-03,Picos,Hospital Regional de Picos,Consulta,Odontologia,40-59,M,29,12,Alta,1
+AT00691,2026-08-03,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,M,51,25,Alta,2
+AT00760,2026-08-03,Floriano,UBS Floriano,Consulta,Dermatologia,18-39,M,34,24,Alta,3
+AT00777,2026-08-03,Teresina,UPA Norte,Consulta,Clínica Geral,60+,F,68,26,Alta,3
+AT00826,2026-08-03,Parnaíba,UPA Parnaíba,Retorno,Psiquiatria,18-39,F,22,7,Alta,5
+AT00932,2026-08-03,Teresina,Hospital Regional,Urgência,Clínica Geral,60+,F,2,48,Encaminhamento,5
+AT01667,2026-08-03,Picos,UBS Picos Sul,Consulta,Ginecologia,40-59,F,34,29,Encaminhamento,4
+AT00659,2026-08-04,Picos,Hospital Regional de Picos,Consulta,Ortopedia,18-39,M,29,36,Internação,5
+AT01170,2026-08-04,Teresina,UBS Dirceu,Exame,Cardiologia,12-17,M,35,10,Encaminhamento,4
+AT01291,2026-08-04,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,F,49,24,Alta,3
+AT01715,2026-08-04,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,F,55,18,Retorno agendado,2
+AT00014,2026-08-05,Corrente,UBS Corrente,Urgência,Clínica Geral,60+,M,23,31,Alta,3
+AT00209,2026-08-05,Piripiri,UBS Piripiri,Consulta,Odontologia,18-39,F,28,17,Encaminhamento,5
+AT00442,2026-08-05,Teresina,UPA Norte,Urgência,Odontologia,40-59,F,39,39,Alta,3
+AT00765,2026-08-05,Parnaíba,UPA Parnaíba,Consulta,Pediatria,60+,M,33,32,Alta,5
+AT00808,2026-08-05,Oeiras,UBS Oeiras,Retorno,Psiquiatria,12-17,F,20,19,Alta,4
+AT01209,2026-08-05,Teresina,UPA Norte,Consulta,Dermatologia,0-11,F,27,23,Alta,4
+AT01549,2026-08-05,Teresina,UBS Dirceu,Consulta,Ortopedia,40-59,M,21,29,Alta,4
+AT01795,2026-08-05,Piripiri,UBS Piripiri,Consulta,Dermatologia,18-39,F,51,23,Alta,3
+AT00083,2026-08-06,Floriano,UPA Floriano,Exame,Ortopedia,18-39,M,64,17,Evasão,4
+AT00338,2026-08-06,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,40-59,F,40,10,Alta,2
+AT00478,2026-08-06,Picos,Hospital Regional de Picos,Consulta,Odontologia,18-39,F,43,17,Alta,4
+AT00948,2026-08-06,Teresina,UBS Dirceu,Retorno,Pediatria,0-11,M,17,10,Retorno agendado,5
+AT00963,2026-08-06,Floriano,UPA Floriano,Consulta,Clínica Geral,60+,F,58,33,Retorno agendado,4
+AT00995,2026-08-06,Picos,UBS Picos Sul,Consulta,Clínica Geral,18-39,F,48,32,Alta,3
+AT00997,2026-08-06,Teresina,UBS Dirceu,Consulta,Odontologia,40-59,F,81,26,Alta,2
+AT01305,2026-08-06,Teresina,UBS Dirceu,Urgência,Dermatologia,0-11,M,38,40,Alta,4
+AT01481,2026-08-06,Teresina,UPA Norte,Consulta,Cardiologia,60+,M,34,41,Alta,4
+AT00017,2026-08-07,Parnaíba,UPA Parnaíba,Urgência,Pediatria,12-17,M,47,39,Alta,4
+AT00047,2026-08-07,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,40-59,M,48,28,Alta,3
+AT00183,2026-08-07,Picos,UBS Picos Sul,Retorno,Psiquiatria,18-39,M,32,8,Alta,3
+AT00332,2026-08-07,Teresina,UPA Norte,Urgência,Clínica Geral,12-17,F,16,28,Retorno agendado,5
+AT00347,2026-08-07,Teresina,UPA Norte,Urgência,Ginecologia,18-39,M,29,31,Encaminhamento,4
+AT00466,2026-08-07,Parnaíba,UBS Centro,Urgência,Clínica Geral,40-59,F,30,40,Internação,2
+AT00723,2026-08-07,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,12-17,F,37,21,Retorno agendado,3
+AT00744,2026-08-07,Floriano,UBS Floriano,Procedimento,Pediatria,60+,F,55,44,Evasão,4
+AT01044,2026-08-07,Piripiri,UBS Piripiri,Urgência,Ortopedia,18-39,F,48,28,Alta,3
+AT01054,2026-08-07,Teresina,UPA Norte,Urgência,Odontologia,60+,M,45,31,Retorno agendado,3
+AT01156,2026-08-07,Piripiri,UBS Piripiri,Consulta,Pediatria,60+,F,51,16,Alta,5
+AT01429,2026-08-07,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,M,44,24,Alta,4
+AT01566,2026-08-07,Teresina,UBS Dirceu,Urgência,Clínica Geral,0-11,M,49,36,Alta,4
+AT01698,2026-08-07,Oeiras,UBS Oeiras,Urgência,Clínica Geral,0-11,M,34,38,Alta,2
+AT01741,2026-08-07,Parnaíba,UBS Centro,Urgência,Psiquiatria,18-39,M,24,45,Alta,4
+AT01163,2026-08-08,Picos,Hospital Regional de Picos,Consulta,Dermatologia,0-11,M,55,7,Alta,2
+AT01600,2026-08-08,Teresina,UPA Norte,Urgência,Dermatologia,40-59,F,13,31,Alta,5
+AT01630,2026-08-08,Teresina,UPA Norte,Consulta,Psiquiatria,40-59,M,61,27,Alta,4
+AT00193,2026-08-09,Oeiras,UBS Oeiras,Procedimento,Cardiologia,40-59,F,41,61,Alta,4
+AT01004,2026-08-09,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,M,41,41,Alta,2
+AT01452,2026-08-09,Corrente,UBS Corrente,Consulta,Odontologia,60+,F,44,30,Alta,4
+AT01250,2026-08-10,Piripiri,UBS Piripiri,Urgência,Clínica Geral,60+,F,44,34,Retorno agendado,2
+AT00053,2026-08-11,Teresina,Hospital Regional,Retorno,Ginecologia,60+,M,4,5,Alta,4
+AT00137,2026-08-11,Teresina,UPA Norte,Consulta,Psiquiatria,12-17,M,27,32,Alta,3
+AT00588,2026-08-11,Piripiri,UBS Piripiri,Exame,Odontologia,12-17,M,32,27,Alta,5
+AT01117,2026-08-11,Piripiri,UBS Piripiri,Consulta,Clínica Geral,40-59,F,50,20,Encaminhamento,5
+AT01609,2026-08-11,Parnaíba,UBS Centro,Urgência,Clínica Geral,18-39,M,52,27,Alta,5
+AT00595,2026-08-12,Oeiras,UBS Oeiras,Urgência,Clínica Geral,18-39,F,43,31,Alta,5
+AT01101,2026-08-12,Teresina,UPA Norte,Consulta,Odontologia,12-17,M,40,21,Alta,2
+AT00405,2026-08-13,Piripiri,UBS Piripiri,Urgência,Clínica Geral,18-39,M,46,47,Alta,2
+AT00439,2026-08-13,Campo Maior,UBS Campo Maior,Urgência,Ortopedia,40-59,M,2,41,Alta,3
+AT00898,2026-08-13,Floriano,UBS Floriano,Consulta,Cardiologia,40-59,F,60,13,Alta,4
+AT00936,2026-08-13,Teresina,Hospital Regional,Urgência,Pediatria,0-11,M,26,36,Alta,5
+AT00989,2026-08-13,Campo Maior,UBS Campo Maior,Urgência,Psiquiatria,18-39,M,13,35,Alta,4
+AT01093,2026-08-13,Oeiras,UBS Oeiras,Retorno,Dermatologia,40-59,M,39,15,Encaminhamento,3
+AT01559,2026-08-13,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,M,18,38,Alta,5
+AT01671,2026-08-13,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,18-39,M,25,18,Encaminhamento,3
+AT00400,2026-08-14,Corrente,UBS Corrente,Consulta,Pediatria,18-39,M,59,5,Retorno agendado,3
+AT00533,2026-08-14,Teresina,UBS Dirceu,Procedimento,Cardiologia,18-39,M,36,46,Alta,5
+AT00555,2026-08-14,Parnaíba,UBS Centro,Consulta,Pediatria,0-11,M,66,13,Encaminhamento,4
+AT00654,2026-08-14,Piripiri,UBS Piripiri,Urgência,Ortopedia,18-39,F,2,44,Alta,5
+AT00663,2026-08-14,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,40-59,F,33,19,Retorno agendado,3
+AT00666,2026-08-14,Teresina,UPA Norte,Consulta,Ginecologia,40-59,M,35,13,Alta,3
+AT00921,2026-08-14,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,F,59,30,Encaminhamento,4
+AT01039,2026-08-14,Floriano,UBS Floriano,Consulta,Pediatria,40-59,F,45,16,Encaminhamento,3
+AT01321,2026-08-14,Floriano,UBS Floriano,Urgência,Clínica Geral,40-59,F,31,40,Encaminhamento,4
+AT01408,2026-08-14,Floriano,UPA Floriano,Urgência,Clínica Geral,18-39,F,16,42,Retorno agendado,4
+AT01471,2026-08-14,Parnaíba,UPA Parnaíba,Exame,Dermatologia,40-59,F,10,5,Encaminhamento,3
+AT00068,2026-08-15,Teresina,Hospital Regional,Consulta,Odontologia,18-39,M,49,30,Encaminhamento,3
+AT00818,2026-08-15,Teresina,UPA Norte,Retorno,Odontologia,18-39,F,40,30,Alta,4
+AT01036,2026-08-15,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,M,26,48,Encaminhamento,4
+AT01643,2026-08-15,Campo Maior,UBS Campo Maior,Consulta,Odontologia,0-11,F,25,21,Alta,3
+AT00318,2026-08-16,Parnaíba,UBS Centro,Consulta,Pediatria,0-11,M,66,35,Alta,3
+AT00388,2026-08-16,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,M,65,24,Internação,3
+AT00653,2026-08-16,Teresina,UBS Dirceu,Exame,Dermatologia,0-11,M,13,27,Retorno agendado,5
+AT01533,2026-08-16,Teresina,Hospital Regional,Consulta,Clínica Geral,60+,M,27,28,Encaminhamento,4
+AT00075,2026-08-17,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,40-59,F,32,23,Retorno agendado,4
+AT00662,2026-08-17,Picos,UBS Picos Sul,Retorno,Clínica Geral,40-59,F,35,5,Alta,5
+AT01140,2026-08-17,Parnaíba,UPA Parnaíba,Consulta,Pediatria,60+,F,72,23,Alta,2
+AT01576,2026-08-17,Teresina,UPA Norte,Consulta,Ginecologia,40-59,F,65,27,Alta,4
+AT00280,2026-08-18,Teresina,UPA Norte,Retorno,Ortopedia,60+,M,26,20,Alta,4
+AT00782,2026-08-18,Picos,UBS Picos Sul,Procedimento,Pediatria,60+,F,24,40,Alta,4
+AT01530,2026-08-18,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,40-59,F,54,27,Alta,4
+AT00323,2026-08-19,Parnaíba,UPA Parnaíba,Retorno,Clínica Geral,18-39,F,25,14,Encaminhamento,5
+AT00407,2026-08-19,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,M,66,22,Encaminhamento,3
+AT01193,2026-08-19,Piripiri,UBS Piripiri,Procedimento,Dermatologia,40-59,F,10,49,Retorno agendado,3
+AT01498,2026-08-19,Floriano,UPA Floriano,Consulta,Clínica Geral,60+,M,47,27,Encaminhamento,2
+AT00651,2026-08-20,Teresina,Hospital Regional,Retorno,Dermatologia,0-11,F,39,34,Alta,3
+AT00825,2026-08-20,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,F,28,31,Alta,4
+AT00008,2026-08-21,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,14,20,Evasão,3
+AT00175,2026-08-21,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,F,24,17,Encaminhamento,4
+AT00217,2026-08-21,Floriano,UPA Floriano,Consulta,Dermatologia,60+,F,28,15,Retorno agendado,3
+AT00222,2026-08-21,Piripiri,UBS Piripiri,Consulta,Pediatria,40-59,M,48,16,Alta,3
+AT00320,2026-08-21,Teresina,Hospital Regional,Urgência,Dermatologia,40-59,F,11,34,Alta,4
+AT00353,2026-08-21,Oeiras,UBS Oeiras,Retorno,Dermatologia,40-59,F,61,27,Alta,3
+AT00525,2026-08-21,Parnaíba,UPA Parnaíba,Consulta,Pediatria,60+,F,54,26,Alta,3
+AT00608,2026-08-21,Piripiri,UBS Piripiri,Urgência,Clínica Geral,12-17,F,28,50,Alta,3
+AT00635,2026-08-21,Piripiri,UBS Piripiri,Procedimento,Pediatria,0-11,F,27,45,Alta,5
+AT00792,2026-08-21,Oeiras,UBS Oeiras,Consulta,Cardiologia,40-59,M,57,19,Alta,2
+AT00817,2026-08-21,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,M,32,18,Internação,5
+AT00830,2026-08-21,Teresina,Hospital Regional,Consulta,Dermatologia,18-39,F,57,25,Alta,4
+AT01131,2026-08-21,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,18-39,M,47,28,Retorno agendado,3
+AT01197,2026-08-21,Teresina,Hospital Regional,Procedimento,Ortopedia,18-39,F,33,33,Encaminhamento,5
+AT01349,2026-08-21,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,F,46,15,Alta,3
+AT01573,2026-08-21,Parnaíba,UBS Centro,Urgência,Dermatologia,18-39,M,38,32,Alta,4
+AT01691,2026-08-21,Teresina,UBS Dirceu,Consulta,Dermatologia,40-59,M,35,16,Alta,4
+AT01760,2026-08-21,Teresina,Hospital Regional,Procedimento,Ortopedia,40-59,M,42,54,Alta,3
+AT00392,2026-08-22,Floriano,UPA Floriano,Consulta,Ginecologia,18-39,F,61,29,Alta,3
+AT01186,2026-08-22,Oeiras,UBS Oeiras,Consulta,Clínica Geral,12-17,F,48,35,Alta,2
+AT01608,2026-08-22,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,M,47,25,Alta,4
+AT01074,2026-08-23,Teresina,Hospital Regional,Consulta,Dermatologia,60+,F,29,18,Internação,5
+AT00004,2026-08-24,Picos,Hospital Regional de Picos,Consulta,Ginecologia,60+,F,48,27,Encaminhamento,2
+AT00111,2026-08-24,Campo Maior,UBS Campo Maior,Consulta,Pediatria,18-39,M,45,32,Alta,3
+AT00519,2026-08-24,Campo Maior,UBS Campo Maior,Retorno,Odontologia,18-39,M,34,5,Encaminhamento,2
+AT01031,2026-08-24,Picos,UBS Picos Sul,Exame,Ortopedia,60+,F,34,10,Alta,5
+AT01151,2026-08-24,Floriano,UPA Floriano,Exame,Pediatria,60+,F,31,16,Alta,5
+AT01254,2026-08-24,Campo Maior,UBS Campo Maior,Urgência,Odontologia,40-59,M,20,40,Encaminhamento,4
+AT00821,2026-08-25,Floriano,UPA Floriano,Consulta,Odontologia,18-39,M,52,25,Alta,5
+AT01692,2026-08-25,Teresina,Hospital Regional,Consulta,Odontologia,60+,F,57,24,Alta,4
+AT01702,2026-08-25,Piripiri,UBS Piripiri,Exame,Ginecologia,40-59,M,30,12,Retorno agendado,4
+AT01703,2026-08-25,Teresina,UBS Dirceu,Exame,Ginecologia,18-39,F,45,14,Alta,3
+AT01711,2026-08-25,Teresina,UPA Norte,Procedimento,Odontologia,12-17,M,46,62,Alta,4
+AT00132,2026-08-26,Corrente,UBS Corrente,Urgência,Pediatria,0-11,F,35,30,Alta,2
+AT00472,2026-08-26,Teresina,UPA Norte,Exame,Cardiologia,40-59,M,26,15,Alta,5
+AT00698,2026-08-26,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,M,45,20,Retorno agendado,3
+AT00834,2026-08-26,Parnaíba,UBS Centro,Consulta,Dermatologia,18-39,M,51,23,Alta,2
+AT01742,2026-08-26,Parnaíba,UPA Parnaíba,Procedimento,Ginecologia,18-39,F,8,47,Alta,5
+AT00044,2026-08-27,Parnaíba,UPA Parnaíba,Exame,Psiquiatria,40-59,M,12,26,Alta,3
+AT00467,2026-08-27,Picos,UBS Picos Sul,Exame,Odontologia,18-39,F,45,21,Alta,3
+AT01188,2026-08-27,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,M,39,47,Encaminhamento,4
+AT00066,2026-08-28,Floriano,UPA Floriano,Procedimento,Odontologia,60+,M,63,40,Alta,4
+AT00088,2026-08-28,Corrente,UBS Corrente,Exame,Ortopedia,60+,M,19,26,Alta,3
+AT00090,2026-08-28,Oeiras,UBS Oeiras,Procedimento,Ortopedia,18-39,M,25,43,Encaminhamento,3
+AT00297,2026-08-28,Teresina,Hospital Regional,Exame,Cardiologia,18-39,M,65,12,Alta,3
+AT00566,2026-08-28,Corrente,UBS Corrente,Urgência,Clínica Geral,40-59,F,39,42,Alta,4
+AT00616,2026-08-28,Teresina,UPA Norte,Urgência,Odontologia,40-59,M,44,39,Retorno agendado,4
+AT00669,2026-08-28,Picos,Hospital Regional de Picos,Exame,Dermatologia,40-59,F,23,12,Alta,4
+AT01049,2026-08-28,Teresina,UBS Dirceu,Consulta,Ginecologia,18-39,M,44,35,Retorno agendado,4
+AT01052,2026-08-28,Picos,UBS Picos Sul,Exame,Psiquiatria,60+,F,29,21,Encaminhamento,3
+AT01065,2026-08-28,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,18-39,F,46,9,Alta,4
+AT01078,2026-08-28,Teresina,Hospital Regional,Procedimento,Clínica Geral,40-59,F,48,61,Retorno agendado,4
+AT01082,2026-08-28,Parnaíba,UPA Parnaíba,Consulta,Odontologia,40-59,M,45,31,Retorno agendado,5
+AT01508,2026-08-28,Picos,Hospital Regional de Picos,Exame,Ortopedia,18-39,F,39,8,Alta,4
+AT01781,2026-08-28,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,F,28,18,Retorno agendado,4
+AT00517,2026-08-29,Parnaíba,UBS Centro,Consulta,Odontologia,0-11,F,53,10,Encaminhamento,4
+AT01067,2026-08-29,Teresina,UBS Dirceu,Urgência,Clínica Geral,60+,F,7,26,Alta,3
+AT01166,2026-08-29,Teresina,UPA Norte,Consulta,Cardiologia,18-39,M,32,19,Alta,3
+AT01238,2026-08-29,Oeiras,UBS Oeiras,Consulta,Ortopedia,40-59,M,15,19,Retorno agendado,4
+AT01525,2026-08-30,Parnaíba,UPA Parnaíba,Retorno,Cardiologia,12-17,F,39,14,Alta,3
+AT00623,2026-08-31,Teresina,Hospital Regional,Consulta,Ginecologia,12-17,M,27,31,Encaminhamento,3
+AT00803,2026-08-31,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,M,26,33,Alta,4
+AT01000,2026-08-31,Floriano,UPA Floriano,Consulta,Cardiologia,18-39,F,29,31,Alta,4
+AT01201,2026-08-31,Campo Maior,UBS Campo Maior,Exame,Pediatria,40-59,F,17,22,Alta,5
+AT01286,2026-08-31,Parnaíba,UBS Centro,Consulta,Clínica Geral,18-39,M,40,24,Alta,2
+AT00042,2026-09-01,Parnaíba,UPA Parnaíba,Exame,Ginecologia,40-59,M,34,18,Alta,3
+AT00403,2026-09-01,Floriano,UBS Floriano,Consulta,Pediatria,60+,F,45,31,Alta,3
+AT00729,2026-09-01,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,18-39,M,59,22,Alta,5
+AT00971,2026-09-01,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,18-39,F,62,33,Alta,2
+AT00988,2026-09-01,Teresina,Hospital Regional,Procedimento,Cardiologia,18-39,F,44,55,Encaminhamento,3
+AT01130,2026-09-01,Oeiras,UBS Oeiras,Consulta,Psiquiatria,40-59,M,52,9,Alta,4
+AT01225,2026-09-01,Parnaíba,UBS Centro,Consulta,Cardiologia,0-11,F,63,31,Alta,3
+AT01467,2026-09-01,Floriano,UBS Floriano,Consulta,Ortopedia,18-39,F,56,23,Retorno agendado,3
+AT00394,2026-09-02,Teresina,UBS Dirceu,Exame,Ortopedia,12-17,M,44,20,Alta,2
+AT00935,2026-09-02,Floriano,UBS Floriano,Urgência,Clínica Geral,40-59,M,32,26,Alta,4
+AT01459,2026-09-02,Floriano,UBS Floriano,Consulta,Dermatologia,40-59,F,45,25,Alta,4
+AT01515,2026-09-02,Teresina,Hospital Regional,Consulta,Clínica Geral,40-59,M,56,6,Retorno agendado,4
+AT00276,2026-09-03,Teresina,UPA Norte,Consulta,Ginecologia,0-11,M,56,30,Alta,3
+AT00456,2026-09-03,Oeiras,UBS Oeiras,Urgência,Clínica Geral,40-59,M,26,23,Alta,2
+AT01596,2026-09-03,Campo Maior,UBS Campo Maior,Consulta,Pediatria,40-59,M,44,15,Alta,3
+AT00121,2026-09-04,Corrente,UBS Corrente,Consulta,Pediatria,40-59,F,26,21,Alta,4
+AT00309,2026-09-04,Teresina,UPA Norte,Consulta,Pediatria,0-11,F,68,13,Encaminhamento,3
+AT00423,2026-09-04,Picos,Hospital Regional de Picos,Consulta,Ortopedia,18-39,M,2,11,Alta,4
+AT00714,2026-09-04,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,F,51,23,Alta,1
+AT00730,2026-09-04,Picos,UBS Picos Sul,Consulta,Odontologia,60+,M,52,37,Alta,3
+AT00732,2026-09-04,Floriano,UBS Floriano,Consulta,Cardiologia,0-11,M,35,22,Evasão,2
+AT00801,2026-09-04,Floriano,UPA Floriano,Urgência,Cardiologia,18-39,M,32,23,Alta,4
+AT00958,2026-09-04,Floriano,UBS Floriano,Consulta,Odontologia,40-59,F,56,19,Alta,1
+AT01025,2026-09-04,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,M,18,22,Encaminhamento,4
+AT01302,2026-09-04,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,M,53,9,Encaminhamento,3
+AT01323,2026-09-04,Corrente,UBS Corrente,Consulta,Dermatologia,12-17,M,64,25,Alta,3
+AT01637,2026-09-04,Teresina,Hospital Regional,Exame,Pediatria,0-11,M,36,14,Internação,5
+AT01665,2026-09-04,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,F,15,29,Retorno agendado,4
+AT00274,2026-09-05,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,60+,M,42,41,Encaminhamento,4
+AT01696,2026-09-05,Piripiri,UBS Piripiri,Consulta,Pediatria,12-17,M,60,14,Retorno agendado,4
+AT00079,2026-09-07,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,60+,F,20,28,Alta,4
+AT00228,2026-09-07,Teresina,UPA Norte,Exame,Pediatria,40-59,M,19,16,Retorno agendado,3
+AT00348,2026-09-07,Picos,UBS Picos Sul,Urgência,Clínica Geral,60+,F,2,32,Alta,5
+AT00767,2026-09-07,Teresina,UPA Norte,Urgência,Clínica Geral,18-39,F,24,35,Alta,4
+AT01073,2026-09-07,Piripiri,UBS Piripiri,Urgência,Dermatologia,0-11,F,25,28,Alta,4
+AT01138,2026-09-07,Teresina,Hospital Regional,Consulta,Clínica Geral,0-11,F,55,15,Retorno agendado,2
+AT01161,2026-09-07,Picos,Hospital Regional de Picos,Consulta,Cardiologia,60+,M,22,22,Alta,4
+AT01202,2026-09-07,Piripiri,UBS Piripiri,Consulta,Pediatria,40-59,F,20,33,Alta,5
+AT01541,2026-09-07,Picos,UBS Picos Sul,Urgência,Clínica Geral,40-59,M,2,42,Alta,4
+AT01626,2026-09-07,Parnaíba,UBS Centro,Consulta,Ginecologia,12-17,M,7,22,Alta,4
+AT00190,2026-09-08,Corrente,UBS Corrente,Consulta,Dermatologia,18-39,F,64,28,Alta,4
+AT00304,2026-09-08,Teresina,UPA Norte,Consulta,Psiquiatria,60+,F,24,27,Encaminhamento,4
+AT00634,2026-09-08,Piripiri,UBS Piripiri,Exame,Cardiologia,18-39,F,20,8,Encaminhamento,4
+AT00718,2026-09-08,Floriano,UPA Floriano,Urgência,Psiquiatria,0-11,M,40,34,Encaminhamento,3
+AT00949,2026-09-08,Picos,UBS Picos Sul,Consulta,Ginecologia,40-59,M,13,21,Encaminhamento,4
+AT01190,2026-09-08,Piripiri,UBS Piripiri,Consulta,Pediatria,18-39,F,45,14,Alta,3
+AT00060,2026-09-09,Teresina,UPA Norte,Urgência,Clínica Geral,0-11,M,26,30,Alta,4
+AT00221,2026-09-09,Parnaíba,UBS Centro,Consulta,Pediatria,18-39,M,20,16,Alta,4
+AT00397,2026-09-09,Teresina,UPA Norte,Consulta,Clínica Geral,40-59,F,47,25,Alta,3
+AT00734,2026-09-09,Teresina,Hospital Regional,Consulta,Ortopedia,40-59,M,49,34,Alta,3
+AT00752,2026-09-09,Floriano,UPA Floriano,Urgência,Clínica Geral,0-11,F,14,30,Alta,3
+AT00791,2026-09-09,Oeiras,UBS Oeiras,Urgência,Clínica Geral,0-11,F,29,39,Alta,3
+AT01051,2026-09-09,Teresina,UBS Dirceu,Urgência,Pediatria,60+,F,50,32,Alta,2
+AT01376,2026-09-09,Piripiri,UBS Piripiri,Consulta,Psiquiatria,60+,F,40,25,Retorno agendado,3
+AT01701,2026-09-09,Teresina,Hospital Regional,Urgência,Cardiologia,12-17,M,48,30,Encaminhamento,4
+AT01746,2026-09-09,Floriano,UBS Floriano,Exame,Dermatologia,12-17,F,27,18,Alta,4
+AT00249,2026-09-10,Corrente,UBS Corrente,Urgência,Clínica Geral,40-59,F,27,30,Internação,4
+AT00618,2026-09-10,Teresina,UPA Norte,Urgência,Dermatologia,12-17,F,32,40,Retorno agendado,3
+AT00655,2026-09-10,Corrente,UBS Corrente,Consulta,Ortopedia,18-39,M,88,23,Alta,2
+AT00852,2026-09-10,Parnaíba,UBS Centro,Consulta,Pediatria,40-59,F,30,11,Alta,4
+AT00890,2026-09-10,Teresina,UBS Dirceu,Consulta,Pediatria,12-17,M,40,7,Alta,4
+AT00961,2026-09-10,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,M,16,44,Alta,4
+AT01569,2026-09-10,Corrente,UBS Corrente,Urgência,Cardiologia,40-59,M,9,25,Alta,5
+AT00055,2026-09-11,Campo Maior,UBS Campo Maior,Consulta,Dermatologia,18-39,F,49,15,Alta,4
+AT00129,2026-09-11,Teresina,Hospital Regional,Urgência,Ginecologia,40-59,F,6,39,Alta,4
+AT00589,2026-09-11,Parnaíba,UBS Centro,Exame,Ortopedia,18-39,F,47,17,Alta,3
+AT00846,2026-09-11,Parnaíba,UBS Centro,Procedimento,Ginecologia,60+,M,52,55,Internação,5
+AT00886,2026-09-11,Teresina,Hospital Regional,Urgência,Clínica Geral,60+,M,20,26,Encaminhamento,3
+AT00964,2026-09-11,Teresina,Hospital Regional,Consulta,Psiquiatria,18-39,M,58,16,Encaminhamento,4
+AT01011,2026-09-11,Floriano,UPA Floriano,Consulta,Clínica Geral,60+,F,34,13,Alta,5
+AT01086,2026-09-11,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,M,26,37,Alta,2
+AT01118,2026-09-11,Teresina,Hospital Regional,Urgência,Clínica Geral,0-11,M,15,22,Alta,5
+AT01145,2026-09-11,Teresina,Hospital Regional,Consulta,Cardiologia,60+,F,37,26,Alta,1
+AT01192,2026-09-11,Floriano,UPA Floriano,Consulta,Psiquiatria,0-11,M,75,27,Encaminhamento,3
+AT01284,2026-09-11,Picos,Hospital Regional de Picos,Consulta,Dermatologia,18-39,F,33,22,Alta,4
+AT01367,2026-09-11,Parnaíba,UBS Centro,Consulta,Clínica Geral,60+,F,41,13,Alta,4
+AT01426,2026-09-11,Corrente,UBS Corrente,Consulta,Cardiologia,12-17,M,34,21,Alta,3
+AT01484,2026-09-11,Corrente,UBS Corrente,Consulta,Pediatria,60+,M,34,27,Retorno agendado,5
+AT01581,2026-09-11,Parnaíba,UPA Parnaíba,Exame,Clínica Geral,12-17,M,29,10,Alta,3
+AT01697,2026-09-11,Parnaíba,UBS Centro,Procedimento,Psiquiatria,18-39,M,35,48,Retorno agendado,3
+AT01733,2026-09-11,Teresina,UBS Dirceu,Retorno,Clínica Geral,40-59,F,46,16,Encaminhamento,3
+AT01749,2026-09-11,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,M,2,32,Alta,4
+AT00085,2026-09-12,Oeiras,UBS Oeiras,Urgência,Clínica Geral,40-59,F,11,26,Encaminhamento,3
+AT01449,2026-09-12,Parnaíba,UBS Centro,Urgência,Ortopedia,40-59,M,9,36,Alta,5
+AT01777,2026-09-12,Picos,Hospital Regional de Picos,Exame,Psiquiatria,60+,F,58,21,Encaminhamento,4
+AT00594,2026-09-13,Campo Maior,UBS Campo Maior,Procedimento,Ginecologia,60+,M,38,55,Alta,3
+AT00738,2026-09-13,Teresina,UBS Dirceu,Consulta,Clínica Geral,60+,F,34,16,Alta,3
+AT00430,2026-09-14,Corrente,UBS Corrente,Consulta,Ginecologia,12-17,M,35,17,Encaminhamento,4
+AT00551,2026-09-14,Piripiri,UBS Piripiri,Consulta,Pediatria,12-17,M,61,28,Alta,4
+AT01272,2026-09-14,Teresina,UPA Norte,Consulta,Ginecologia,60+,F,31,5,Alta,3
+AT00341,2026-09-15,Teresina,Hospital Regional,Consulta,Pediatria,0-11,F,38,39,Alta,2
+AT00567,2026-09-15,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,40-59,F,34,28,Alta,2
+AT00641,2026-09-15,Oeiras,UBS Oeiras,Urgência,Clínica Geral,60+,M,36,33,Alta,4
+AT00692,2026-09-15,Floriano,UPA Floriano,Consulta,Clínica Geral,60+,F,54,30,Alta,3
+AT00833,2026-09-15,Picos,UBS Picos Sul,Urgência,Ortopedia,18-39,F,27,43,Alta,3
+AT00986,2026-09-15,Picos,Hospital Regional de Picos,Consulta,Ortopedia,0-11,F,26,21,Alta,5
+AT01311,2026-09-15,Picos,Hospital Regional de Picos,Consulta,Dermatologia,40-59,F,68,16,Encaminhamento,3
+AT01483,2026-09-15,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,0-11,M,46,21,Alta,4
+AT01574,2026-09-15,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,18-39,F,59,25,Alta,4
+AT01772,2026-09-15,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,0-11,M,57,14,Alta,3
+AT00305,2026-09-16,Teresina,UBS Dirceu,Urgência,Psiquiatria,60+,F,33,30,Encaminhamento,3
+AT01075,2026-09-16,Teresina,Hospital Regional,Consulta,Ortopedia,40-59,F,46,16,Retorno agendado,3
+AT01394,2026-09-16,Teresina,Hospital Regional,Consulta,Dermatologia,18-39,M,40,33,Internação,4
+AT00116,2026-09-17,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,12-17,F,65,18,Alta,4
+AT00157,2026-09-17,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,40-59,F,30,27,Alta,3
+AT00630,2026-09-17,Teresina,UPA Norte,Exame,Pediatria,0-11,M,34,8,Evasão,4
+AT00751,2026-09-17,Teresina,Hospital Regional,Consulta,Clínica Geral,18-39,M,45,24,Alta,5
+AT00894,2026-09-17,Piripiri,UBS Piripiri,Consulta,Dermatologia,40-59,M,48,13,Alta,3
+AT01422,2026-09-17,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,60+,M,27,17,Alta,2
+AT00237,2026-09-18,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,F,50,8,Alta,3
+AT00291,2026-09-18,Piripiri,UBS Piripiri,Consulta,Cardiologia,60+,M,32,13,Encaminhamento,4
+AT00344,2026-09-18,Teresina,Hospital Regional,Exame,Ortopedia,40-59,F,33,26,Retorno agendado,5
+AT00367,2026-09-18,Parnaíba,UBS Centro,Exame,Clínica Geral,12-17,M,55,35,Alta,4
+AT00417,2026-09-18,Oeiras,UBS Oeiras,Consulta,Odontologia,18-39,M,39,25,Alta,3
+AT00747,2026-09-18,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,M,21,48,Alta,4
+AT00784,2026-09-18,Parnaíba,UBS Centro,Consulta,Ginecologia,40-59,F,29,22,Retorno agendado,4
+AT00785,2026-09-18,Floriano,UPA Floriano,Consulta,Ortopedia,40-59,M,41,28,Alta,4
+AT01455,2026-09-18,Teresina,UPA Norte,Retorno,Psiquiatria,18-39,M,40,10,Alta,5
+AT01718,2026-09-18,Campo Maior,UBS Campo Maior,Urgência,Odontologia,18-39,M,25,45,Encaminhamento,5
+AT00445,2026-09-19,Teresina,Hospital Regional,Consulta,Cardiologia,60+,F,61,16,Encaminhamento,3
+AT01458,2026-09-19,Floriano,UPA Floriano,Exame,Psiquiatria,18-39,M,45,9,Alta,3
+AT00819,2026-09-20,Corrente,UBS Corrente,Consulta,Psiquiatria,40-59,F,33,21,Encaminhamento,5
+AT01240,2026-09-20,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,0-11,M,69,26,Alta,3
+AT01396,2026-09-20,Teresina,UPA Norte,Procedimento,Odontologia,60+,M,41,52,Alta,4
+AT00150,2026-09-21,Picos,Hospital Regional de Picos,Consulta,Pediatria,0-11,M,15,21,Internação,5
+AT00287,2026-09-21,Piripiri,UBS Piripiri,Consulta,Psiquiatria,12-17,F,64,33,Retorno agendado,3
+AT00620,2026-09-21,Picos,UBS Picos Sul,Urgência,Odontologia,40-59,F,2,41,Encaminhamento,2
+AT00763,2026-09-21,Floriano,UBS Floriano,Consulta,Ortopedia,40-59,F,66,14,Evasão,3
+AT01007,2026-09-21,Picos,UBS Picos Sul,Urgência,Clínica Geral,40-59,F,15,32,Alta,5
+AT01068,2026-09-21,Teresina,UPA Norte,Consulta,Pediatria,18-39,F,48,21,Alta,2
+AT01264,2026-09-21,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,M,34,37,Retorno agendado,4
+AT01377,2026-09-21,Teresina,Hospital Regional,Retorno,Psiquiatria,0-11,M,40,16,Alta,4
+AT01751,2026-09-21,Teresina,UPA Norte,Consulta,Pediatria,60+,F,63,13,Alta,3
+AT00632,2026-09-22,Picos,Hospital Regional de Picos,Consulta,Cardiologia,0-11,F,41,18,Alta,2
+AT01041,2026-09-22,Corrente,UBS Corrente,Exame,Ginecologia,18-39,M,36,24,Alta,5
+AT01799,2026-09-22,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,12-17,M,44,23,Internação,3
+AT00156,2026-09-23,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,40-59,M,47,34,Alta,5
+AT00380,2026-09-23,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,M,69,19,Alta,3
+AT00416,2026-09-23,Teresina,UBS Dirceu,Consulta,Ortopedia,40-59,M,44,23,Retorno agendado,4
+AT01098,2026-09-23,Picos,Hospital Regional de Picos,Urgência,Dermatologia,18-39,F,26,37,Alta,3
+AT01124,2026-09-23,Corrente,UBS Corrente,Consulta,Pediatria,12-17,F,17,24,Alta,5
+AT01220,2026-09-23,Floriano,UPA Floriano,Consulta,Psiquiatria,40-59,F,54,19,Retorno agendado,3
+AT01249,2026-09-24,Parnaíba,UBS Centro,Consulta,Odontologia,40-59,M,37,27,Encaminhamento,2
+AT01359,2026-09-24,Teresina,Hospital Regional,Exame,Ginecologia,0-11,F,50,5,Retorno agendado,5
+AT01550,2026-09-24,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,M,46,31,Alta,3
+AT00097,2026-09-25,Teresina,UBS Dirceu,Exame,Pediatria,60+,M,24,19,Alta,3
+AT00243,2026-09-25,Parnaíba,UBS Centro,Consulta,Cardiologia,60+,M,44,5,Retorno agendado,3
+AT00282,2026-09-25,Piripiri,UBS Piripiri,Consulta,Cardiologia,60+,F,35,12,Retorno agendado,3
+AT00428,2026-09-25,Teresina,UBS Dirceu,Consulta,Ginecologia,0-11,M,43,33,Encaminhamento,4
+AT00726,2026-09-25,Piripiri,UBS Piripiri,Urgência,Ginecologia,18-39,M,34,43,Alta,3
+AT00882,2026-09-25,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,F,11,27,Retorno agendado,4
+AT00954,2026-09-25,Parnaíba,UBS Centro,Consulta,Ginecologia,40-59,F,68,20,Alta,4
+AT00991,2026-09-25,Corrente,UBS Corrente,Consulta,Dermatologia,12-17,M,46,19,Alta,5
+AT01175,2026-09-25,Piripiri,UBS Piripiri,Consulta,Pediatria,18-39,F,51,13,Alta,5
+AT01325,2026-09-25,Oeiras,UBS Oeiras,Consulta,Ginecologia,18-39,M,18,21,Alta,4
+AT01338,2026-09-25,Teresina,Hospital Regional,Consulta,Ortopedia,0-11,M,39,27,Alta,2
+AT01355,2026-09-25,Teresina,Hospital Regional,Exame,Psiquiatria,18-39,M,22,10,Alta,5
+AT01366,2026-09-25,Teresina,Hospital Regional,Procedimento,Psiquiatria,18-39,M,29,48,Alta,4
+AT00538,2026-09-26,Teresina,Hospital Regional,Exame,Pediatria,18-39,F,17,29,Alta,4
+AT01243,2026-09-26,Teresina,UBS Dirceu,Consulta,Clínica Geral,40-59,M,50,32,Alta,3
+AT01552,2026-09-26,Picos,Hospital Regional de Picos,Urgência,Pediatria,18-39,F,23,22,Alta,4
+AT00410,2026-09-27,Picos,UBS Picos Sul,Consulta,Pediatria,40-59,F,51,39,Alta,4
+AT00480,2026-09-27,Corrente,UBS Corrente,Consulta,Pediatria,18-39,F,59,11,Encaminhamento,3
+AT00605,2026-09-27,Picos,Hospital Regional de Picos,Consulta,Pediatria,60+,F,59,16,Alta,3
+AT01344,2026-09-27,Picos,UBS Picos Sul,Consulta,Ortopedia,18-39,F,70,23,Alta,4
+AT00025,2026-09-28,Teresina,Hospital Regional,Consulta,Pediatria,40-59,M,52,20,Alta,4
+AT00764,2026-09-28,Floriano,UBS Floriano,Urgência,Ortopedia,0-11,M,2,38,Internação,5
+AT01304,2026-09-28,Teresina,UPA Norte,Consulta,Psiquiatria,12-17,F,35,21,Encaminhamento,4
+AT01330,2026-09-28,Piripiri,UBS Piripiri,Urgência,Clínica Geral,60+,M,35,38,Retorno agendado,3
+AT01333,2026-09-28,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,60+,M,71,30,Alta,3
+AT01362,2026-09-28,Teresina,UBS Dirceu,Retorno,Pediatria,18-39,F,19,14,Alta,4
+AT01497,2026-09-28,Parnaíba,UPA Parnaíba,Procedimento,Clínica Geral,60+,F,24,71,Alta,2
+AT01572,2026-09-28,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,40-59,M,39,15,Alta,4
+AT00012,2026-09-29,Oeiras,UBS Oeiras,Consulta,Pediatria,60+,M,29,36,Alta,3
+AT00041,2026-09-29,Corrente,UBS Corrente,Retorno,Odontologia,40-59,F,11,6,Encaminhamento,2
+AT01012,2026-09-29,Teresina,UBS Dirceu,Exame,Odontologia,40-59,F,43,17,Encaminhamento,3
+AT01681,2026-09-29,Parnaíba,UBS Centro,Procedimento,Clínica Geral,40-59,F,60,52,Alta,3
+AT01756,2026-09-29,Teresina,UPA Norte,Consulta,Dermatologia,40-59,M,5,29,Encaminhamento,4
+AT00396,2026-09-30,Campo Maior,UBS Campo Maior,Consulta,Pediatria,40-59,M,70,24,Alta,4
+AT00487,2026-09-30,Teresina,Hospital Regional,Urgência,Clínica Geral,18-39,M,43,47,Internação,5
+AT00524,2026-09-30,Floriano,UPA Floriano,Consulta,Dermatologia,60+,F,49,27,Alta,1
+AT00571,2026-09-30,Campo Maior,UBS Campo Maior,Procedimento,Clínica Geral,40-59,M,25,48,Retorno agendado,4
+AT01016,2026-09-30,Parnaíba,UBS Centro,Consulta,Odontologia,12-17,F,64,17,Alta,5
+AT01141,2026-09-30,Oeiras,UBS Oeiras,Consulta,Odontologia,0-11,F,41,15,Retorno agendado,4
+AT01487,2026-09-30,Teresina,Hospital Regional,Consulta,Cardiologia,0-11,F,37,26,Alta,3
+AT01709,2026-09-30,Teresina,Hospital Regional,Retorno,Ginecologia,18-39,F,49,26,Encaminhamento,3
+AT00229,2026-10-01,Parnaíba,UBS Centro,Exame,Odontologia,40-59,M,31,32,Encaminhamento,3
+AT00642,2026-10-01,Picos,Hospital Regional de Picos,Urgência,Clínica Geral,12-17,F,52,41,Retorno agendado,3
+AT01023,2026-10-01,Floriano,UPA Floriano,Consulta,Clínica Geral,18-39,M,40,29,Alta,4
+AT01032,2026-10-01,Campo Maior,UBS Campo Maior,Retorno,Clínica Geral,18-39,F,34,5,Encaminhamento,4
+AT01281,2026-10-01,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,60+,M,48,14,Encaminhamento,4
+AT01423,2026-10-01,Parnaíba,UPA Parnaíba,Exame,Clínica Geral,40-59,M,38,24,Alta,3
+AT01674,2026-10-01,Teresina,UBS Dirceu,Consulta,Cardiologia,18-39,F,40,16,Alta,3
+AT00254,2026-10-02,Teresina,UPA Norte,Consulta,Odontologia,12-17,M,49,21,Retorno agendado,4
+AT00275,2026-10-02,Teresina,UPA Norte,Consulta,Psiquiatria,18-39,M,19,15,Retorno agendado,4
+AT00334,2026-10-02,Parnaíba,UBS Centro,Consulta,Ortopedia,18-39,M,39,18,Evasão,3
+AT00350,2026-10-02,Piripiri,UBS Piripiri,Consulta,Ginecologia,0-11,M,34,28,Alta,4
+AT00365,2026-10-02,Parnaíba,UBS Centro,Urgência,Psiquiatria,18-39,M,25,26,Alta,4
+AT00552,2026-10-02,Floriano,UBS Floriano,Procedimento,Odontologia,18-39,F,40,42,Alta,4
+AT00628,2026-10-02,Floriano,UBS Floriano,Consulta,Ginecologia,18-39,M,30,24,Encaminhamento,5
+AT00840,2026-10-02,Campo Maior,UBS Campo Maior,Exame,Clínica Geral,40-59,F,15,15,Alta,5
+AT00953,2026-10-02,Parnaíba,UPA Parnaíba,Consulta,Cardiologia,60+,F,56,18,Retorno agendado,4
+AT01094,2026-10-02,Picos,UBS Picos Sul,Consulta,Pediatria,40-59,M,61,17,Alta,1
+AT01470,2026-10-02,Picos,UBS Picos Sul,Consulta,Clínica Geral,40-59,F,23,27,Alta,3
+AT00857,2026-10-03,Oeiras,UBS Oeiras,Consulta,Clínica Geral,40-59,M,72,34,Alta,4
+AT01319,2026-10-03,Piripiri,UBS Piripiri,Procedimento,Pediatria,18-39,M,41,60,Alta,3
+AT01475,2026-10-03,Picos,Hospital Regional de Picos,Consulta,Dermatologia,40-59,M,45,43,Alta,3
+AT00481,2026-10-04,Teresina,UPA Norte,Procedimento,Clínica Geral,18-39,M,22,51,Alta,2
+AT01531,2026-10-04,Oeiras,UBS Oeiras,Consulta,Odontologia,0-11,F,36,17,Alta,5
+AT01625,2026-10-04,Teresina,Hospital Regional,Consulta,Cardiologia,12-17,F,33,19,Encaminhamento,4
+AT01755,2026-10-04,Floriano,UBS Floriano,Procedimento,Ortopedia,12-17,M,19,49,Alta,4
+AT00526,2026-10-05,Oeiras,UBS Oeiras,Consulta,Odontologia,12-17,F,28,21,Retorno agendado,4
+AT00667,2026-10-05,Piripiri,UBS Piripiri,Consulta,Dermatologia,12-17,F,34,42,Alta,2
+AT00703,2026-10-05,Parnaíba,UBS Centro,Consulta,Ortopedia,0-11,F,55,26,Alta,5
+AT00956,2026-10-05,Picos,UBS Picos Sul,Consulta,Psiquiatria,18-39,M,47,25,Alta,5
+AT01310,2026-10-05,Teresina,Hospital Regional,Urgência,Odontologia,18-39,M,2,37,Alta,4
+AT01382,2026-10-05,Teresina,Hospital Regional,Exame,Cardiologia,60+,F,40,30,Internação,5
+AT01563,2026-10-05,Campo Maior,UBS Campo Maior,Urgência,Clínica Geral,18-39,F,28,37,Alta,5
+AT00065,2026-10-06,Teresina,UPA Norte,Procedimento,Cardiologia,40-59,M,48,52,Alta,3
+AT00168,2026-10-06,Picos,UBS Picos Sul,Exame,Odontologia,18-39,M,32,15,Encaminhamento,5
+AT00179,2026-10-06,Parnaíba,UBS Centro,Exame,Ortopedia,40-59,F,26,19,Retorno agendado,4
+AT00839,2026-10-06,Oeiras,UBS Oeiras,Urgência,Clínica Geral,12-17,F,20,12,Alta,3
+AT00532,2026-10-07,Corrente,UBS Corrente,Urgência,Clínica Geral,40-59,F,25,51,Encaminhamento,2
+AT00977,2026-10-07,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,60+,F,42,17,Alta,4
+AT01072,2026-10-07,Parnaíba,UBS Centro,Urgência,Clínica Geral,12-17,M,22,20,Retorno agendado,5
+AT01276,2026-10-07,Oeiras,UBS Oeiras,Consulta,Ginecologia,18-39,F,54,23,Alta,2
+AT01493,2026-10-07,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,60+,F,39,27,Alta,3
+AT01771,2026-10-07,Picos,UBS Picos Sul,Consulta,Clínica Geral,40-59,M,54,15,Alta,3
+AT00570,2026-10-08,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,M,39,38,Alta,5
+AT00741,2026-10-08,Parnaíba,UBS Centro,Urgência,Psiquiatria,12-17,M,10,41,Alta,4
+AT00904,2026-10-08,Campo Maior,UBS Campo Maior,Procedimento,Clínica Geral,60+,F,44,50,Alta,4
+AT01091,2026-10-08,Floriano,UPA Floriano,Exame,Cardiologia,40-59,F,51,5,Alta,3
+AT01112,2026-10-08,Campo Maior,UBS Campo Maior,Procedimento,Pediatria,18-39,M,45,45,Alta,4
+AT01135,2026-10-08,Campo Maior,UBS Campo Maior,Consulta,Ginecologia,18-39,M,46,26,Alta,4
+AT01528,2026-10-08,Teresina,Hospital Regional,Retorno,Ginecologia,40-59,F,2,23,Alta,4
+AT00165,2026-10-09,Corrente,UBS Corrente,Consulta,Odontologia,40-59,F,35,22,Encaminhamento,4
+AT00173,2026-10-09,Oeiras,UBS Oeiras,Exame,Pediatria,0-11,F,16,16,Alta,3
+AT00345,2026-10-09,Parnaíba,UPA Parnaíba,Consulta,Pediatria,18-39,F,44,27,Alta,2
+AT00696,2026-10-09,Teresina,UPA Norte,Consulta,Dermatologia,12-17,F,13,17,Alta,4
+AT00917,2026-10-09,Floriano,UPA Floriano,Exame,Odontologia,60+,M,13,23,Encaminhamento,4
+AT01224,2026-10-09,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,18-39,M,45,22,Alta,4
+AT01236,2026-10-09,Teresina,UBS Dirceu,Consulta,Ginecologia,60+,F,64,27,Alta,4
+AT01277,2026-10-09,Teresina,UPA Norte,Procedimento,Psiquiatria,40-59,F,27,47,Alta,3
+AT01290,2026-10-09,Oeiras,UBS Oeiras,Procedimento,Ginecologia,60+,M,29,56,Retorno agendado,4
+AT01500,2026-10-09,Parnaíba,UBS Centro,Procedimento,Cardiologia,60+,F,59,59,Encaminhamento,3
+AT01537,2026-10-09,Teresina,UBS Dirceu,Urgência,Clínica Geral,0-11,F,22,36,Evasão,4
+AT01791,2026-10-09,Teresina,UPA Norte,Consulta,Pediatria,60+,M,53,17,Alta,3
+AT00010,2026-10-11,Teresina,Hospital Regional,Consulta,Ginecologia,18-39,F,26,22,Alta,3
+AT00125,2026-10-11,Floriano,UBS Floriano,Consulta,Cardiologia,60+,F,40,39,Retorno agendado,4
+AT00326,2026-10-11,Teresina,Hospital Regional,Urgência,Cardiologia,60+,M,12,46,Encaminhamento,4
+AT00614,2026-10-11,Teresina,UBS Dirceu,Consulta,Odontologia,0-11,M,31,22,Alta,4
+AT01213,2026-10-11,Picos,UBS Picos Sul,Consulta,Cardiologia,60+,F,50,18,Alta,3
+AT00020,2026-10-12,Floriano,UPA Floriano,Consulta,Ginecologia,40-59,F,66,22,Encaminhamento,3
+AT00648,2026-10-12,Parnaíba,UPA Parnaíba,Exame,Ginecologia,0-11,M,32,15,Alta,3
+AT01695,2026-10-12,Parnaíba,UBS Centro,Urgência,Clínica Geral,12-17,M,41,43,Encaminhamento,2
+AT01752,2026-10-12,Floriano,UPA Floriano,Consulta,Cardiologia,18-39,F,61,23,Alta,1
+AT00104,2026-10-13,Teresina,Hospital Regional,Exame,Ginecologia,40-59,M,53,24,Alta,3
+AT00202,2026-10-13,Picos,Hospital Regional de Picos,Consulta,Pediatria,40-59,M,54,19,Retorno agendado,4
+AT00319,2026-10-13,Picos,UBS Picos Sul,Exame,Ginecologia,18-39,F,49,11,Retorno agendado,3
+AT00413,2026-10-13,Parnaíba,UPA Parnaíba,Exame,Dermatologia,40-59,M,24,6,Alta,3
+AT01176,2026-10-13,Teresina,Hospital Regional,Exame,Ortopedia,40-59,F,56,15,Internação,3
+AT01501,2026-10-13,Oeiras,UBS Oeiras,Consulta,Clínica Geral,0-11,M,46,20,Alta,4
+AT01580,2026-10-13,Teresina,UPA Norte,Consulta,Ginecologia,60+,M,54,21,Alta,3
+AT01592,2026-10-13,Floriano,UBS Floriano,Urgência,Odontologia,18-39,M,2,27,Alta,3
+AT01641,2026-10-13,Parnaíba,UPA Parnaíba,Consulta,Ginecologia,40-59,M,49,25,Alta,4
+AT01743,2026-10-13,Corrente,UBS Corrente,Urgência,Clínica Geral,0-11,F,10,27,Alta,5
+AT01780,2026-10-13,Picos,Hospital Regional de Picos,Consulta,Clínica Geral,40-59,F,52,8,Encaminhamento,4
+AT00546,2026-10-14,Picos,UBS Picos Sul,Consulta,Pediatria,0-11,M,53,25,Alta,4
+AT00668,2026-10-14,Campo Maior,UBS Campo Maior,Consulta,Ortopedia,0-11,F,42,18,Encaminhamento,3
+AT01218,2026-10-14,Oeiras,UBS Oeiras,Consulta,Pediatria,40-59,F,56,14,Alta,1
+AT01395,2026-10-14,Teresina,Hospital Regional,Consulta,Odontologia,18-39,F,46,15,Retorno agendado,3
+AT00102,2026-10-15,Picos,UBS Picos Sul,Consulta,Psiquiatria,60+,M,48,30,Alta,2
+AT00140,2026-10-15,Teresina,UBS Dirceu,Urgência,Clínica Geral,60+,F,32,25,Alta,3
+AT00268,2026-10-15,Floriano,UPA Floriano,Consulta,Cardiologia,18-39,F,53,12,Encaminhamento,4
+AT00384,2026-10-15,Campo Maior,UBS Campo Maior,Consulta,Cardiologia,18-39,F,31,35,Alta,4
+AT00597,2026-10-15,Parnaíba,UBS Centro,Consulta,Cardiologia,12-17,M,49,24,Alta,4
+AT00969,2026-10-15,Picos,UBS Picos Sul,Consulta,Cardiologia,0-11,M,53,25,Alta,4
+AT00981,2026-10-15,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,F,29,18,Alta,4
+AT00106,2026-10-16,Oeiras,UBS Oeiras,Consulta,Clínica Geral,40-59,M,56,19,Alta,3
+AT00189,2026-10-16,Campo Maior,UBS Campo Maior,Consulta,Psiquiatria,18-39,M,42,27,Alta,4
+AT00197,2026-10-16,Floriano,UBS Floriano,Procedimento,Dermatologia,60+,F,50,50,Alta,4
+AT00198,2026-10-16,Teresina,UBS Dirceu,Urgência,Clínica Geral,40-59,F,46,25,Alta,4
+AT00261,2026-10-16,Parnaíba,UPA Parnaíba,Consulta,Ortopedia,18-39,M,71,24,Encaminhamento,3
+AT00283,2026-10-16,Piripiri,UBS Piripiri,Exame,Dermatologia,18-39,F,43,13,Alta,3
+AT00415,2026-10-16,Picos,Hospital Regional de Picos,Exame,Ginecologia,0-11,M,24,24,Alta,4
+AT00528,2026-10-16,Piripiri,UBS Piripiri,Exame,Ortopedia,40-59,F,36,5,Alta,4
+AT00891,2026-10-16,Parnaíba,UBS Centro,Consulta,Odontologia,40-59,M,76,26,Alta,4
+AT01013,2026-10-16,Corrente,UBS Corrente,Exame,Ginecologia,0-11,F,18,14,Alta,4
+AT01353,2026-10-16,Teresina,UBS Dirceu,Consulta,Cardiologia,60+,M,66,16,Encaminhamento,2
+AT01509,2026-10-16,Parnaíba,UBS Centro,Urgência,Ortopedia,0-11,M,6,32,Encaminhamento,3
+AT01611,2026-10-16,Teresina,UBS Dirceu,Consulta,Pediatria,18-39,M,59,15,Alta,2
+AT01619,2026-10-16,Teresina,UPA Norte,Consulta,Ortopedia,18-39,F,19,15,Encaminhamento,5
+AT00114,2026-10-17,Corrente,UBS Corrente,Exame,Dermatologia,18-39,M,35,19,Encaminhamento,4
+AT01360,2026-10-17,Teresina,Hospital Regional,Exame,Cardiologia,40-59,F,27,6,Alta,5
+AT01369,2026-10-17,Picos,Hospital Regional de Picos,Consulta,Ginecologia,60+,M,54,24,Alta,3
+AT01660,2026-10-17,Teresina,UBS Dirceu,Consulta,Psiquiatria,18-39,F,63,26,Retorno agendado,4
+AT00539,2026-10-18,Teresina,UPA Norte,Exame,Ginecologia,18-39,M,30,17,Alta,4
+AT00022,2026-10-19,Teresina,Hospital Regional,Consulta,Pediatria,40-59,M,40,12,Alta,4
+AT00693,2026-10-19,Campo Maior,UBS Campo Maior,Consulta,Clínica Geral,40-59,M,44,15,Alta,4
+AT01543,2026-10-19,Campo Maior,UBS Campo Maior,Urgência,Dermatologia,40-59,F,26,33,Alta,3
+AT00440,2026-10-20,Picos,UBS Picos Sul,Consulta,Odontologia,60+,F,27,6,Alta,4
+AT00679,2026-10-20,Teresina,UBS Dirceu,Consulta,Pediatria,40-59,M,49,24,Alta,3
+AT00836,2026-10-20,Corrente,UBS Corrente,Urgência,Clínica Geral,0-11,M,2,29,Alta,4
+AT01210,2026-10-20,Teresina,UPA Norte,Consulta,Dermatologia,60+,F,79,13,Alta,3
+AT01419,2026-10-20,Teresina,UPA Norte,Consulta,Dermatologia,18-39,F,45,39,Alta,2
+AT01454,2026-10-20,Parnaíba,UBS Centro,Procedimento,Pediatria,0-11,M,26,57,Retorno agendado,4
+AT01603,2026-10-20,Teresina,Hospital Regional,Consulta,Psiquiatria,60+,M,26,24,Alta,4
+AT01672,2026-10-20,Teresina,UBS Dirceu,Consulta,Ortopedia,60+,F,66,26,Alta,2
+AT00269,2026-10-21,Parnaíba,UPA Parnaíba,Consulta,Dermatologia,60+,F,79,12,Alta,3
+AT00376,2026-10-21,Teresina,Hospital Regional,Urgência,Odontologia,18-39,M,40,34,Alta,3
+AT00433,2026-10-21,Teresina,UBS Dirceu,Procedimento,Dermatologia,40-59,F,32,51,Retorno agendado,3
+AT00739,2026-10-21,Parnaíba,UPA Parnaíba,Consulta,Psiquiatria,60+,F,70,27,Encaminhamento,4
+AT01194,2026-10-21,Teresina,UPA Norte,Exame,Psiquiatria,0-11,F,20,25,Alta,4
+AT01354,2026-10-21,Picos,Hospital Regional de Picos,Exame,Psiquiatria,60+,M,38,25,Alta,3
+AT01464,2026-10-21,Corrente,UBS Corrente,Consulta,Psiquiatria,40-59,M,17,12,Alta,4
+AT01629,2026-10-21,Corrente,UBS Corrente,Consulta,Clínica Geral,0-11,F,46,27,Encaminhamento,3
+AT01650,2026-10-21,Picos,UBS Picos Sul,Urgência,Clínica Geral,60+,F,30,36,Internação,3
+AT00372,2026-10-22,Teresina,UPA Norte,Consulta,Pediatria,18-39,F,35,13,Retorno agendado,3
+AT00424,2026-10-22,Teresina,Hospital Regional,Consulta,Dermatologia,40-59,F,43,17,Encaminhamento,4
+AT00496,2026-10-22,Teresina,Hospital Regional,Procedimento,Odontologia,40-59,F,30,41,Alta,4
+AT00504,2026-10-22,Picos,Hospital Regional de Picos,Exame,Ortopedia,18-39,F,59,18,Alta,2
+AT00927,2026-10-22,Picos,Hospital Regional de Picos,Consulta,Pediatria,40-59,M,55,13,Alta,4
+AT01195,2026-10-22,Teresina,Hospital Regional,Urgência,Clínica Geral,40-59,M,28,47,Alta,4
+AT01387,2026-10-22,Oeiras,UBS Oeiras,Urgência,Clínica Geral,40-59,M,31,28,Encaminhamento,3
+AT01521,2026-10-22,Parnaíba,UPA Parnaíba,Urgência,Pediatria,40-59,F,46,33,Encaminhamento,3
+AT00034,2026-10-23,Teresina,UPA Norte,Urgência,Clínica Geral,40-59,F,46,43,Alta,3
+AT00103,2026-10-23,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,40-59,M,47,44,Retorno agendado,2
+AT00176,2026-10-23,Parnaíba,UPA Parnaíba,Consulta,Clínica Geral,60+,F,47,24,Alta,3
+AT00379,2026-10-23,Teresina,Hospital Regional,Exame,Odontologia,40-59,M,38,17,Internação,3
+AT00450,2026-10-23,Teresina,UBS Dirceu,Consulta,Psiquiatria,60+,F,66,27,Alta,2
+AT00631,2026-10-23,Oeiras,UBS Oeiras,Consulta,Ginecologia,18-39,F,31,9,Alta,3
+AT00863,2026-10-23,Floriano,UBS Floriano,Consulta,Pediatria,0-11,M,44,16,Alta,4
+AT00959,2026-10-23,Corrente,UBS Corrente,Exame,Odontologia,60+,F,21,25,Alta,3
+AT01055,2026-10-23,Teresina,UPA Norte,Consulta,Cardiologia,0-11,M,59,27,Internação,3
+AT01165,2026-10-23,Piripiri,UBS Piripiri,Procedimento,Dermatologia,40-59,F,43,39,Alta,5
+AT01275,2026-10-23,Teresina,Hospital Regional,Consulta,Ortopedia,60+,M,60,19,Alta,2
+AT01296,2026-10-23,Floriano,UBS Floriano,Urgência,Clínica Geral,0-11,M,35,35,Alta,4
+AT01328,2026-10-23,Parnaíba,UPA Parnaíba,Urgência,Clínica Geral,18-39,M,24,26,Alta,4
+AT01418,2026-10-23,Campo Maior,UBS Campo Maior,Urgência,Cardiologia,60+,M,59,43,Alta,2
+AT01472,2026-10-23,Picos,Hospital Regional de Picos,Consulta,Psiquiatria,60+,M,19,10,Alta,3
+AT01517,2026-10-23,Teresina,UBS Dirceu,Consulta,Clínica Geral,18-39,M,44,20,Alta,3
+AT01555,2026-10-23,Teresina,Hospital Regional,Consulta,Ginecologia,40-59,M,59,13,Alta,4
+AT01699,2026-10-23,Teresina,UPA Norte,Exame,Dermatologia,40-59,M,47,28,Alta,3
+AT00037,2026-10-24,Teresina,UBS Dirceu,Consulta,Ortopedia,40-59,M,18,21,Alta,5
+AT00523,2026-10-25,Floriano,UBS Floriano,Consulta,Ginecologia,18-39,F,29,21,Alta,5
+AT00576,2026-10-25,Oeiras,UBS Oeiras,Consulta,Pediatria,60+,M,35,22,Retorno agendado,4
+AT00870,2026-10-26,Teresina,UPA Norte,Consulta,Clínica Geral,60+,F,67,26,Alta,2
+AT01402,2026-10-26,Parnaíba,UBS Centro,Consulta,Ginecologia,18-39,M,31,20,Alta,4
+AT00443,2026-10-27,Oeiras,UBS Oeiras,Consulta,Dermatologia,12-17,M,36,23,Alta,2
+AT00598,2026-10-27,Teresina,UPA Norte,Consulta,Cardiologia,40-59,F,38,19,Retorno agendado,4
+AT00607,2026-10-27,Teresina,Hospital Regional,Consulta,Odontologia,60+,M,49,26,Alta,3
+AT00613,2026-10-27,Teresina,UBS Dirceu,Urgência,Clínica Geral,18-39,M,21,38,Encaminhamento,4
+AT00749,2026-10-27,Picos,UBS Picos Sul,Exame,Ortopedia,12-17,M,66,14,Retorno agendado,4
+AT01081,2026-10-27,Oeiras,UBS Oeiras,Consulta,Cardiologia,18-39,F,33,10,Encaminhamento,4
+AT01143,2026-10-27,Picos,Hospital Regional de Picos,Procedimento,Odontologia,60+,F,58,46,Alta,5
+AT01707,2026-10-27,Teresina,UBS Dirceu,Consulta,Dermatologia,60+,F,44,12,Encaminhamento,5
+AT01792,2026-10-27,Piripiri,UBS Piripiri,Consulta,Ortopedia,40-59,F,45,15,Alta,3
