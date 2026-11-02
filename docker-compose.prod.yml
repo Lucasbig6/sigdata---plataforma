@@ -28,7 +28,11 @@ services:
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?URL pública do frontend}
       SIGDATA_ENCRYPTION_KEY: ${SIGDATA_ENCRYPTION_KEY:?}
-      GROQ_API_KEY: ${GROQ_API_KEY:?}
+      # defina ANTHROPIC_API_KEY (Claude) ou GROQ_API_KEY; AI_PROVIDER escolhe quando há as duas
+      AI_PROVIDER: ${AI_PROVIDER:-}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_MODEL: ${ANTHROPIC_MODEL:-}
+      GROQ_API_KEY: ${GROQ_API_KEY:-}
       SIGDATA_STORAGE_DIR: /app/backend/storage
     volumes:
       - storage:/app/backend/storage

@@ -1,4 +1,4 @@
-import { createGroq } from "@ai-sdk/groq";
+import { resolveChatModel } from "../ai-model";
 import {
   convertToModelMessages,
   generateId,
@@ -17,12 +17,6 @@ import { buildSystemPrompt, loadActiveSource, persistConversation, serverTools }
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, parseBody, requireUser } from "../http";
 import { getProject } from "../projects";
-
-const MODEL = process.env.GROQ_MODEL || "qwen/qwen3.8-27b";
-
-// Limite de saída por minuto (OTPM) da Groq neste plano é 1000 tokens;
-// sem max_tokens a API estima a saída e rejeita a requisição ("Request too large").
-const MAX_OUTPUT_TOKENS = Number(process.env.GROQ_MAX_OUTPUT_TOKENS) || 900;
 
 // consulta → (correção) → visualização/edição → resposta
 const MAX_STEPS = 8;
@@ -64,7 +58,10 @@ const chatLimit = userLimiter({
 const publicChatError = (error: unknown) => {
   console.error("[sigdata] erro no chat", error);
   const message = error instanceof Error ? error.message : String(error);
-  if (/rate.?limit|too large|429|quota/i.test(message)) {
+  if (/credit balance|insufficient.?(funds|credit)|billing/i.test(message)) {
+    return "A conta do serviço de IA está sem crédito. Avise um administrador.";
+  }
+  if (/rate.?limit|too large|429|quota|overloaded|529/i.test(message)) {
     return "O serviço de IA atingiu o limite de uso. Tente novamente em instantes.";
   }
   return "Não foi possível gerar a resposta. Tente novamente.";
@@ -77,8 +74,7 @@ chatRoutes.post("/", async (c) => {
     const req = c.req.raw;
     const user = await requireUser(req.headers);
 
-    const apiKey = process.env.GROQ_API_KEY;
-    if (!apiKey) throw new HttpError(500, "GROQ_API_KEY não configurada no backend (.env).");
+    const chatModel = resolveChatModel();
 
     const retryAfter = chatLimit(user.id);
     if (retryAfter !== null) {
@@ -96,7 +92,6 @@ chatRoutes.post("/", async (c) => {
     const project = await getProject(user.id, projectId);
     const source = await loadActiveSource(user.id, project.sourceId);
 
-    const groq = createGroq({ apiKey });
     const aiTools = {
       ...frontendTools(tools ?? {}),
       ...serverTools({ userId: user.id, projectId: project.id, source }),
@@ -105,12 +100,12 @@ chatRoutes.post("/", async (c) => {
 
     const result = streamText({
       abortSignal: req.signal,
-      model: groq(MODEL),
+      model: chatModel.model,
       messages: await convertToModelMessages(safeMessages, { tools: aiTools }),
       system: [buildSystemPrompt(source), system].filter(Boolean).join("\n\n"),
       tools: aiTools,
       stopWhen: isStepCount(MAX_STEPS),
-      maxOutputTokens: MAX_OUTPUT_TOKENS,
+      maxOutputTokens: chatModel.maxOutputTokens,
       maxRetries: 1,
     });
 

@@ -16,6 +16,7 @@
     "migrate:prod": "node dist/migrate.js"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.94",
     "@ai-sdk/groq": "^4.0.70",
     "@duckdb/node-api": "1.5.6-r.2",
     "@hono/node-server": "^2.1.5",

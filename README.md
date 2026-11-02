@@ -24,7 +24,7 @@ Pré-requisitos: Node 24+ e Docker Desktop aberto.
 
 ```bash
 npm run setup                          # instala raiz, backend e frontend
-cp backend/.env.example backend/.env   # preencha os segredos e a GROQ_API_KEY
+cp backend/.env.example backend/.env   # preencha os segredos e a ANTHROPIC_API_KEY (Claude) ou a GROQ_API_KEY
 cp frontend/.env.example frontend/.env.local
 npm run db:up                          # Postgres 17 (projeto compose "sigdata-dev")
 npm run db:migrate                     # cria as tabelas
@@ -107,7 +107,7 @@ produção (`SIGDATA_SEED_DEMO`). As regras valem no backend (`handle(..., { rol
 docker compose -f docker-compose.prod.yml up -d --build   # Postgres + backend + frontend
 ```
 
-Defina `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGDATA_ENCRYPTION_KEY` e `GROQ_API_KEY`
+Defina `POSTGRES_PASSWORD`, `BETTER_AUTH_SECRET`, `BETTER_AUTH_URL`, `SIGDATA_ENCRYPTION_KEY` e `ANTHROPIC_API_KEY` (ou `GROQ_API_KEY`)
 em um `.env` na raiz. O backend aplica as migrações ao iniciar (`dist/migrate.js`) e expõe `/api/health`
 (vivo) e `/api/ready` (confere o banco). Sem build do Docker: `npm run build` na raiz gera `backend/dist`.
 
