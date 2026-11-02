@@ -1,9 +1,9 @@
 "use client";
 
-import { ArrowLeft, Loader2 } from "lucide-react";
-import Link from "next/link";
+import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { AppHeader } from "@/components/sigdata/app-header";
+import { PageHeading } from "@/components/sigdata/page-heading";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { authClient, signOut, useRole, useSession } from "@/lib/auth-client";
@@ -107,20 +107,10 @@ const PasswordForm = () => {
 export default function SettingsPage() {
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="mx-auto flex h-16 max-w-3xl items-center gap-4 px-4">
-          <Link
-            href="/"
-            aria-label="Voltar ao início"
-            className="grid size-9 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-          </Link>
-          <h1 className="flex-1 text-base font-medium text-foreground">Configurações</h1>
-          <ThemeToggle />
-        </div>
-      </header>
-      <main className="mx-auto flex max-w-3xl flex-col gap-4 px-4 py-6">
+      <AppHeader />
+      <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+        <PageHeading title="Configurações" description="Seu perfil, sua senha e a sessão deste aparelho." />
+        <div className="flex max-w-3xl flex-col gap-4">
         <Section title="Perfil" description="Como seu nome aparece no SIGDATA.">
           <ProfileForm />
         </Section>
@@ -135,6 +125,7 @@ export default function SettingsPage() {
             Sair da conta
           </Button>
         </Section>
+        </div>
       </main>
     </div>
   );

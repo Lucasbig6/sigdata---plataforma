@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Code2, Database, Plus, Table2 } from "lucide-react";
+import { Code2, Database, Plus, Table2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -14,8 +14,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SourceTile } from "@/components/fontes/source-tile";
-import { LogoMark } from "@/components/sigdata/logo";
-import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { AppHeader } from "@/components/sigdata/app-header";
+import { PageHeading } from "@/components/sigdata/page-heading";
 import { useDatasetsStore, type Dataset, type SourceUsage } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
 import { confirmAction, toast } from "@/lib/feedback";
@@ -160,36 +160,19 @@ function FontesDeDadosContent() {
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="flex h-20 items-center gap-2 px-4 sm:px-8 lg:px-15 sm:gap-7">
-          <Link
-            href="/"
-            aria-label="Voltar ao início"
-            className="grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-          </Link>
-          <LogoMark className="h-11 w-auto shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-base font-semibold text-foreground">Fontes de dados</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              Arquivos, bancos e datasets que o assistente pode consultar
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/fontes-de-dados/editor"
-              className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <Code2 className="size-4" aria-hidden />
-              Editor SQL
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
-      <main className="mx-auto px-4 sm:px-10 lg:px-30 py-6">
+      <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+        <PageHeading
+          title="Fontes de dados"
+          description="Arquivos, bancos e datasets que o assistente pode consultar."
+          actions={
+            <Button render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
+              <Code2 aria-hidden />
+              Editor SQL
+            </Button>
+          }
+        />
         <TabBar active={tab} counts={{ fontes: sources.length, datasets: saved.length }} onChange={changeTab} />
 
         {removeError ? <p className="mb-4 text-sm text-destructive">{removeError}</p> : null}

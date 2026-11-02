@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Link2, Loader2, MoreHorizontal, Trash2, UserPlus } from "lucide-react";
+import { Link2, Loader2, MoreHorizontal, Trash2, UserPlus } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
@@ -9,7 +9,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { CardSkeletons, ErrorState } from "@/components/sigdata/list-states";
 import { RoleGate } from "@/components/sigdata/role-gate";
-import { ThemeToggle } from "@/components/sigdata/theme-toggle";
+import { AppHeader } from "@/components/sigdata/app-header";
+import { PageHeading } from "@/components/sigdata/page-heading";
 import { api } from "@/lib/api/client";
 import { useSession } from "@/lib/auth-client";
 import { confirmAction, toast } from "@/lib/feedback";
@@ -358,26 +359,17 @@ export default function UsersAdminPage() {
   return (
     <RoleGate roles={["admin"]}>
       <div className="min-h-dvh bg-background">
-        <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-          <div className="flex h-16 items-center gap-4 px-4 sm:px-8 lg:px-15">
-            <Link
-              href="/"
-              aria-label="Voltar ao início"
-              className="grid size-9 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-            >
-              <ArrowLeft className="size-4" aria-hidden />
-            </Link>
-            <h1 className="flex-1 text-base font-medium text-foreground">Usuários e perfis</h1>
-            <Link
-              href="/admin/atividades"
-              className="rounded-md border border-border/70 px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted/60"
-            >
-              Atividades
-            </Link>
-            <ThemeToggle />
-          </div>
-        </header>
-        <main className="px-4 py-6 sm:px-10 lg:px-30">
+        <AppHeader />
+        <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+          <PageHeading
+            title="Usuários e perfis"
+            description="Crie contas, defina o que cada pessoa pode fazer e acompanhe as atividades."
+            actions={
+              <Button variant="outline" render={<Link href="/admin/atividades" />} nativeButton={false}>
+                Atividades
+              </Button>
+            }
+          />
           <UsersTable />
         </main>
       </div>
