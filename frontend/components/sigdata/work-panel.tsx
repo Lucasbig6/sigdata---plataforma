@@ -28,7 +28,7 @@ import {
   type WidgetKind,
 } from "@/lib/panel/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { fetchResult } from "@/lib/results/client";
+import { fetchResult, widgetDataFromResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
 import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
@@ -192,7 +192,30 @@ const WidgetEditor = ({
 
 const WidgetCard = ({ notebookId, widget }: { notebookId: string; widget: PanelWidget }) => {
   const removeWidget = usePanelStore((state) => state.removeWidget);
+  const updateWidget = usePanelStore((state) => state.updateWidget);
   const [editing, setEditing] = useState(false);
+
+  // visualizações salvas antes da correção ficaram sem os dados do gráfico (apareciam como a série de
+  // demonstração): refaz a partir da consulta de origem e grava.
+  useEffect(() => {
+    if (!isChartKind(widget.kind) || widget.chart || widget.series || !widget.resultId) return;
+    let cancelled = false;
+    fetchResult(widget.resultId)
+      .then((result) => {
+        if (cancelled) return;
+        const rebuilt = widgetDataFromResult(result, widget.kind, {
+          x: widget.xCol,
+          y: widget.yCol,
+          ys: widget.ysCols,
+          splitBy: widget.splitBy,
+        });
+        updateWidget(notebookId, widget.id, { chart: rebuilt.chart, ysCols: rebuilt.ysCols, splitBy: rebuilt.splitBy });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [notebookId, updateWidget, widget.chart, widget.series, widget.id, widget.kind, widget.resultId, widget.xCol, widget.yCol, widget.ysCols, widget.splitBy]);
 
   return (
     <article className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">

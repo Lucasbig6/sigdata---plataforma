@@ -192,6 +192,11 @@ export const usePanelStore = create<PanelStore>((set, get) => {
         ...(input.resultId && { resultId: input.resultId }),
         ...(input.xCol && { xCol: input.xCol }),
         ...(input.yCol && { yCol: input.yCol }),
+        ...(input.ysCols && { ysCols: input.ysCols }),
+        ...(input.splitBy && { splitBy: input.splitBy }),
+        // sem `chart` o painel cai na série de demonstração (meses) em vez de mostrar o que está no chat
+        ...(input.chart && { chart: input.chart }),
+        ...(input.border && { border: input.border }),
         ...(input.series && { series: input.series }),
         ...(input.kpis && { kpis: input.kpis }),
         ...(input.rows && { rows: input.rows }),
