@@ -1,11 +1,11 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { UIMessage } from "ai";
 import { DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
 import { WIDGET_KINDS, type PanelWidget } from "@shared/panel";
 import { db, schema } from "../db";
-import { handle, HttpError, parseBody } from "../http";
+import { handle, HttpError, notFound, parseBody } from "../http";
 import { getProject, toNotebook } from "../projects";
 import { getSourceRow } from "../sources/service";
 
@@ -156,6 +156,98 @@ projectsRoutes.put(
         target: schema.projectPanels.projectId,
         set: { widgets: value, updatedAt: new Date() },
       });
+    return { ok: true };
+  }),
+);
+
+/* ------------------------------------------------------------------ notas */
+
+const MAX_NOTES_PER_PROJECT = 100;
+
+const noteFields = {
+  title: z.string().trim().max(160).default(""),
+  body: z.string().trim().min(1, "A nota está vazia.").max(20_000),
+  resultId: z.string().max(64).nullable().optional(),
+};
+
+const toNote = (row: typeof schema.projectNotes.$inferSelect) => ({
+  id: row.id,
+  title: row.title,
+  body: row.body,
+  resultId: row.resultId,
+  createdAt: row.createdAt.getTime(),
+  updatedAt: row.updatedAt.getTime(),
+});
+
+const getNote = async (projectId: string, id: string) => {
+  const [row] = await db
+    .select()
+    .from(schema.projectNotes)
+    .where(and(eq(schema.projectNotes.id, id), eq(schema.projectNotes.projectId, projectId)));
+  if (!row) throw notFound("Nota", "a");
+  return row;
+};
+
+projectsRoutes.get(
+  "/:id/notes",
+  handle<{ id: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const rows = await db
+      .select()
+      .from(schema.projectNotes)
+      .where(eq(schema.projectNotes.projectId, project.id))
+      .orderBy(desc(schema.projectNotes.createdAt));
+    return rows.map(toNote);
+  }),
+);
+
+projectsRoutes.post(
+  "/:id/notes",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const body = await parseBody(req, z.object(noteFields).extend({ id: z.string().max(64).optional() }));
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.projectNotes)
+      .where(eq(schema.projectNotes.projectId, project.id));
+    if ((total ?? 0) >= MAX_NOTES_PER_PROJECT) throw new HttpError(409, "Limite de notas do projeto atingido.");
+    const [row] = await db
+      .insert(schema.projectNotes)
+      .values({
+        id: body.id ?? crypto.randomUUID(),
+        projectId: project.id,
+        title: body.title,
+        body: body.body,
+        resultId: body.resultId ?? null,
+      })
+      .onConflictDoNothing()
+      .returning();
+    if (!row) throw new HttpError(409, "Já existe uma nota com este id.");
+    return toNote(row);
+  }),
+);
+
+projectsRoutes.patch(
+  "/:id/notes/:noteId",
+  handle<{ id: string; noteId: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const note = await getNote(project.id, params.noteId);
+    const patch = await parseBody(req, z.object({ title: noteFields.title.optional(), body: noteFields.body.optional() }));
+    const [row] = await db
+      .update(schema.projectNotes)
+      .set({ ...(patch.title !== undefined && { title: patch.title }), ...(patch.body !== undefined && { body: patch.body }) })
+      .where(eq(schema.projectNotes.id, note.id))
+      .returning();
+    return toNote(row);
+  }),
+);
+
+projectsRoutes.delete(
+  "/:id/notes/:noteId",
+  handle<{ id: string; noteId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const note = await getNote(project.id, params.noteId);
+    await db.delete(schema.projectNotes).where(eq(schema.projectNotes.id, note.id));
     return { ok: true };
   }),
 );

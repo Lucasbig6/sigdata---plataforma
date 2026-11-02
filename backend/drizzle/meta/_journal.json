@@ -43,6 +43,13 @@
       "when": 1793576943993,
       "tag": "0005_desativacao_compartilhamento_auditoria",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793578711752,
+      "tag": "0006_notas_do_projeto",
+      "breakpoints": true
     }
   ]
 }

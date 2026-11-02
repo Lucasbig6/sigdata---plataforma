@@ -370,5 +370,25 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
       await request(dona, "PUT", `/api/dashboards/${id}/access`, { sharedWithAll: true, emails: [] });
       assert.equal((await request(fora, "GET", `/api/dashboards/${id}/view`)).status, 200, "compartilhado com todos");
     });
+
+    test("notas do projeto: criar, editar, listar e isolar entre usuários", async () => {
+      const dona = await signUp("notas1@teste.dev");
+      const outra = await signUp("notas2@teste.dev");
+      const project = (await (await request(dona, "POST", "/api/projects", { title: "Com notas" })).json()) as { id: string };
+
+      assert.equal((await request(dona, "POST", `/api/projects/${project.id}/notes`, { body: "   " })).status, 400);
+      const created = await request(dona, "POST", `/api/projects/${project.id}/notes`, { title: "Achado", body: "Teresina concentra 34%." });
+      assert.equal(created.status, 200);
+      const note = (await created.json()) as { id: string };
+
+      assert.equal((await request(dona, "PATCH", `/api/projects/${project.id}/notes/${note.id}`, { body: "Teresina concentra 35%." })).status, 200);
+      const list = (await (await request(dona, "GET", `/api/projects/${project.id}/notes`)).json()) as { body: string }[];
+      assert.equal(list.length, 1);
+      assert.equal(list[0]!.body, "Teresina concentra 35%.");
+
+      assert.equal((await request(outra, "GET", `/api/projects/${project.id}/notes`)).status, 404);
+      assert.equal((await request(outra, "DELETE", `/api/projects/${project.id}/notes/${note.id}`)).status, 404);
+      assert.equal((await request(dona, "DELETE", `/api/projects/${project.id}/notes/${note.id}`)).status, 200);
+    });
   });
 });

@@ -304,3 +304,21 @@ export const auditLog = pgTable(
   },
   (table) => [index("audit_log_at_idx").on(table.at)],
 );
+
+/** Notas do projeto: respostas do chat ou textos fixados para reunir no relatório/painel. */
+export const projectNotes = pgTable(
+  "project_notes",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull(),
+    /** Resultado de consulta que sustenta a nota (para citar a fonte dos números). */
+    resultId: text("result_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("project_notes_project_idx").on(table.projectId, table.createdAt)],
+);
