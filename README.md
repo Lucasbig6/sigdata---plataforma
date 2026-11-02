@@ -71,6 +71,14 @@ demonstração consultável e três dashboards de exemplo.
 | `npm run typecheck` | checa tipos dos dois projetos |
 | `npm test` | testes do backend e do frontend |
 
+## Workspace: chat, notas e estúdio
+
+O workspace de cada projeto tem o chat no centro e, à direita, o **Estúdio**: ferramentas (resumo executivo,
+insights, perguntas sugeridas, qualidade dos dados), as **visualizações** salvas e as **notas** do projeto.
+Qualquer resposta do assistente pode ser fixada como nota (ícone de marcador abaixo da resposta), e o tipo de
+gráfico pode ser trocado no próprio chat antes de salvar. Resumo e insights são pedidos ao assistente (que consulta
+os dados); a qualidade dos dados é uma verificação determinística do perfil das colunas, sem IA.
+
 ## Perfis de acesso
 
 | Perfil | Pode |

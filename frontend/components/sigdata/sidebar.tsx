@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState, type ComponentProps } from "react";
+import { useEffect, type ComponentProps } from "react";
 import {
   Check,
   ChevronDown,
@@ -41,35 +41,16 @@ import { canManageData } from "@shared/roles";
 import { cn } from "@/lib/utils";
 import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { useSigdata, type SigdataSection } from "@/lib/sigdata-store";
 import { ChatListItem } from "./chat-list-item";
 import { openCommandPalette } from "./command-palette";
 import { Logo } from "./logo";
 import { LineSkeletons } from "./list-states";
-
-type NavItem = {
-  section: SigdataSection;
-  label: string;
-  icon: typeof Database;
-  iconClassName: string;
-};
-
-const NAV_ITEMS: NavItem[] = [
-  {
-    section: "projetos",
-    label: "Projetos",
-    icon: FolderKanban,
-    iconClassName: "text-violet-500",
-  },
-];
 
 export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeNotebookId = searchParams.get("notebook");
-  const { section, setSection } = useSigdata();
-  const [search, setSearch] = useState("");
   const notebooksHydrated = useNotebooksStore((state) => state.hydrated);
   const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
   const notebooks = useNotebooksStore((state) => state.notebooks);
@@ -93,10 +74,7 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
 
   const selectedDataset = datasets.find((dataset) => dataset.id === selectedId) ?? null;
 
-  const normalized = search.trim().toLowerCase();
-  const visibleNotebooks = notebooks.filter((notebook) =>
-    normalized ? notebook.title.toLowerCase().includes(normalized) : true,
-  );
+  const visibleNotebooks = notebooks;
 
   const handleNewConversation = () => {
     const id = createNotebook();
@@ -176,7 +154,6 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
         </SidebarGroup>
 
         <SidebarGroup className="gap-1 p-0">
-          <SidebarGroupLabel className="px-0">Espaço de trabalho</SidebarGroupLabel>
           <SidebarMenu>
             <SidebarMenuItem>
               <SidebarMenuButton
@@ -190,24 +167,14 @@ export const SigdataSidebar = (props: ComponentProps<typeof Sidebar>) => {
                 <span className="truncate">Dashboards</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
-            {NAV_ITEMS.map((item) => {
-              const Icon = item.icon;
-              return (
-                <SidebarMenuItem key={item.section}>
-                  <SidebarMenuButton
-                    isActive={section === item.section}
-                    onClick={() => setSection(item.section)}
-                    tooltip={item.label}
-                    className="h-9 gap-2.5"
-                  >
-                    <span className="grid size-6 shrink-0 place-items-center rounded-md bg-violet-500/15">
-                      <Icon className={cn("size-3.5", item.iconClassName)} aria-hidden />
-                    </span>
-                    <span className="truncate">{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              );
-            })}
+            <SidebarMenuItem>
+              <SidebarMenuButton render={<Link href="/" />} tooltip="Todos os projetos" className="h-9 gap-2.5">
+                <span className="grid size-6 shrink-0 place-items-center rounded-md bg-violet-500/15">
+                  <FolderKanban className="size-3.5 text-violet-500" aria-hidden />
+                </span>
+                <span className="truncate">Todos os projetos</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
 

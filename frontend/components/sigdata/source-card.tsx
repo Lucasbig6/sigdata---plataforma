@@ -125,7 +125,7 @@ const TableBlock = ({ source, tableName }: { source: DataSource; tableName: stri
 
 /** Fonte ativa do projeto: o que existe nela, para o usuário saber o que perguntar. */
 export const SourceCard = ({ source }: { source: DataSource | null }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
   const canManage = canManageData(useRole() ?? "usuario");
 
   if (!source) {

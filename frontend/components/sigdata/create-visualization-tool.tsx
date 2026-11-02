@@ -187,7 +187,9 @@ const CreateVisualizationUI = (
   const [showQuery, setShowQuery] = useState(false);
   const [queryInfo, setQueryInfo] = useState<{ sql: string; rows: number; ms: number } | null>(null);
 
-  const kind: WidgetKind = isWidgetKind(args?.kind) ? args.kind : "linha";
+  // a pessoa pode trocar o tipo ali mesmo, antes de salvar (os dados vêm da mesma consulta)
+  const [kindOverride, setKindOverride] = useState<WidgetKind | null>(null);
+  const kind: WidgetKind = kindOverride ?? (isWidgetKind(args?.kind) ? args.kind : "linha");
   const Icon = WIDGET_ICON[kind];
   const titulo = (args?.titulo ?? "").trim() || WIDGET_KIND_LABELS[kind];
   const running = status?.type === "running" || status?.type === "requires-action";
@@ -259,9 +261,24 @@ const CreateVisualizationUI = (
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-medium text-foreground">{titulo}</p>
-            <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {WIDGET_KIND_LABELS[kind]}
-            </span>
+            {args?.resultId && ready && !isSaved ? (
+              <select
+                aria-label="Tipo de visualização"
+                value={kind}
+                onChange={(event) => setKindOverride(event.target.value as WidgetKind)}
+                className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                {WIDGET_KINDS.map((option) => (
+                  <option key={option} value={option}>
+                    {WIDGET_KIND_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {WIDGET_KIND_LABELS[kind]}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">{args ? kindSummary(args) : "Aguardando dados…"}</p>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}

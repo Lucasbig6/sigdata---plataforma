@@ -5,13 +5,12 @@ import { ArrowUpRight, Database, Upload } from "lucide-react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
-import { useRole } from "@/lib/auth-client";
+import { useRole, useSession } from "@/lib/auth-client";
 import { canManageData } from "@shared/roles";
 import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
 
 const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   const chat = useAISDKChat();
@@ -25,14 +24,14 @@ const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
           disabled={!chat}
           onClick={() => void chat?.sendMessage({ text: prompt })}
           className={cn(
-            "group flex items-start justify-between gap-3 rounded-xl border border-border bg-card/60 px-3.5 py-3 text-start",
-            "text-sm leading-snug text-muted-foreground transition-colors",
+            "group flex items-start justify-between gap-3 rounded-xl border border-border bg-card/60 px-3 py-2.5 text-start",
+            "text-[13px] leading-snug text-muted-foreground transition-colors",
             "hover:border-primary/40 hover:bg-card hover:text-foreground",
             "focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
             "disabled:opacity-60 disabled:pointer-events-none",
           )}
         >
-          <span>{prompt}</span>
+          <span className="line-clamp-3">{prompt}</span>
           <ArrowUpRight
             className="mt-0.5 size-4 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-primary"
             aria-hidden
@@ -112,39 +111,27 @@ export const WelcomeScreen = () => {
 
   const prompts = useMemo(() => (source ? suggestQuestions(source.tables) : []), [source]);
 
+  const firstName = useSession().data?.user.name.trim().split(/\s+/)[0] ?? "";
+
   return (
-    <div className="flex w-full flex-col items-center gap-6 px-2 py-10 text-center sm:py-16">
-      <Logo className="h-14 w-auto sm:h-16" />
-
-      <div className="flex max-w-2xl flex-col gap-3">
-        <h1 className="text-3xl font-medium tracking-tight text-balance text-foreground sm:text-4xl">
-          Inteligência de dados, em uma conversa.
-        </h1>
-        <p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-          {source
-            ? "Pergunte sobre os seus dados ou comece por uma das sugestões abaixo."
-            : "Explore seus dados, encontre padrões e transforme perguntas em análises."}
-        </p>
-      </div>
-
-      {source ? (
-        <div className="flex w-full flex-col items-center gap-1.5">
-          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-primary">
-            <Database className="size-3 shrink-0" aria-hidden />
-            <span className="truncate">{source.name}</span>
+    <div className="flex w-full flex-col items-center gap-5 px-2 py-10 text-center sm:py-14">
+      <div className="flex max-w-xl flex-col gap-1.5">
+        <h1 className="text-2xl font-medium tracking-tight text-balance text-foreground sm:text-3xl">
+          {firstName ? `Olá, ${firstName}.` : "Olá."}{" "}
+          <span className="text-muted-foreground">
+            {source ? "O que você quer saber?" : "Escolha um dataset para começar."}
           </span>
-          <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
-            {sourceSummary(source.tables)}
+        </h1>
+        {source ? (
+          <p className="mx-auto max-w-lg text-xs leading-relaxed text-muted-foreground">
+            <Database className="mr-1 inline size-3 align-[-1px] text-primary" aria-hidden />
+            <span className="font-medium text-foreground">{source.name}</span> · {sourceSummary(source.tables)}
           </p>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
       {source && prompts.length > 0 ? <SuggestedPrompts prompts={prompts} /> : null}
       {!source ? <PickSource notebookId={notebookId} /> : null}
-
-      <p className="text-xs text-muted-foreground/70">
-        As visualizações que você salvar das respostas ficam no painel lateral.
-      </p>
     </div>
   );
 };
