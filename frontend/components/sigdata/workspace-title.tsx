@@ -1,14 +1,14 @@
 "use client";
 
 import { Database } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 /** Cabeçalho do workspace: nome do projeto (editável ali mesmo) e a fonte ativa. */
 export const WorkspaceTitle = ({ fallback }: { fallback: string }) => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const notebook = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === notebookId));
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
   const datasets = useDatasetsStore((state) => state.datasets);

@@ -5,11 +5,14 @@ import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { projectHref } from "@/lib/routes";
 import { ShareDialog } from "./share-dialog";
 import { VersionHistory } from "./version-history";
 
 type Props = {
   dashboardId: string;
+  /** Projeto de origem (quando o dashboard nasceu de um projeto). */
+  project?: { id: string; title: string } | null;
   name: string;
   saving: boolean;
   saveError: string | null;
@@ -89,6 +92,7 @@ const AutosaveToggle = () => {
 
 export const TopBar = ({
   dashboardId,
+  project,
   name,
   saving,
   saveError,
@@ -116,6 +120,13 @@ export const TopBar = ({
     <LogoMark className="hidden h-9 w-auto shrink-0 md:block" />
     <span className="hidden h-8 w-px bg-border/70 md:block" />
 
+    <Link
+      href="/dashboards"
+      className="-mr-2 hidden shrink-0 rounded text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 lg:block"
+    >
+      Dashboards <span aria-hidden>›</span>
+    </Link>
+
     <div className="flex min-w-0 flex-col">
       <input
         value={name}
@@ -129,6 +140,16 @@ export const TopBar = ({
         <SaveStatus saving={saving} saveError={saveError} dirty={dirty} savedAt={savedAt} />
       </span>
     </div>
+
+    {project ? (
+      <Link
+        href={projectHref(project.id)}
+        title={`Abrir o projeto "${project.title}"`}
+        className="hidden max-w-48 shrink-0 truncate rounded-md border border-border/70 px-2 py-1 text-xs text-muted-foreground outline-none transition-colors hover:bg-muted/60 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 xl:block"
+      >
+        Projeto: {project.title}
+      </Link>
+    ) : null}
 
     <div className="ml-auto flex items-center gap-1.5">
       {!preview ? (

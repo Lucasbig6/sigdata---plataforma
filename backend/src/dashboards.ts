@@ -6,7 +6,7 @@ import { HttpError, notFound } from "./http";
 
 type DashboardRow = typeof schema.dashboards.$inferSelect;
 
-export type DashboardWithShare = Dashboard & { shareToken: string | null };
+export type DashboardWithShare = Dashboard & { shareToken: string | null; projectId: string | null };
 
 export const toDashboard = (row: DashboardRow): DashboardWithShare => ({
   id: row.id,
@@ -21,6 +21,7 @@ export const toDashboard = (row: DashboardRow): DashboardWithShare => ({
   ...(row.doc.pages && { pages: row.doc.pages }),
   ...(row.doc.measures && { measures: row.doc.measures }),
   shareToken: row.shareToken,
+  projectId: row.projectId,
 });
 
 /** Valida o documento recebido com a mesma rotina usada na leitura local. */

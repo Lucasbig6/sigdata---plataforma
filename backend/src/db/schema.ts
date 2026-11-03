@@ -234,6 +234,8 @@ export const dashboards = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     origin: text("origin").$type<"demo" | "user">().notNull().default("user"),
+    /** Projeto de onde o dashboard foi criado (null = avulso). */
+    projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
     doc: jsonb("doc").$type<DashboardDoc>().notNull(),
     /** Token do link público (null = não compartilhado). */
     shareToken: text("share_token"),
@@ -247,6 +249,7 @@ export const dashboards = pgTable(
   },
   (table) => [
     index("dashboards_user_idx").on(table.userId, table.updatedAt),
+    index("dashboards_project_idx").on(table.projectId),
     uniqueIndex("dashboards_share_token_idx").on(table.shareToken),
   ],
 );

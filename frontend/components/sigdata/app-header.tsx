@@ -1,11 +1,14 @@
 "use client";
 
+import { Search } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import { useRole } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { DATA_ROLES, type Role } from "@shared/roles";
+import { Button } from "@/components/ui/button";
+import { openCommandPalette } from "./command-palette";
 import { Logo } from "./logo";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
@@ -14,7 +17,7 @@ const NAV: { label: string; href: string; match: (path: string) => boolean; role
   { label: "Projetos", href: "/", match: (path) => path === "/" },
   { label: "Dashboards", href: "/dashboards", match: (path) => path.startsWith("/dashboards") },
   { label: "Fontes de dados", href: "/fontes-de-dados", match: (path) => path.startsWith("/fontes-de-dados"), roles: DATA_ROLES },
-  { label: "Usuários", href: "/admin/usuarios", match: (path) => path.startsWith("/admin"), roles: ["admin"] },
+  { label: "Administração", href: "/admin/usuarios", match: (path) => path.startsWith("/admin"), roles: ["admin"] },
 ];
 
 /** Cabeçalho padrão das áreas do SIGDATA (início, dashboards, fontes, usuários, configurações). */
@@ -30,7 +33,7 @@ export const AppHeader = ({ actions }: { actions?: ReactNode }) => {
           aria-label="SIGDATA — página inicial"
           className="flex shrink-0 items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
         >
-          <Logo className="h-16 w-auto" />
+          <Logo className="h-14 w-auto" />
         </Link>
 
         <nav aria-label="Áreas" className="order-last -mx-1 flex w-full items-center gap-1 overflow-x-auto md:order-none md:mx-0 md:w-auto">
@@ -56,6 +59,11 @@ export const AppHeader = ({ actions }: { actions?: ReactNode }) => {
 
         <div className="ml-auto flex min-w-0 items-center gap-2">
           {actions}
+          <Button variant="ghost" size="sm" onClick={openCommandPalette} aria-label="Buscar" className="gap-1.5 text-muted-foreground">
+            <Search className="size-4" aria-hidden />
+            <span className="hidden lg:inline">Buscar</span>
+            <kbd className="hidden rounded border border-border px-1.5 py-0.5 font-mono text-[10px] lg:inline">Ctrl K</kbd>
+          </Button>
           <ThemeToggle />
           <UserMenu />
         </div>

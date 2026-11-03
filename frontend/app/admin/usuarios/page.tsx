@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input";
 import { CardSkeletons, ErrorState } from "@/components/sigdata/list-states";
 import { RoleGate } from "@/components/sigdata/role-gate";
+import { AdminTabs } from "@/components/sigdata/admin-tabs";
 import { AppHeader } from "@/components/sigdata/app-header";
 import { PageHeading } from "@/components/sigdata/page-heading";
 import { api } from "@/lib/api/client";
@@ -364,12 +365,8 @@ export default function UsersAdminPage() {
           <PageHeading
             title="Usuários e perfis"
             description="Crie contas, defina o que cada pessoa pode fazer e acompanhe as atividades."
-            actions={
-              <Button variant="outline" render={<Link href="/admin/atividades" />} nativeButton={false}>
-                Atividades
-              </Button>
-            }
           />
+          <AdminTabs />
           <UsersTable />
         </main>
       </div>

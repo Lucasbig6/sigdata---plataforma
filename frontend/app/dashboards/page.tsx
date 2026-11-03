@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { api } from "@/lib/api/client";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { CoverArt } from "@/components/sigdata/cover-art";
+import { useNotebooksStore } from "@/lib/notebooks/store";
+import { ChartArt } from "@/components/sigdata/chart-art";
 import { coverGradient } from "@/components/sigdata/notebook-card";
 import { AppHeader } from "@/components/sigdata/app-header";
 import { PageHeading } from "@/components/sigdata/page-heading";
@@ -27,10 +28,12 @@ type SharedEntry = { id: string; name: string; description: string; updatedAt: n
 const DashboardCard = ({
   dashboard,
   isPublic,
+  projectTitle,
   onDelete,
 }: {
   dashboard: { id: string; name: string; origin: string; elements: unknown[]; updatedAt: number };
   isPublic: boolean;
+  projectTitle?: string;
   onDelete: () => void;
 }) => {
   const index = [...dashboard.id].reduce((sum, char) => sum + char.charCodeAt(0), 0);
@@ -44,7 +47,7 @@ const DashboardCard = ({
         style={{ backgroundImage: coverGradient(index) }}
       >
         <div className="absolute inset-0 bg-[radial-gradient(130%_90%_at_50%_-10%,rgba(255,255,255,0.22),transparent_55%)]" aria-hidden />
-        <CoverArt index={index} />
+        <ChartArt index={index} />
         <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/20 to-transparent" aria-hidden />
         <span className="absolute top-3 left-3 grid size-9 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25 backdrop-blur-md">
           <LayoutDashboard className="size-4 text-white" aria-hidden />
@@ -54,6 +57,7 @@ const DashboardCard = ({
           <p className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[12px] text-white/75">
             <span>{dashboard.elements.length} elementos · {formatDate(dashboard.updatedAt)}</span>
             {dashboard.origin === "demo" ? <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px]">Exemplo</span> : null}
+            {projectTitle ? <span className="max-w-full truncate rounded-full bg-white/15 px-1.5 py-0.5 text-[10px]">Projeto: {projectTitle}</span> : null}
             {isPublic ? <span className="rounded-full bg-white/15 px-1.5 py-0.5 text-[10px]">Link público</span> : null}
           </p>
         </div>
@@ -80,15 +84,19 @@ export default function DashboardsPage() {
   const createDashboard = useDashboardsStore((state) => state.createDashboard);
   const deleteDashboard = useDashboardsStore((state) => state.deleteDashboard);
   const shareTokens = useDashboardsStore((state) => state.shareTokens);
+  const projectIds = useDashboardsStore((state) => state.projectIds);
+  const notebooks = useNotebooksStore((state) => state.notebooks);
+  const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
 
   const [sharedWithMe, setSharedWithMe] = useState<SharedEntry[]>([]);
 
   useEffect(() => {
     hydrate();
+    hydrateNotebooks();
     api<SharedEntry[]>("/api/dashboards/shared")
       .then(setSharedWithMe)
       .catch(() => undefined);
-  }, [hydrate]);
+  }, [hydrate, hydrateNotebooks]);
 
   const items = useMemo(
     () =>
@@ -137,6 +145,7 @@ export default function DashboardsPage() {
                 key={dashboard.id}
                 dashboard={dashboard}
                 isPublic={Boolean(shareTokens[dashboard.id])}
+                projectTitle={notebooks.find((entry) => entry.id === projectIds[dashboard.id])?.title}
                 onDelete={() =>
                   void confirmAction({
                     title: `Excluir "${dashboard.name}"?`,

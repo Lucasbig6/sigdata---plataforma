@@ -23,6 +23,7 @@ import { useNotebooksStore } from "@/lib/notebooks/store";
 import { useRole } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { canManageData } from "@shared/roles";
+import { projectHref } from "@/lib/routes";
 
 /** Evento para abrir a paleta de fora (ex.: botão da barra lateral). */
 export const OPEN_PALETTE_EVENT = "sigdata:open-palette";
@@ -106,7 +107,7 @@ export const CommandPalette = () => {
         label: "Nova conversa",
         hint: "Criar projeto",
         icon: MessageSquarePlus,
-        run: () => router.push(`/workspace?notebook=${useNotebooksStore.getState().createNotebook()}`),
+        run: () => router.push(projectHref(useNotebooksStore.getState().createNotebook())),
       },
       { id: "a:projetos", group: "Ações", label: "Ir para a página inicial", icon: FolderKanban, run: go("/") },
       ...(canManageData(role ?? "usuario")
@@ -136,7 +137,7 @@ export const CommandPalette = () => {
         group: "Projetos",
         label: notebook.title,
         icon: FolderKanban,
-        run: go(`/workspace?notebook=${notebook.id}`),
+        run: go(projectHref(notebook.id)),
       })),
       ...datasets.map<Entry>((dataset) => ({
         id: `f:${dataset.id}`,

@@ -10,6 +10,7 @@ import { openCommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 import { WorkspaceTitle } from "./workspace-title";
+import { projectHref } from "@/lib/routes";
 
 /** Barra superior: início, nome do projeto (editável), busca, novo projeto, tema e conta. */
 export const WorkspaceTopbar = ({
@@ -49,6 +50,15 @@ export const WorkspaceTopbar = ({
         <PanelLeft className="size-4" aria-hidden />
       </Button>
       <div className="flex min-w-0 flex-1 items-center gap-2">
+        <Link
+          href="/"
+          className="hidden shrink-0 rounded text-sm text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50 md:block"
+        >
+          Projetos
+        </Link>
+        <span className="hidden text-muted-foreground/60 md:block" aria-hidden>
+          ›
+        </span>
         <WorkspaceTitle fallback={fallbackTitle} />
       </div>
 
@@ -61,7 +71,7 @@ export const WorkspaceTopbar = ({
         variant="outline"
         size="sm"
         className="gap-1.5 rounded-full"
-        onClick={() => router.push(`/workspace?notebook=${createNotebook()}`)}
+        onClick={() => router.push(projectHref(createNotebook()))}
       >
         <Plus className="size-4" aria-hidden />
         <span className="hidden sm:inline">Novo projeto</span>

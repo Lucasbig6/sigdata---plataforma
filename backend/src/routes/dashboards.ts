@@ -159,15 +159,28 @@ dashboardsRoutes.get(
   }),
 );
 
+/** Projeto de origem informado ao criar: precisa ser do próprio usuário; qualquer outro valor vira "avulso". */
+const ownedProjectId = async (userId: string, raw: unknown): Promise<string | null> => {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 64) return null;
+  const [project] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, raw), eq(schema.projects.userId, userId)));
+  return project?.id ?? null;
+};
+
 dashboardsRoutes.post(
   "/",
   handle(async ({ req, user }) => {
-    const doc = parseDashboard(await readJson(req));
+    const body = await readJson(req);
+    const doc = parseDashboard(body);
+    const projectId = await ownedProjectId(user.id, body?.projectId);
     const [row] = await db
       .insert(schema.dashboards)
       .values({
         id: doc.id,
         userId: user.id,
+        projectId,
         name: doc.name.trim() || "Novo dashboard",
         description: doc.description,
         origin: "user",

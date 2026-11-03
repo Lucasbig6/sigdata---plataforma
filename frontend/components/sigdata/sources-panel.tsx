@@ -2,7 +2,7 @@
 
 import { Check, Database, PanelLeftClose, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/lib/auth-client";
@@ -13,6 +13,8 @@ import { canManageData } from "@shared/roles";
 import { ChatListItem } from "./chat-list-item";
 import { LineSkeletons } from "./list-states";
 import { SourceCard } from "./source-card";
+import { projectHref } from "@/lib/routes";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 /**
  * Painel "Fontes" (esquerda): os datasets que o projeto pode usar — o escolhido fica marcado —
@@ -20,7 +22,7 @@ import { SourceCard } from "./source-card";
  */
 export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
   const router = useRouter();
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const role = useRole();
 
   const datasetsHydrated = useDatasetsStore((state) => state.hydrated);
@@ -135,7 +137,7 @@ export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
             size="icon-xs"
             aria-label="Novo projeto"
             title="Novo projeto"
-            onClick={() => router.push(`/workspace?notebook=${createNotebook()}`)}
+            onClick={() => router.push(projectHref(createNotebook()))}
           >
             <Plus className="size-3.5" aria-hidden />
           </Button>
@@ -153,14 +155,14 @@ export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
                   <ChatListItem
                     title={notebook.title}
                     active={isActive}
-                    onOpen={() => router.push(`/workspace?notebook=${notebook.id}`)}
+                    onOpen={() => router.push(projectHref(notebook.id))}
                     onRename={(title) => renameNotebook(notebook.id, title)}
                     onDelete={() => {
                       deleteNotebook(notebook.id);
                       if (!isActive) return;
                       // excluiu a conversa aberta: abre outra, ou cria uma nova se não sobrou nenhuma
                       const next = notebooks.find((entry) => entry.id !== notebook.id);
-                      router.push(`/workspace?notebook=${next ? next.id : createNotebook()}`);
+                      router.push(projectHref(next ? next.id : createNotebook()));
                     }}
                   />
                 </li>

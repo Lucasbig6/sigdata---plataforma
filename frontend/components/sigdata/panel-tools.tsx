@@ -6,13 +6,14 @@ import { useAssistantTool, type AssistantToolProps, type ToolCallMessagePartProp
 import { editWidget, isWidgetKind, type WidgetEdit } from "@/lib/panel/edit";
 import { WIDGET_KINDS } from "@shared/panel";
 import { usePanelStore, type WidgetKind } from "@/lib/panel/store";
+import { currentNotebookId } from "@/lib/use-notebook-id";
 
 /**
  * Ferramentas do agente sobre as visualizações salvas: as mesmas ações que o
  * usuário tem no painel (listar, editar título/tipo/colunas, remover).
  */
 
-const currentNotebook = () => new URLSearchParams(window.location.search).get("notebook");
+const currentNotebook = () => currentNotebookId();
 
 type ListItem = {
   id: string;

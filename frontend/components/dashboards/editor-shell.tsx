@@ -7,6 +7,7 @@ import { DashboardDataProvider } from "@/lib/dashboards/live-data";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { useNotebooksStore } from "@/lib/notebooks/store";
 import { CANVAS } from "@/lib/dashboards/types";
 import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
 import { DashboardCanvas } from "./canvas";
@@ -119,6 +120,13 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   const saving = useDashboardsStore((state) => state.saving);
   const saveError = useDashboardsStore((state) => state.saveError);
   const loadError = useDashboardsStore((state) => state.loadError);
+  const projectId = useDashboardsStore((state) => state.projectIds[dashboardId] ?? null);
+  const projectTitle = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === projectId)?.title);
+  const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
+  useEffect(() => {
+    if (projectId) hydrateNotebooks();
+  }, [projectId, hydrateNotebooks]);
+  const project = projectId && projectTitle ? { id: projectId, title: projectTitle } : null;
   const pastLength = useDashboardsStore((state) => state.past.length);
   const futureLength = useDashboardsStore((state) => state.future.length);
   const preview = useDashboardsStore((state) => state.preview);
@@ -307,6 +315,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <TopBar
         dashboardId={doc.id}
+        project={project}
         name={doc.name}
         saving={saving}
         saveError={saveError}

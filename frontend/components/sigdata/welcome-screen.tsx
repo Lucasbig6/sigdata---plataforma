@@ -3,7 +3,6 @@
 import { useAISDKChat } from "@assistant-ui/ai-sdk";
 import { Database, Upload } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo } from "react";
 import { useRole, useSession } from "@/lib/auth-client";
 import { canManageData } from "@shared/roles";
@@ -12,6 +11,7 @@ import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
 import { useActiveSource } from "@/lib/workspace/use-active-source";
 import { cn } from "@/lib/utils";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   const chat = useAISDKChat();
@@ -93,7 +93,7 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
 };
 
 export const WelcomeScreen = () => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const source = useActiveSource();
 
   const prompts = useMemo(() => (source ? suggestQuestions(source.tables) : []), [source]);

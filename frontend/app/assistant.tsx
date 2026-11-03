@@ -4,7 +4,8 @@ import { AssistantRuntimeProvider } from "@assistant-ui/react";
 import { useChatRuntime, AssistantChatTransport, useAISDKChat } from "@assistant-ui/ai-sdk";
 import { lastAssistantMessageIsCompleteWithToolCalls, type UIMessage } from "ai";
 import { Loader2 } from "lucide-react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useRouter } from "next/navigation";
+import { projectHref } from "@/lib/routes";
 import { useEffect, useMemo, useRef } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { AppShell } from "@/components/sigdata/app-shell";
@@ -112,10 +113,8 @@ const NotebookLoader = ({ notebookId }: { notebookId: string }) => {
   return <AssistantRuntimeInner notebookId={notebookId} initialMessages={messages} />;
 };
 
-export const Assistant = () => {
-  const searchParams = useSearchParams();
+export const Assistant = ({ notebookId = null }: { notebookId?: string | null }) => {
   const router = useRouter();
-  const notebookId = searchParams.get("notebook");
   const hydrated = useNotebooksStore((state) => state.hydrated);
   const hydrate = useNotebooksStore((state) => state.hydrate);
   const loadError = useNotebooksStore((state) => state.error);
@@ -130,7 +129,7 @@ export const Assistant = () => {
     if (!hydrated || notebookId || autoCreated.current) return;
     autoCreated.current = true;
     const id = createNotebook();
-    router.replace(`/workspace?notebook=${id}`);
+    router.replace(projectHref(id));
   }, [hydrated, notebookId, createNotebook, router]);
 
   if (!notebookId) {

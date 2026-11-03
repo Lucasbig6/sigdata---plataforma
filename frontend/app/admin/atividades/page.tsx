@@ -1,12 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { CardSkeletons, EmptyState, ErrorState } from "@/components/sigdata/list-states";
 import { RoleGate } from "@/components/sigdata/role-gate";
+import { AdminTabs } from "@/components/sigdata/admin-tabs";
 import { AppHeader } from "@/components/sigdata/app-header";
 import { PageHeading } from "@/components/sigdata/page-heading";
-import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 
 type Entry = { id: string; at: string; actorName: string; action: string; target: string; detail: string };
@@ -85,12 +84,8 @@ export default function ActivityPage() {
           <PageHeading
             title="Atividades"
             description="Registro das ações sensíveis: fontes, datasets, contas e compartilhamentos."
-            actions={
-              <Button variant="outline" render={<Link href="/admin/usuarios" />} nativeButton={false}>
-                Voltar aos usuários
-              </Button>
-            }
           />
+          <AdminTabs />
           <LogTable />
         </main>
       </div>

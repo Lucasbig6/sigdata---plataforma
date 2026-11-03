@@ -1,7 +1,6 @@
 "use client";
 
 import { BookmarkPlus, Check, ChevronDown, Database, Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { JSONSchema7 } from "ai";
 import {
@@ -18,6 +17,7 @@ import { WIDGET_CHART_TYPE, WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { WIDGET_ICON } from "./widget-icons";
 import { WidgetView } from "./widget-view";
 import { checkResultFor, fetchResult, widgetDataFromResult } from "@/lib/results/client";
+import { useNotebookId, currentNotebookId } from "@/lib/use-notebook-id";
 
 export type CreateVisualizationArgs = {
   kind: WidgetKind;
@@ -153,7 +153,7 @@ const executeCreateVisualization = async (
   }
   if (!args.salvar) return { ok: true, kind: args.kind, titulo };
 
-  const notebookId = new URLSearchParams(window.location.search).get("notebook");
+  const notebookId = currentNotebookId();
   if (!notebookId) return { ok: false, error: "Nenhum projeto aberto para salvar a visualização." };
   const panel = usePanelStore.getState();
   await panel.load(notebookId);
@@ -176,7 +176,7 @@ const CreateVisualizationUI = (
   props: ToolCallMessagePartProps<CreateVisualizationArgs, CreateVisualizationResult>,
 ) => {
   const { args, result, status, addResult } = props;
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const addWidget = usePanelStore((state) => state.addWidget);
   const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
   const saved = notebookId ? (widgetsByNotebook[notebookId] ?? []) : [];

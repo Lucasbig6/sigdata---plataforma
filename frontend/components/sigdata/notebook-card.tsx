@@ -16,6 +16,7 @@ import { cn } from "@/lib/utils";
 import type { Notebook } from "@/lib/notebooks/store";
 import { CoverArt } from "./cover-art";
 import { confirmAction } from "@/lib/feedback";
+import { projectHref } from "@/lib/routes";
 
 const COVER_GRADIENTS = [
   "linear-gradient(145deg, #1e3a5f 0%, #0f766e 100%)",
@@ -206,7 +207,7 @@ export const NotebookCard = ({
           style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
         >
           <Link
-            href={`/workspace?notebook=${notebook.id}`}
+            href={projectHref(notebook.id)}
             className={cn(
               "flex items-stretch gap-3.5 overflow-hidden rounded-xl border border-border/70 bg-card/60 p-2.5 pr-11 transition-colors",
               "hover:border-primary/40 hover:bg-card focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
@@ -242,7 +243,7 @@ export const NotebookCard = ({
         style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
       >
         <Link
-          href={`/workspace?notebook=${notebook.id}`}
+          href={projectHref(notebook.id)}
           className={cn(
             "relative block aspect-[3/2] overflow-hidden rounded-2xl outline-none",
             "ring-1 ring-inset ring-white/10",

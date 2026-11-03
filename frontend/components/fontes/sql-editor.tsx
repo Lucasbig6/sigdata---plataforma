@@ -31,6 +31,7 @@ import { SaveDatasetDialog } from "./sql/save-dataset-dialog";
 import { SchemaNavigator } from "./sql/schema-navigator";
 import { ScriptTabs } from "./sql/script-tabs";
 import { ShortcutsDialog } from "./sql/shortcuts-dialog";
+import { Breadcrumbs } from "@/components/sigdata/breadcrumbs";
 
 type RunOutput = {
   columns: ResultColumn[];
@@ -344,7 +345,7 @@ export const SqlEditor = ({
           </Link>
           <LogoMark className="h-10 w-auto shrink-0" />
           <div className="min-w-0">
-            <h1 className="text-base font-semibold text-foreground">Editor SQL</h1>
+            <Breadcrumbs items={[{ label: "Fontes de dados", href: "/fontes-de-dados" }, { label: "Editor SQL" }]} />
             <p className="truncate text-xs text-muted-foreground">
               Consulte, trate os dados e salve datasets para usar nas análises
             </p>

@@ -53,7 +53,7 @@ type HistoryKey = string | null;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-type ServerDashboard = Dashboard & { shareToken: string | null };
+type ServerDashboard = Dashboard & { shareToken: string | null; projectId: string | null };
 
 /** POSTs de criação em andamento: o primeiro PUT/DELETE espera por eles. */
 const pendingCreates = new Map<string, Promise<unknown>>();
@@ -87,6 +87,8 @@ type SigdataDashboardsStore = {
   order: string[];
   dashboards: Record<string, Dashboard>;
   shareTokens: Record<string, string | null>;
+  /** Projeto de origem de cada dashboard (null = avulso). */
+  projectIds: Record<string, string | null>;
   saving: boolean;
   saveError: string | null;
   /** Última versão salva do documento aberto (para "Descartar"). */
@@ -133,7 +135,7 @@ type SigdataDashboardsStore = {
   select: (id: string | null) => void;
   setPreview: (preview: boolean) => void;
   openDashboard: (id: string | null) => void;
-  createDashboard: () => string;
+  createDashboard: (projectId?: string) => string;
   deleteDashboard: (id: string) => void;
   rename: (name: string) => void;
 
@@ -298,6 +300,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     order: [],
     dashboards: {},
     shareTokens: {},
+    projectIds: {},
     saving: false,
     saveError: null,
     baseline: null,
@@ -345,9 +348,10 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
             loadError: null,
             order: list.map((dashboard) => dashboard.id),
             dashboards: Object.fromEntries(
-              list.map(({ shareToken: _token, ...dashboard }) => [dashboard.id, dashboard]),
+              list.map(({ shareToken: _token, projectId: _project, ...dashboard }) => [dashboard.id, dashboard]),
             ),
             shareTokens: Object.fromEntries(list.map((d) => [d.id, d.shareToken])),
+            projectIds: Object.fromEntries(list.map((d) => [d.id, d.projectId ?? null])),
           });
         })
         .catch((error: Error) => set({ hydrated: true, loadError: error.message }))
@@ -393,7 +397,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         historyKey: null,
       }),
 
-    createDashboard: () => {
+    createDashboard: (projectId) => {
       const { order, dashboards } = get();
       const now = Date.now();
       const dashboard: Dashboard = {
@@ -414,6 +418,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       set({
         order: next.order,
         dashboards: next.dashboards,
+        projectIds: { ...get().projectIds, [dashboard.id]: projectId ?? null },
         activePageId: null,
         currentId: dashboard.id,
         baseline: clone(dashboard),
@@ -424,7 +429,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         future: [],
         historyKey: null,
       });
-      const request = api("/api/dashboards", { method: "POST", json: toPayload(dashboard) }).finally(
+      const request = api("/api/dashboards", { method: "POST", json: { ...toPayload(dashboard), projectId } }).finally(
         () => pendingCreates.delete(dashboard.id),
       );
       pendingCreates.set(dashboard.id, request);

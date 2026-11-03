@@ -2,17 +2,17 @@
 
 import { useAuiState } from "@assistant-ui/react";
 import { Check, StickyNote } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { TooltipIconButton } from "@/components/assistant-ui/elements/tooltip-icon-button";
 import { toast } from "@/lib/feedback";
 import { useNotesStore } from "@/lib/notes/store";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 type Part = { type?: string; text?: string; args?: { resultId?: string } };
 
 /** Fixa o texto da resposta como nota do projeto, citando a consulta de origem quando houver. */
 export const PinNoteButton = () => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const parts = useAuiState((state) => state.message.content) as readonly Part[];
   const add = useNotesStore((state) => state.add);
   const [done, setDone] = useState(false);

@@ -1,13 +1,16 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   BookmarkPlus,
   Check,
+  ChevronDown,
   ChevronRight,
+  Code2,
   Database,
+  LayoutDashboard,
   Loader2,
   Minus,
   Pencil,
@@ -19,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { draftFromWidget, liveFromResult } from "@/lib/dashboards/from-workspace";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import type { ResultColumn } from "@/lib/domain/sources";
+import type { AnalyticResult, ResultColumn } from "@/lib/domain/sources";
 import { editWidget } from "@/lib/panel/edit";
 import {
   usePanelStore,
@@ -32,11 +35,14 @@ import { fetchResult, widgetDataFromResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
 import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { NotesPanel } from "./notes-panel";
 import { StudioTools } from "./studio-tools";
 import { WidgetView } from "./widget-view";
 import { useNotesStore } from "@/lib/notes/store";
 import { toast } from "@/lib/feedback";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
@@ -262,7 +268,104 @@ const WidgetCard = ({ notebookId, widget }: { notebookId: string; widget: PanelW
       <div className="max-h-72 overflow-auto p-2">
         <WidgetView kind={widget.kind} data={widget} />
       </div>
+      {widget.resultId ? <QueryInfo resultId={widget.resultId} /> : null}
     </article>
+  );
+};
+
+/** Consulta e fonte por trás da visualização: dá para conferir de onde vêm os números. */
+const QueryInfo = ({ resultId }: { resultId: string }) => {
+  const [open, setOpen] = useState(false);
+  const [result, setResult] = useState<AnalyticResult | null>(null);
+  const [failed, setFailed] = useState(false);
+  const datasets = useDatasetsStore((state) => state.datasets);
+  const role = useRole();
+
+  useEffect(() => {
+    if (!open || result) return;
+    let cancelled = false;
+    fetchResult(resultId)
+      .then((value) => !cancelled && setResult(value))
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, result, resultId]);
+
+  const sourceName = datasets.find((entry) => entry.id === result?.sourceId)?.name;
+
+  return (
+    <div className="border-t border-border/70">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
+        <Code2 className="size-3" aria-hidden />
+        Ver consulta
+        <ChevronDown className={cn("ml-auto size-3 transition-transform", open && "rotate-180")} aria-hidden />
+      </button>
+      {open ? (
+        <div className="space-y-2 px-3 pb-3">
+          {failed ? <p className="text-[11px] text-destructive">Não foi possível carregar a consulta.</p> : null}
+          {!result && !failed ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-hidden /> : null}
+          {result ? (
+            <>
+              <pre className="max-h-40 overflow-auto rounded-md border border-border/70 bg-muted/30 p-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
+                {result.sql}
+              </pre>
+              <p className="flex flex-wrap items-center gap-x-2 text-[10px] text-muted-foreground tabular-nums">
+                <span>{sourceName ?? "Fonte do projeto"}</span>
+                <span>·</span>
+                <span>
+                  {result.rowCount.toLocaleString("pt-BR")} linhas{result.truncated ? " (parcial)" : ""}
+                </span>
+                <span>·</span>
+                <span>{result.durationMs.toLocaleString("pt-BR")} ms</span>
+                <span>·</span>
+                <span>{new Date(result.createdAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+                {result.sourceId && role !== null && canManageData(role) ? (
+                  <Link
+                    href={`/fontes-de-dados/editor?${new URLSearchParams({ source: result.sourceId, sql: result.sql })}`}
+                    className="ml-auto font-medium text-primary hover:underline"
+                  >
+                    Abrir no editor SQL
+                  </Link>
+                ) : null}
+              </p>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+};
+
+/** Dashboards criados a partir deste projeto: volta rápida para o que já foi montado. */
+const ProjectDashboards = ({ notebookId }: { notebookId: string }) => {
+  const order = useDashboardsStore((state) => state.order);
+  const dashboards = useDashboardsStore((state) => state.dashboards);
+  const projectIds = useDashboardsStore((state) => state.projectIds);
+  const hydrate = useDashboardsStore((state) => state.hydrate);
+  useEffect(() => hydrate(), [hydrate]);
+
+  const own = order.filter((id) => projectIds[id] === notebookId && dashboards[id]);
+  if (own.length === 0) return null;
+
+  return (
+    <div className="flex shrink-0 flex-wrap items-center gap-1.5 px-3 pt-3" aria-label="Dashboards deste projeto">
+      <LayoutDashboard className="size-3.5 text-muted-foreground" aria-hidden />
+      {own.map((id) => (
+        <Link
+          key={id}
+          href={`/dashboards/${id}`}
+          className="max-w-44 truncate rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground outline-none transition-colors hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring/50"
+        >
+          {dashboards[id]!.name}
+        </Link>
+      ))}
+    </div>
   );
 };
 
@@ -283,7 +386,7 @@ const EmptyState = () => (
 
 /** Biblioteca de visualizações salvas do projeto (geradas no chat). */
 export const WorkPanel = ({ className }: { className?: string }) => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const {
     panelView,
     panelCollapsed,
@@ -355,7 +458,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       }),
     );
 
-    const id = createDashboard();
+    const id = createDashboard(notebookId);
     openDashboard(id);
     beginTransaction("panel-import");
     renameDashboard(title);
@@ -368,10 +471,10 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     const { saveError } = useDashboardsStore.getState();
     const message = saveError
       ? `Não foi possível salvar o dashboard: ${saveError}`
-      : `Dashboard "${title}" salvo — abra em Dashboards.`;
+      : `Dashboard "${title}" salvo.`;
     setNote(message);
     if (saveError) toast.error(message);
-    else toast.success(message);
+    else toast.success(message, { label: "Abrir dashboard", href: `/dashboards/${id}` });
   };
 
   return (
@@ -453,6 +556,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
           </div>
           </div>
         ) : null}
+        {panelVisible && notebookId ? <ProjectDashboards notebookId={notebookId} /> : null}
         {!panelVisible ? null : studioTab === "notas" ? (
           notebookId ? <NotesPanel notebookId={notebookId} /> : null
         ) : (

@@ -23,6 +23,7 @@ import { SchemaView } from "./schema-view";
 import { StatusBar } from "./status-bar";
 import { StepDialog, type StepDialogMode } from "./step-dialog";
 import { StepsPanel } from "./steps-panel";
+import { Breadcrumbs } from "@/components/sigdata/breadcrumbs";
 
 const prettySql = (sql: string) => {
   try {
@@ -291,7 +292,7 @@ export const PrepWorkspace = ({
           </Link>
           <LogoMark className="h-9 w-auto shrink-0" />
           <div className="min-w-0">
-            <h1 className="text-base font-semibold text-foreground">Preparar dados</h1>
+            <Breadcrumbs items={[{ label: "Fontes de dados", href: "/fontes-de-dados" }, { label: "Preparar dados" }]} />
             <p className="truncate text-xs text-muted-foreground">
               {origin?.definition?.workspace
                 ? `Etapas de “${origin.name}” abertas para edição; salvar cria um novo dataset`

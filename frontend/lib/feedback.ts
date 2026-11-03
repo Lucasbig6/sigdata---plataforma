@@ -6,7 +6,8 @@ import { create } from "zustand";
  */
 
 export type ToastTone = "success" | "error" | "info";
-export type ToastItem = { id: number; tone: ToastTone; message: string };
+export type ToastAction = { label: string; href: string };
+export type ToastItem = { id: number; tone: ToastTone; message: string; action?: ToastAction };
 
 export type ConfirmOptions = {
   title: string;
@@ -32,14 +33,14 @@ export const useFeedback = create<FeedbackState>(() => ({ toasts: [], confirmReq
 export const dismissToast = (id: number) =>
   useFeedback.setState((state) => ({ toasts: state.toasts.filter((item) => item.id !== id) }));
 
-const push = (tone: ToastTone, message: string) => {
+const push = (tone: ToastTone, message: string, action?: ToastAction) => {
   const id = nextId++;
-  useFeedback.setState((state) => ({ toasts: [...state.toasts, { id, tone, message }].slice(-MAX_TOASTS) }));
+  useFeedback.setState((state) => ({ toasts: [...state.toasts, { id, tone, message, action }].slice(-MAX_TOASTS) }));
   if (typeof window !== "undefined") window.setTimeout(() => dismissToast(id), DURATION_MS[tone]);
 };
 
 export const toast = {
-  success: (message: string) => push("success", message),
+  success: (message: string, action?: ToastAction) => push("success", message, action),
   error: (message: string) => push("error", message),
   info: (message: string) => push("info", message),
 };

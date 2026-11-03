@@ -11,6 +11,7 @@ import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { cn } from "@/lib/utils";
+import { projectHref } from "@/lib/routes";
 
 const DISMISS_KEY = "sigdata.onboarding.dismissed.v1";
 
@@ -89,7 +90,7 @@ export const GettingStarted = () => {
         <Button
           size="sm"
           variant="outline"
-          onClick={() => router.push(`/workspace?notebook=${useNotebooksStore.getState().createNotebook()}`)}
+          onClick={() => router.push(projectHref(useNotebooksStore.getState().createNotebook()))}
         >
           {next.cta}
         </Button>
