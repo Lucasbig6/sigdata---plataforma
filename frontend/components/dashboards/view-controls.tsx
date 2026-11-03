@@ -14,6 +14,8 @@ type Props = {
   onMobile?: (mobile: boolean) => void;
   /** Elemento que entra em tela cheia (omitido = sem o botão). */
   fullscreenTarget?: () => HTMLElement | null;
+  /** Sem moldura própria, para ficar dentro de uma barra. */
+  flat?: boolean;
   className?: string;
 };
 
@@ -22,7 +24,7 @@ const btn =
 const active = "bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary";
 
 /** Controles de visualização da página: zoom, ajustar à página/largura, 100% e tela cheia. */
-export const ViewControls = ({ zoom, mode, onMode, onZoom, mobile, onMobile, fullscreenTarget, className = "" }: Props) => {
+export const ViewControls = ({ zoom, mode, onMode, onZoom, mobile, onMobile, fullscreenTarget, flat = false, className = "" }: Props) => {
   const [fullscreen, setFullscreen] = useState(false);
 
   useEffect(() => {
@@ -42,7 +44,7 @@ export const ViewControls = ({ zoom, mode, onMode, onZoom, mobile, onMobile, ful
 
   return (
     <div
-      className={`flex items-center gap-1 rounded-md border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur ${className}`}
+      className={`flex items-center gap-1 ${flat ? "" : "rounded-md border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur"} ${className}`}
     >
       <button
         type="button"

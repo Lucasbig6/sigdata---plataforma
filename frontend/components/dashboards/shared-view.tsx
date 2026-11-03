@@ -2,7 +2,7 @@
 
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardCanvas } from "@/components/dashboards/canvas";
 import { ClearFilters } from "@/components/dashboards/clear-filters";
 import { RefreshControl } from "@/components/dashboards/refresh-control";
@@ -70,6 +70,11 @@ export const SharedView = ({
     initialMode: "page",
   });
   const mode = useMemo(() => ({ kind: "public" as const, token, basePath }), [token, basePath]);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const changeMobile = (next: boolean) => {
+    setMobile(next);
+    setFitMode(next ? "width" : "page");
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -127,61 +132,76 @@ export const SharedView = ({
 
   return (
     <DashboardDataProvider mode={mode} elements={pageElements} interactive>
-    <div className="flex h-dvh flex-col overflow-hidden bg-background">
-      {embed ? null : (
-      <header className="flex h-16 shrink-0 items-center gap-4 border-b border-border/60 bg-card/60 px-6 backdrop-blur">
-        {backHref ? (
-          <Link
-            href={backHref}
-            aria-label="Voltar"
-            className="grid size-9 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-          </Link>
-        ) : null}
-        <LogoMark className="h-9 w-auto shrink-0" />
-        <div className="min-w-0">
-          <h1 className="truncate text-sm font-semibold text-foreground">{state.dashboard.name}</h1>
-          <p className="truncate text-[11px] text-muted-foreground">
-            Somente leitura · dados ao vivo · versão de{" "}
-            {new Date(state.dashboard.updatedAt).toLocaleString("pt-BR", {
-              dateStyle: "short",
-              timeStyle: "short",
-            })}
-          </p>
-        </div>
-        <div className="ml-auto flex items-center gap-2">
-          <RefreshControl />
-          <ExportMenu mobileSize={mobileCanvas ?? undefined} />
-          <ThemeToggle />
-        </div>
-      </header>
-      )}
+    <div ref={rootRef} className="flex h-dvh flex-col overflow-hidden bg-background">
       <div ref={stageRef} className="relative min-h-0 flex-1 overflow-hidden bg-background">
         <DashboardCanvas zoom={zoom} preview fill mobile={mobile} />
-        <ClearFilters className="absolute left-3 top-3 z-20" />
-        <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40">
-          <PageTabs readOnly className="pointer-events-auto" />
-        </div>
         {embed ? (
-          <div className="absolute right-3 top-3 z-20">
-            <RefreshControl />
-          </div>
+          <>
+            <ClearFilters className="absolute left-3 top-3 z-20" />
+            <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40">
+              <PageTabs readOnly className="pointer-events-auto" />
+            </div>
+            <div className="absolute right-3 top-3 z-20">
+              <RefreshControl />
+            </div>
+            <ViewControls
+              className="absolute bottom-3 right-3"
+              zoom={zoom}
+              mode={fitMode}
+              onMode={setFitMode}
+              onZoom={setZoom}
+              mobile={mobile}
+              onMobile={changeMobile}
+              fullscreenTarget={() => stage}
+            />
+          </>
         ) : null}
-        <ViewControls
-          className="absolute bottom-3 right-3"
-          zoom={zoom}
-          mode={fitMode}
-          onMode={setFitMode}
-          onZoom={setZoom}
-          mobile={mobile}
-          onMobile={(next) => {
-            setMobile(next);
-            setFitMode(next ? "width" : "page");
-          }}
-          fullscreenTarget={() => stage}
-        />
       </div>
+
+      {embed ? null : (
+        /* rodapé único: marca, páginas e ajuste de visualização; o painel ocupa todo o resto da tela */
+        <footer className="relative z-20 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 bg-card/80 px-3 py-1.5 backdrop-blur md:h-11 md:flex-nowrap md:py-0">
+          {backHref ? (
+            <Link
+              href={backHref}
+              aria-label="Voltar"
+              className="grid size-7 shrink-0 place-items-center rounded-md text-foreground transition-colors hover:bg-muted/60"
+            >
+              <ArrowLeft className="size-4" aria-hidden />
+            </Link>
+          ) : null}
+          <div
+            className="flex min-w-0 shrink items-center gap-2 md:max-w-[28%]"
+            title={`${state.dashboard.name} · somente leitura · versão de ${new Date(state.dashboard.updatedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`}
+          >
+            <LogoMark className="h-6 w-auto shrink-0" />
+            <span className="shrink-0 text-xs font-semibold tracking-wide text-foreground">SIGDATA</span>
+            <span className="hidden min-w-0 truncate text-xs text-muted-foreground lg:inline">· {state.dashboard.name}</span>
+          </div>
+
+          <div className="order-last flex w-full min-w-0 justify-center md:order-none md:w-auto md:flex-1">
+            <PageTabs readOnly flat />
+          </div>
+
+          <div className="ml-auto flex shrink-0 items-center gap-2">
+            <ClearFilters />
+            <RefreshControl />
+            <ExportMenu mobileSize={mobileCanvas ?? undefined} menuAbove />
+            <ThemeToggle />
+            <span className="h-4 w-px bg-border/70" aria-hidden />
+            <ViewControls
+              flat
+              zoom={zoom}
+              mode={fitMode}
+              onMode={setFitMode}
+              onZoom={setZoom}
+              mobile={mobile}
+              onMobile={changeMobile}
+              fullscreenTarget={() => rootRef.current}
+            />
+          </div>
+        </footer>
+      )}
     </div>
     </DashboardDataProvider>
   );

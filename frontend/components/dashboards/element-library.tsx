@@ -7,6 +7,8 @@ import { autoProps, defaultSource } from "@/lib/dashboards/auto-binding";
 import { ELEMENT_LIBRARY, ELEMENT_MIME, type LibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { WorkspaceLibrary } from "./workspace-library";
 
 /** Adiciona um item já ligado a uma fonte real, quando houver. */
@@ -44,9 +46,11 @@ export const ElementLibrary = () => {
   const readySources = datasets.filter((s) => isAnalysisDataset(s) && s.tables.length > 0);
   const source = defaultSource(datasets.filter(isAnalysisDataset), preferredSourceId);
   const normalized = query.trim().toLowerCase();
+  const role = useRole();
+  const canCustomize = role !== null && canManageData(role);
 
   // gráficos, tabelas e indicadores vêm só das visualizações salvas (aba Visualizações)
-  const groups = ELEMENT_LIBRARY.filter((group) => !group.fromAnalysis).map((group) => ({
+  const groups = ELEMENT_LIBRARY.filter((group) => !group.fromAnalysis && (group.id !== "avancado" || canCustomize)).map((group) => ({
     ...group,
     items: group.items.filter(
       (item) =>

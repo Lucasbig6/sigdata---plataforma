@@ -61,6 +61,7 @@ export const ELEMENT_SIZES = {
   divider: { w: 480, h: 24 },
   shape: { w: 240, h: 160 },
   filter: { w: 260, h: 92 },
+  html: { w: 520, h: 320 },
 } as const;
 
 /** Limites mínimos de redimensionamento por tipo. */
@@ -76,6 +77,7 @@ export const ELEMENT_MIN = {
   divider: { w: 120, h: 8 },
   shape: { w: 80, h: 60 },
   filter: { w: 200, h: 76 },
+  html: { w: 240, h: 160 },
 } as const;
 
 export type ElementType =
@@ -89,7 +91,8 @@ export type ElementType =
   | "image"
   | "divider"
   | "shape"
-  | "filter";
+  | "filter"
+  | "html";
 
 export type ChartColor = 1 | 2 | 3 | 4 | 5;
 
@@ -307,6 +310,24 @@ export type FilterProps = FilterStyle & {
   binding?: FilterBinding;
 };
 
+/** Limite de cada trecho de código (HTML, CSS, JS) de um elemento personalizado. */
+export const HTML_CODE_MAX = 60_000;
+
+/**
+ * Visual personalizado (como o "HTML Content" do Power BI). O código roda num iframe isolado
+ * (sem acesso à sessão nem à API) e recebe as linhas da ligação por `window.sigdata`.
+ */
+export type HtmlProps = {
+  frame?: FrameStyle;
+  ignoreFilters?: boolean;
+  title: string;
+  showTitle: boolean;
+  binding?: DataBinding;
+  html: string;
+  css: string;
+  js: string;
+};
+
 type ElementBase = {
   id: string;
   /** Elementos com o mesmo groupId são selecionados e movidos juntos. */
@@ -332,7 +353,8 @@ export type DashboardElement =
   | (ElementBase & { type: "image"; props: ImageProps })
   | (ElementBase & { type: "divider"; props: DividerProps })
   | (ElementBase & { type: "shape"; props: ShapeProps })
-  | (ElementBase & { type: "filter"; props: FilterProps });
+  | (ElementBase & { type: "filter"; props: FilterProps })
+  | (ElementBase & { type: "html"; props: HtmlProps });
 
 export type DashboardPage = {
   id: string;
@@ -441,6 +463,7 @@ const ELEMENT_TYPES: ElementType[] = [
   "divider",
   "shape",
   "filter",
+  "html",
 ];
 
 const sanitizeElement = (raw: unknown): DashboardElement | null => {

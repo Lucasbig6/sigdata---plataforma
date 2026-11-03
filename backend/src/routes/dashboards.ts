@@ -13,6 +13,7 @@ import { filterOptions, runBinding } from "../dashboard-data";
 import { db, schema } from "../db";
 import {
   analysesForDashboard,
+  assertCustomCode,
   getDashboardRow,
   parseDashboard,
   toDashboard,
@@ -174,6 +175,7 @@ dashboardsRoutes.post(
   handle(async ({ req, user }) => {
     const body = await readJson(req);
     const doc = parseDashboard(body);
+    assertCustomCode(user, doc);
     const projectId = await ownedProjectId(user.id, body?.projectId);
     const [row] = await db
       .insert(schema.dashboards)
@@ -203,6 +205,7 @@ dashboardsRoutes.put(
   handle<{ id: string }>(async ({ req, user, params }) => {
     const existing = await getDashboardRow(user.id, params.id);
     const doc = parseDashboard({ ...(await readJson(req)), id: existing.id });
+    assertCustomCode(user, doc, allElements(existing.doc));
     await snapshotVersion(existing, "");
     const [row] = await db
       .update(schema.dashboards)
@@ -315,6 +318,7 @@ dashboardsRoutes.post(
       .from(schema.dashboardVersions)
       .where(and(eq(schema.dashboardVersions.id, params.versionId), eq(schema.dashboardVersions.dashboardId, row.id)));
     if (!version) throw notFound("Versão", "a");
+    assertCustomCode(user, version.doc, allElements(row.doc));
     // o estado de agora também vira uma versão: restaurar é sempre reversível
     await snapshotVersion(row, "Antes de restaurar");
     const [updated] = await db
@@ -470,7 +474,7 @@ const sharedDashboard = async (token: string) => {
 type BoundProps = { binding?: DataBinding };
 type FilterProps = { binding?: FilterBinding; global?: boolean; mode?: "list" | "range" };
 
-const DATA_ELEMENT_TYPES = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison"]);
+const DATA_ELEMENT_TYPES = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison", "html"]);
 
 const findElement = (elements: DashboardElement[], id: string) => {
   const element = elements.find((entry) => entry.id === id);

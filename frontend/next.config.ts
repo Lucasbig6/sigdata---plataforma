@@ -5,8 +5,13 @@ import type { NextConfig } from "next";
 /** API do SIGDATA (pasta /backend). O navegador só fala com o Next, na mesma origem. */
 const BACKEND_URL = process.env.BACKEND_URL ?? "http://localhost:4000";
 
-/** Cabeçalhos de segurança para todas as páginas (a CSP fica para uma etapa própria: exige nonces no Next). */
+/**
+ * Cabeçalhos de segurança para todas as páginas (a CSP completa fica para uma etapa própria: exige
+ * nonces no Next). `frame-src` já vai agora: o visual HTML personalizado roda num iframe e, sem ele,
+ * o código do autor poderia navegar o próprio iframe para um endereço externo levando os dados na URL.
+ */
 const securityHeaders = [
+  { key: "Content-Security-Policy", value: "frame-src 'self' about: blob:" },
   { key: "X-Content-Type-Options", value: "nosniff" },
   { key: "X-Frame-Options", value: "SAMEORIGIN" },
   { key: "Referrer-Policy", value: "strict-origin-when-cross-origin" },

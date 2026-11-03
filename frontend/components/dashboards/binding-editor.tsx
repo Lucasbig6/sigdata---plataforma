@@ -140,7 +140,7 @@ const BuilderFields = ({
   const columns = table?.columns ?? [];
   const numeric = columns.filter((c) => c.kind === "numero");
   const isKpi = type === "kpi" || type === "percent" || type === "comparison";
-  const isTable = type === "table";
+  const isTable = type === "table" || type === "html";
   const grouped = Boolean(binding.dimension);
   const aggs: Aggregation[] = binding.measure ? ["sum", "avg", "min", "max", "count"] : ["count"];
 
