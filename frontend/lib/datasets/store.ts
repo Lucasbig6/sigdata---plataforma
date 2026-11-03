@@ -43,6 +43,8 @@ type DatasetsStore = {
   /** Com `sourceId` + `sql` (editor SQL) ou `workspace` (preparação de dados em etapas). */
   createDataset: (input: {
     sourceId?: string;
+    /** Editor SQL cruzando fontes: a principal primeiro; o SQL cita `apelido.tabela`. */
+    sourceIds?: string[];
     sql?: string;
     workspace?: Workspace;
     name: string;

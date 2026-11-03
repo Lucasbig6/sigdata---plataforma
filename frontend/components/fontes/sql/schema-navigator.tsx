@@ -22,8 +22,11 @@ export const SchemaNavigator = ({
   source,
   onInsert,
   onPreview,
+  qualifier,
 }: {
   source: DataSource;
+  /** Apelido da fonte ao cruzar fontes: as tabelas são inseridas como `apelido.tabela`. */
+  qualifier?: string;
   onInsert: (text: string) => void;
   /** Abre `SELECT * FROM tabela LIMIT 100` num script novo e executa. */
   onPreview: (table: string) => void;
@@ -86,7 +89,7 @@ export const SchemaNavigator = ({
                 <button
                   type="button"
                   onClick={() => toggle(table.name)}
-                  onDoubleClick={() => onInsert(table.name.split(".").map(ident).join("."))}
+                  onDoubleClick={() => onInsert([...(qualifier ? [qualifier] : []), ...table.name.split(".").map(ident)].join("."))}
                   aria-expanded={expanded}
                   title="Clique para expandir · duplo clique insere o nome"
                   className="flex min-w-0 flex-1 items-center gap-1 rounded-md px-1 py-1 text-start outline-none focus-visible:ring-2 focus-visible:ring-ring/50"

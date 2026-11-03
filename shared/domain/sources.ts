@@ -15,6 +15,8 @@ export type DatasetDefinition = {
   rowCount: number;
   /** Consultas e etapas, quando o dataset foi montado na preparação de dados. */
   workspace?: Workspace;
+  /** Fontes cruzadas no editor SQL (apelido usado no SQL → fonte), quando houve cruzamento. */
+  crossSources?: { alias: string; sourceId: string; sourceName: string }[];
 };
 
 export type SourceStatus = "processando" | "pronta" | "erro";
@@ -122,4 +124,22 @@ export const kindFromDbType = (dbType: string): ColumnKind => {
   if (/DATE|TIME|INTERVAL/.test(t)) return "data";
   if (/CHAR|TEXT|STRING|UUID|ENUM|NAME/.test(t)) return "texto";
   return "outro";
+};
+
+/** Nome seguro (tabela ou apelido de fonte) a partir de um nome de arquivo/aba/fonte. */
+export const toTableName = (raw: string, taken: Set<string>): string => {
+  const base =
+    raw
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 48) || "tabela";
+  let name = /^[0-9]/.test(base) ? `t_${base}` : base;
+  let n = 2;
+  while (taken.has(name)) name = `${base}_${n++}`;
+  taken.add(name);
+  return name;
 };

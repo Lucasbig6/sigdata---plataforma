@@ -27,6 +27,7 @@ import {
   updateSourceMeta,
 } from "../sources/service";
 import { createDatasetFromWorkspace } from "../sources/workspace";
+import { createDatasetFromCross, MAX_CROSS_SOURCES, runCrossQuery } from "../sources/cross";
 
 export const sourcesRoutes = new Hono();
 
@@ -63,12 +64,17 @@ sourcesRoutes.post(
 const datasetSchema = z
   .object({
     sourceId: z.string().min(1).optional(),
+    /** Editor SQL cruzando fontes: o SQL cita as tabelas como `apelido.tabela`. */
+    sourceIds: z.array(z.string().min(1)).min(2).max(MAX_CROSS_SOURCES).optional(),
     sql: z.string().min(1).max(20_000).optional(),
     workspace: workspaceSchema.optional(),
     name: z.string().trim().min(1, "Dê um nome ao dataset.").max(120),
     description: z.string().max(500).default(""),
   })
-  .refine((body) => body.workspace || (body.sourceId && body.sql), "Informe a consulta ou as etapas do dataset.");
+  .refine(
+    (body) => body.workspace || (body.sql && (body.sourceId || body.sourceIds)),
+    "Informe a consulta ou as etapas do dataset.",
+  );
 
 /** Cria um dataset a partir de uma consulta SQL ou de etapas de preparação sobre uma fonte existente. */
 sourcesRoutes.post(
@@ -77,7 +83,9 @@ sourcesRoutes.post(
     const body = await parseBody(req, datasetSchema);
     const created = body.workspace
       ? await createDatasetFromWorkspace(user.id, { workspace: body.workspace, name: body.name, description: body.description })
-      : await createDataset(user.id, { sourceId: body.sourceId!, sql: body.sql!, name: body.name, description: body.description });
+      : body.sourceIds
+        ? await createDatasetFromCross(user.id, { sourceIds: body.sourceIds, sql: body.sql!, name: body.name, description: body.description })
+        : await createDataset(user.id, { sourceId: body.sourceId!, sql: body.sql!, name: body.name, description: body.description });
     await audit(user, "dataset.criado", created.name);
     return created;
   }),
@@ -158,6 +166,28 @@ const querySchema = z.object({
   title: z.string().max(160).default("Consulta manual"),
   projectId: z.string().nullable().optional(),
 });
+
+/** Editor SQL cruzando fontes: prévia de uma consulta sobre cópias em memória das tabelas citadas. */
+sourcesRoutes.post(
+  "/cross/run",
+  analystHandle(async ({ req, user }) => {
+    const body = await parseBody(
+      req,
+      z.object({
+        sourceIds: z.array(z.string().min(1)).min(2).max(MAX_CROSS_SOURCES),
+        sql: z.string().min(1).max(20_000),
+        page: z.number().int().min(1).max(100_000).default(1),
+        pageSize: z
+          .number()
+          .int()
+          .refine((size) => (EDITOR_PAGE_SIZES as readonly number[]).includes(size), "Tamanho de página inválido.")
+          .default(100),
+        count: z.boolean().default(false),
+      }),
+    );
+    return runCrossQuery(user.id, body);
+  }),
+);
 
 /** Editor SQL do analista: prévia da consulta, sem gravar o resultado. */
 sourcesRoutes.post(

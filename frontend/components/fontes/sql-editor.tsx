@@ -23,11 +23,13 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import type { DataSource, ResultColumn } from "@/lib/domain/sources";
+import { toTableName } from "@shared/domain/sources";
 import { useScriptsStore } from "@/lib/sql-editor/scripts";
 import { cn } from "@/lib/utils";
 import { CodeEditor, type EditorHandle } from "./sql/code-editor";
 import { ResultsGrid } from "./sql/results-grid";
 import { SaveDatasetDialog } from "./sql/save-dataset-dialog";
+import { CrossSourcesPicker } from "./sql/cross-sources";
 import { SchemaNavigator } from "./sql/schema-navigator";
 import { ScriptTabs } from "./sql/script-tabs";
 import { ShortcutsDialog } from "./sql/shortcuts-dialog";
@@ -78,9 +80,12 @@ const dialectOf = (source: DataSource | null) => (source?.kind === "postgresql" 
 export const SqlEditor = ({
   initialSourceId,
   initialSql,
+  initialCross = [],
 }: {
   initialSourceId: string | null;
   initialSql: string | null;
+  /** Outras fontes cruzadas, ao reabrir um dataset criado por cruzamento. */
+  initialCross?: string[];
 }) => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const hydrated = useDatasetsStore((state) => state.hydrated);
@@ -92,11 +97,22 @@ export const SqlEditor = ({
   const hydrateScripts = useScriptsStore((state) => state.hydrate);
   const scripts = useScriptsStore((state) => state.scripts);
   const activeId = useScriptsStore((state) => state.activeId);
-  const { open, close, setActive, setSql, setSource, rename } = useScriptsStore.getState();
+  const { open, close, setActive, setSql, setSource, setCross, rename } = useScriptsStore.getState();
 
   const ready = useMemo(() => datasets.filter((dataset) => dataset.status === "pronta"), [datasets]);
   const script = scripts.find((entry) => entry.id === activeId) ?? null;
   const source = ready.find((dataset) => dataset.id === script?.sourceId) ?? null;
+  // fontes cruzadas com a principal, na ordem escolhida (o apelido de cada uma é o que o SQL cita)
+  const crossSources = useMemo(
+    () => (script?.crossIds ?? []).flatMap((id) => ready.find((dataset) => dataset.id === id && dataset.id !== source?.id) ?? []),
+    [script?.crossIds, ready, source?.id],
+  );
+  const aliases = useMemo(() => {
+    const taken = new Set<string>();
+    return (source ? [source, ...crossSources] : []).map((entry) => ({ source: entry, alias: toTableName(entry.name, taken) }));
+  }, [source, crossSources]);
+  const [navAlias, setNavAlias] = useState<string | null>(null);
+  const navEntry = aliases.find((entry) => entry.alias === navAlias) ?? aliases[0] ?? null;
 
   const [runs, setRuns] = useState<Record<string, RunState>>({});
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -126,7 +142,8 @@ export const SqlEditor = ({
     const store = useScriptsStore.getState();
     const target = ready.find((dataset) => dataset.id === initialSourceId) ?? null;
     if (initialSql && target) {
-      store.open({ sourceId: target.id, sql: initialSql });
+      const id = store.open({ sourceId: target.id, sql: initialSql });
+      if (initialCross.length > 0) store.setCross(id, initialCross);
     } else if (target) {
       const existing = store.scripts.find((entry) => entry.sourceId === target.id);
       if (existing) store.setActive(existing.id);
@@ -174,10 +191,12 @@ export const SqlEditor = ({
       // mesma consulta (virar a página, mudar o tamanho): o total já é conhecido, não conta de novo
       const keepTotal = opts.keepTotal ?? false;
       try {
-        const output = await api<RunOutput>(`/api/sources/${targetSource.id}/run`, {
-          method: "POST",
-          json: { sql: statement, page, pageSize: opts.pageSize ?? pageSize, count: !keepTotal },
-        });
+        const crossIds = (target.crossIds ?? []).filter((id) => id !== targetSource.id && ready.some((entry) => entry.id === id));
+        const body = { sql: statement, page, pageSize: opts.pageSize ?? pageSize, count: !keepTotal };
+        const output =
+          crossIds.length > 0
+            ? await api<RunOutput>("/api/sources/cross/run", { method: "POST", json: { ...body, sourceIds: [targetSource.id, ...crossIds] } })
+            : await api<RunOutput>(`/api/sources/${targetSource.id}/run`, { method: "POST", json: body });
         setRuns((current) => {
           const previous = current[target.id]?.output;
           const total = keepTotal ? (previous?.total ?? null) : output.total;
@@ -198,7 +217,7 @@ export const SqlEditor = ({
         pushHistory({ script: target.name, sourceName: targetSource.name, sql: statement, ok: false, detail: message });
       }
     },
-    [script, source, setRun, pageSize],
+    [script, source, ready, setRun, pageSize],
   );
 
   // o editor chama sempre a versão mais recente, sem ser recriado
@@ -246,11 +265,12 @@ export const SqlEditor = ({
   };
 
   const previewTable = (table: string) => {
-    if (!source) return;
+    const target = navEntry?.source ?? source;
+    if (!target) return;
     const sql = `SELECT *\nFROM ${table}\nLIMIT 100;`;
-    const id = open({ sourceId: source.id, sql, name: table.split(".").pop() });
+    const id = open({ sourceId: target.id, sql, name: table.split(".").pop() });
     const created = useScriptsStore.getState().scripts.find((entry) => entry.id === id);
-    if (created) void executeRef.current(sql, created, source);
+    if (created) void executeRef.current(sql, created, target);
   };
 
   const changeSource = (id: string) => {
@@ -263,7 +283,11 @@ export const SqlEditor = ({
 
   const saveDataset = async (input: { name: string; description: string }) => {
     if (!source || !run.sql) return;
-    const dataset = await createDataset({ sourceId: source.id, sql: run.sql, ...input });
+    const dataset = await createDataset(
+      crossSources.length > 0
+        ? { sourceIds: [source.id, ...crossSources.map((entry) => entry.id)], sql: run.sql, ...input }
+        : { sourceId: source.id, sql: run.sql, ...input },
+    );
     setNotice({
       ok: true,
       text: `Dataset "${dataset.name}" criado com ${(dataset.definition?.rowCount ?? 0).toLocaleString("pt-BR")} linhas. Escolha-o na barra lateral de um projeto para analisar.`,
@@ -399,6 +423,13 @@ export const SqlEditor = ({
           </select>
         </label>
 
+        <CrossSourcesPicker
+          sources={ready}
+          primaryId={source?.id ?? null}
+          selected={crossSources.map((entry) => entry.id)}
+          onChange={(ids) => script && setCross(script.id, ids)}
+        />
+
         <Button
           size="sm"
           disabled={!canRun}
@@ -424,6 +455,26 @@ export const SqlEditor = ({
         </Button>
       </div>
 
+      {crossSources.length > 0 ? (
+        <div className="flex shrink-0 flex-wrap items-center gap-1.5 border-b border-border bg-primary/5 px-3 py-1.5 text-xs">
+          <span className="text-muted-foreground">Cite as tabelas como apelido.tabela:</span>
+          {aliases.map(({ source: entry, alias }) => (
+            <button
+              key={entry.id}
+              type="button"
+              onClick={() => handle.current?.insert(`${alias}.`)}
+              title={`Inserir "${alias}." — ${entry.name}`}
+              className="rounded-full border border-border bg-background px-2 py-0.5 font-mono text-[11px] text-foreground outline-none hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring/50"
+            >
+              {alias}
+            </button>
+          ))}
+          <span className="ml-auto text-[11px] text-muted-foreground">
+            Cada tabela citada é copiada em memória (até 50 mil linhas); as fontes originais não são alteradas.
+          </span>
+        </div>
+      ) : null}
+
       {notice ? (
         <div
           role="status"
@@ -448,12 +499,34 @@ export const SqlEditor = ({
       <div className="flex min-h-0 flex-1">
         {navOpen && source ? (
           <aside className="hidden w-64 shrink-0 border-r border-border bg-card md:block" aria-label="Navegador de tabelas">
-            <SchemaNavigator
-              key={source.id}
-              source={source}
-              onInsert={(text) => handle.current?.insert(text)}
-              onPreview={previewTable}
-            />
+            {aliases.length > 1 ? (
+              <div className="flex flex-wrap gap-1 border-b border-border p-2" role="tablist" aria-label="Fonte do navegador">
+                {aliases.map(({ source: entry, alias }) => (
+                  <button
+                    key={entry.id}
+                    type="button"
+                    role="tab"
+                    aria-selected={navEntry?.source.id === entry.id}
+                    onClick={() => setNavAlias(alias)}
+                    className={cn(
+                      "rounded-md px-2 py-0.5 font-mono text-[11px] outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
+                      navEntry?.source.id === entry.id ? "bg-primary/15 text-primary" : "text-muted-foreground hover:bg-muted",
+                    )}
+                  >
+                    {alias}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+            {navEntry ? (
+              <SchemaNavigator
+                key={navEntry.source.id}
+                source={navEntry.source}
+                qualifier={aliases.length > 1 ? navEntry.alias : undefined}
+                onInsert={(text) => handle.current?.insert(text)}
+                onPreview={previewTable}
+              />
+            ) : null}
           </aside>
         ) : null}
 

@@ -8,7 +8,11 @@ import { SqlEditor } from "@/components/fontes/sql-editor";
 
 const EditorContent = () => {
   const params = useSearchParams();
-  return <SqlEditor initialSourceId={params.get("source")} initialSql={params.get("sql")} />;
+  return <SqlEditor
+      initialSourceId={params.get("source")}
+      initialSql={params.get("sql")}
+      initialCross={params.get("cross")?.split(",").filter(Boolean) ?? []}
+    />;
 };
 
 /** Editor SQL em tela cheia: abre ao escolher uma fonte em Fontes de dados. */

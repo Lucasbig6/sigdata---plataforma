@@ -4,7 +4,14 @@
  */
 import { create } from "zustand";
 
-export type Script = { id: string; name: string; sql: string; sourceId: string | null };
+export type Script = {
+  id: string;
+  name: string;
+  sql: string;
+  sourceId: string | null;
+  /** Outras fontes cruzadas na mesma consulta (o SQL cita `apelido.tabela`). */
+  crossIds?: string[];
+};
 
 const KEY = "sigdata:sql-scripts:v1";
 const MAX_SCRIPTS = 20;
@@ -21,6 +28,7 @@ type ScriptsStore = {
   setActive: (id: string) => void;
   setSql: (id: string, sql: string) => void;
   setSource: (id: string, sourceId: string | null) => void;
+  setCross: (id: string, crossIds: string[]) => void;
   rename: (id: string, name: string) => void;
 };
 
@@ -99,7 +107,9 @@ export const useScriptsStore = create<ScriptsStore>((set, get) => {
     setActive: (id) => commit({ activeId: id }),
     setSql: (id, sql) => commit({ scripts: get().scripts.map((s) => (s.id === id ? { ...s, sql } : s)) }),
     setSource: (id, sourceId) =>
-      commit({ scripts: get().scripts.map((s) => (s.id === id ? { ...s, sourceId } : s)) }),
+      commit({ scripts: get().scripts.map((s) => (s.id === id ? { ...s, sourceId, crossIds: [] } : s)) }),
+    setCross: (id, crossIds) =>
+      commit({ scripts: get().scripts.map((s) => (s.id === id ? { ...s, crossIds } : s)) }),
     rename: (id, name) =>
       commit({ scripts: get().scripts.map((s) => (s.id === id ? { ...s, name: name.trim() || s.name } : s)) }),
   };

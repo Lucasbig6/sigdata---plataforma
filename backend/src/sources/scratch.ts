@@ -9,8 +9,11 @@ import { quoteIdent, type QueryOutput } from "./sql";
  * a junção aqui: nada é gravado nas fontes originais e nada é gravado em disco.
  */
 export type Scratch = {
-  /** Cria uma tabela com as linhas e devolve o esquema para o compilador. */
-  load: (name: string, columns: ResultColumn[], rows: Record<string, unknown>[]) => Promise<SourceTable>;
+  /**
+   * Cria uma tabela com as linhas e devolve o esquema para o compilador.
+   * Com `schema`, a tabela vai para esse esquema (`schema.tabela` no SQL).
+   */
+  load: (name: string, columns: ResultColumn[], rows: Record<string, unknown>[], schema?: string) => Promise<SourceTable>;
   execute: (sql: string, limit?: number, offset?: number) => Promise<QueryOutput>;
   close: () => void;
 };
@@ -45,15 +48,17 @@ export const openScratch = async (): Promise<Scratch> => {
   const conn: DuckDBConnection = await instance.connect();
 
   return {
-    load: async (name, columns, rows) => {
+    load: async (name, columns, rows, schema) => {
+      if (schema) await conn.run(`CREATE SCHEMA IF NOT EXISTS ${quoteIdent(schema)}`);
+      const target = schema ? `${quoteIdent(schema)}.${quoteIdent(name)}` : quoteIdent(name);
       const defs = columns.map((column) => `${quoteIdent(column.name)} ${DUCK_TYPES[column.kind]}`).join(", ");
-      await conn.run(`CREATE TABLE ${quoteIdent(name)} (${defs})`);
+      await conn.run(`CREATE TABLE ${target} (${defs})`);
       for (let start = 0; start < rows.length; start += BATCH) {
         const values = rows
           .slice(start, start + BATCH)
           .map((row) => `(${columns.map((column) => literal(row[column.name])).join(", ")})`)
           .join(", ");
-        await conn.run(`INSERT INTO ${quoteIdent(name)} VALUES ${values}`);
+        await conn.run(`INSERT INTO ${target} VALUES ${values}`);
       }
       const loaded: SourceTable["columns"] = [];
       for (const column of columns) {
@@ -61,7 +66,7 @@ export const openScratch = async (): Promise<Scratch> => {
         if (column.kind === "data") {
           dbType = /timestamp|datetime/i.test(column.dbType) ? "TIMESTAMP" : "DATE";
           const ref = quoteIdent(column.name);
-          await conn.run(`ALTER TABLE ${quoteIdent(name)} ALTER ${ref} TYPE ${dbType} USING TRY_CAST(${ref} AS ${dbType})`);
+          await conn.run(`ALTER TABLE ${target} ALTER ${ref} TYPE ${dbType} USING TRY_CAST(${ref} AS ${dbType})`);
         }
         loaded.push({ name: column.name, dbType, kind: column.kind });
       }

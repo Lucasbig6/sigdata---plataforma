@@ -13,8 +13,10 @@ const pill = "w-fit rounded-full border border-border bg-muted/40 px-1.5 py-0.5 
 const editorHref = (dataset: Dataset) => {
   const params = new URLSearchParams();
   if (dataset.definition) {
-    params.set("source", dataset.definition.sourceId);
+    const cross = dataset.definition.crossSources;
+    params.set("source", cross?.[0]?.sourceId ?? dataset.definition.sourceId);
     params.set("sql", dataset.definition.sql);
+    if (cross && cross.length > 1) params.set("cross", cross.slice(1).map((entry) => entry.sourceId).join(","));
   } else {
     params.set("source", dataset.id);
   }

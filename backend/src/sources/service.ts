@@ -6,6 +6,7 @@ import { and, desc, eq, or, sql } from "drizzle-orm";
 import type {
   AnalyticResult,
   DataSource,
+  DatasetDefinition,
   PostgresConnectionInput,
   SourceTable,
   TablePreview,
@@ -370,6 +371,7 @@ export const persistDataset = async (
     sql: string;
     out: QueryOutput;
     workspace?: Workspace | undefined;
+    crossSources?: DatasetDefinition["crossSources"] | undefined;
     name: string;
     description: string;
   },
@@ -397,6 +399,7 @@ export const persistDataset = async (
       sql: input.sql,
       rowCount: out.rows.length,
       ...(input.workspace ? { workspace: input.workspace } : {}),
+      ...(input.crossSources ? { crossSources: input.crossSources } : {}),
     },
   });
   try {
@@ -428,7 +431,15 @@ export const createDataset = async (
 /** Salva o resultado de uma execução já preparada (preparação de dados) como dataset. */
 export const createDatasetFromPlan = async (
   userId: string,
-  input: { workspace: Workspace; name: string; description: string; sql: string; origin: SourceRow; exec: Executor },
+  input: {
+    workspace: Workspace | undefined;
+    crossSources?: DatasetDefinition["crossSources"] | undefined;
+    name: string;
+    description: string;
+    sql: string;
+    origin: SourceRow;
+    exec: Executor;
+  },
 ) => {
   const out = await input.exec(input.sql, DATASET_ROW_LIMIT);
   return persistDataset(userId, {
@@ -436,6 +447,7 @@ export const createDatasetFromPlan = async (
     sql: input.sql,
     out,
     workspace: input.workspace,
+    crossSources: input.crossSources,
     name: input.name,
     description: input.description,
   });
