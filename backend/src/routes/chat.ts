@@ -14,6 +14,7 @@ import { Hono } from "hono";
 import { z } from "zod";
 import { userLimiter } from "../rate-limit";
 import { buildSystemPrompt, loadActiveSource, persistConversation, serverTools } from "../chat";
+import { withUserContext } from "../chat-context";
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, parseBody, requireUser } from "../http";
 import { getProject } from "../projects";
@@ -96,7 +97,7 @@ chatRoutes.post("/", async (c) => {
       ...frontendTools(tools ?? {}),
       ...serverTools({ userId: user.id, projectId: project.id, source }),
     };
-    const safeMessages = await sanitizeMessages(messages);
+    const safeMessages = withUserContext(await sanitizeMessages(messages));
 
     const result = streamText({
       abortSignal: req.signal,

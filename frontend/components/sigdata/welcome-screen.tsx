@@ -10,6 +10,7 @@ import { canManageData } from "@shared/roles";
 import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
+import { useActiveSource } from "@/lib/workspace/use-active-source";
 import { cn } from "@/lib/utils";
 
 const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
@@ -93,16 +94,7 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
 
 export const WelcomeScreen = () => {
   const notebookId = useSearchParams().get("notebook");
-  const sourceId = useNotebooksStore(
-    (state) => state.notebooks.find((notebook) => notebook.id === notebookId)?.sourceId ?? null,
-  );
-  const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
-  const datasets = useDatasetsStore((state) => state.datasets);
-  const source = datasets.find((dataset) => dataset.id === sourceId && dataset.status === "pronta") ?? null;
-
-  useEffect(() => {
-    hydrateDatasets();
-  }, [hydrateDatasets]);
+  const source = useActiveSource();
 
   const prompts = useMemo(() => (source ? suggestQuestions(source.tables) : []), [source]);
 
