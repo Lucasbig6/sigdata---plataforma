@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Undo2, Zap } from "lucide-react";
+import { ArrowLeft, Eye, EyeOff, Loader2, Redo2, RotateCcw, Save, Sparkles, Undo2, Zap } from "lucide-react";
 import Link from "next/link";
 import { LogoMark } from "@/components/sigdata/logo";
 import { ThemeToggle } from "@/components/sigdata/theme-toggle";
@@ -27,6 +27,9 @@ type Props = {
   onSave: () => void;
   onDiscard: () => void;
   onTogglePreview: () => void;
+  /** Abre/fecha o assistente que monta o painel (omitido = sem o botão). */
+  assistantOpen?: boolean;
+  onToggleAssistant?: () => void;
 };
 
 const iconBtn =
@@ -107,6 +110,8 @@ export const TopBar = ({
   onSave,
   onDiscard,
   onTogglePreview,
+  assistantOpen = false,
+  onToggleAssistant,
 }: Props) => (
   <header className="flex h-16 shrink-0 items-center gap-3 border-b border-border/60 bg-card/70 px-4 backdrop-blur sm:gap-4 sm:px-6">
     <Link
@@ -176,6 +181,24 @@ export const TopBar = ({
           </button>
           <span className="mx-1.5 h-5 w-px bg-border/70" />
         </div>
+      ) : null}
+
+      {onToggleAssistant ? (
+        <button
+          type="button"
+          onClick={onToggleAssistant}
+          aria-pressed={assistantOpen}
+          aria-label="Assistente de dashboards"
+          title="Peça ao assistente para montar ou ajustar o painel"
+          className={`flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm transition-colors ${
+            assistantOpen
+              ? "border-primary/50 bg-primary/10 text-primary"
+              : "border-border/70 bg-background text-foreground hover:bg-muted/60"
+          }`}
+        >
+          <Sparkles className="size-4" aria-hidden />
+          <span className="hidden sm:inline">Assistente</span>
+        </button>
       ) : null}
 
       <button

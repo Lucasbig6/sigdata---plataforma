@@ -141,6 +141,11 @@ type SigdataDashboardsStore = {
 
   beginTransaction: (key: string) => void;
   endTransaction: () => void;
+  /**
+   * Agrupa várias alterações num único passo de "desfazer". Chamadas seguintes com a mesma `key`
+   * (sem edição do usuário no meio) entram no mesmo passo, mesmo passado o intervalo normal.
+   */
+  runAsOneStep: <T>(key: string, change: () => T) => T;
   undo: () => void;
   redo: () => void;
   save: () => Promise<void>;
@@ -276,7 +281,11 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     });
   };
 
+  /** Dentro de `runAsOneStep`: as alterações não abrem passos de "desfazer" próprios. */
+  let grouping = false;
+
   const pushSnapshot = (key: string) => {
+    if (grouping) return;
     const { past, historyKey, historyAt } = get();
     const doc = get().current();
     if (!doc) return;
@@ -456,6 +465,22 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     rename: (name) => {
       pushSnapshot("rename");
       mutateCurrent((doc) => ({ ...doc, name, updatedAt: Date.now() }));
+    },
+
+    runAsOneStep: (key, change) => {
+      // mesmo pedido do assistente e nenhuma edição do usuário desde então: continua o passo anterior
+      if (get().historyKey !== key) {
+        pushSnapshot(key);
+        set({ historyKey: key });
+      }
+      grouping = true;
+      try {
+        return change();
+      } finally {
+        grouping = false;
+        // addElement e outros zeram a chave; mantê-la liga o próximo trecho do mesmo pedido a este passo
+        set({ historyKey: key, historyAt: Date.now() });
+      }
     },
 
     beginTransaction: (key) => pushSnapshot(key),

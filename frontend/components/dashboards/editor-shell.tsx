@@ -21,6 +21,7 @@ import { PageSettings } from "./page-settings";
 import { PageTabs } from "./page-tabs";
 import { PropertiesPanel } from "./properties-panel";
 import { TopBar } from "./top-bar";
+import { AgentPanel } from "./agent/agent-panel";
 import { ViewControls } from "./view-controls";
 import { confirmAction, toast } from "@/lib/feedback";
 
@@ -120,6 +121,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   const saving = useDashboardsStore((state) => state.saving);
   const saveError = useDashboardsStore((state) => state.saveError);
   const loadError = useDashboardsStore((state) => state.loadError);
+  const [assistantOpen, setAssistantOpen] = useState(false);
   const projectId = useDashboardsStore((state) => state.projectIds[dashboardId] ?? null);
   const projectTitle = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === projectId)?.title);
   const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
@@ -220,6 +222,8 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
+      // dentro do chat do assistente os atalhos são do campo de texto (Ctrl+Z desfaz a digitação)
+      if (target?.closest?.('[aria-label="Assistente de dashboards"]')) return;
       const typing =
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -337,6 +341,8 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
           }).then((ok) => ok && discardChanges());
         }}
         onTogglePreview={togglePreview}
+        assistantOpen={assistantOpen}
+        onToggleAssistant={() => setAssistantOpen((open) => !open)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -395,7 +401,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
           ) : null}
         </div>
 
-        {!preview ? <PropertiesPanel /> : null}
+        {assistantOpen ? <AgentPanel onClose={() => setAssistantOpen(false)} /> : !preview ? <PropertiesPanel /> : null}
       </div>
     </div>
     </DashboardDataProvider>

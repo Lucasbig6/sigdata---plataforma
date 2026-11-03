@@ -18,6 +18,7 @@ import { withUserContext } from "../chat-context";
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, parseBody, requireUser } from "../http";
 import { getProject } from "../projects";
+import { buildDashboardPrompt, dashboardServerTools, dashboardSources } from "../dashboard-chat";
 
 // consulta → (correção) → visualização/edição → resposta
 const MAX_STEPS = 8;
@@ -68,7 +69,65 @@ const publicChatError = (error: unknown) => {
   return "Não foi possível gerar a resposta. Tente novamente.";
 };
 
+/** Montar um dashboard pede mais passos (um por elemento) do que uma pergunta de análise. */
+const DASHBOARD_MAX_STEPS = 16;
+
+/** Corpo do chat do editor de dashboards: o estado do painel fica no navegador (ferramentas ler_dashboard etc.). */
+const dashboardChatSchema = z.object({
+  messages: z.array(z.custom<UIMessage>((value) => typeof value === "object" && value !== null)).min(1).max(60),
+  system: z.string().max(4000).optional(),
+  tools: chatBodySchema.shape.tools,
+});
+
 export const chatRoutes = new Hono();
+
+/** Assistente que monta o dashboard aberto: mesmas regras de acesso às fontes do editor; nada é gravado aqui. */
+chatRoutes.post("/dashboard", async (c) => {
+  try {
+    const req = c.req.raw;
+    const user = await requireUser(req.headers);
+    const chatModel = resolveChatModel();
+
+    const retryAfter = chatLimit(user.id);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      throw new HttpError(429, `Muitas mensagens em pouco tempo. Aguarde ${retryAfter}s.`);
+    }
+
+    const { messages, tools } = (await parseBody(req, dashboardChatSchema)) as {
+      messages: UIMessage[];
+      tools?: FrontendToolDefs;
+    };
+
+    const actor = { id: user.id, role: user.role };
+    const sources = await dashboardSources(actor);
+    const aiTools = {
+      ...frontendTools(tools ?? {}),
+      ...dashboardServerTools({ actor, allowed: new Set(sources.map((source) => source.id)) }),
+    };
+    const safeMessages = withUserContext(await sanitizeMessages(messages));
+
+    const result = streamText({
+      abortSignal: req.signal,
+      model: chatModel.model,
+      messages: await convertToModelMessages(safeMessages, { tools: aiTools }),
+      system: buildDashboardPrompt(sources),
+      tools: aiTools,
+      stopWhen: isStepCount(DASHBOARD_MAX_STEPS),
+      maxOutputTokens: chatModel.maxOutputTokens,
+      maxRetries: 1,
+    });
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      generateMessageId: generateId,
+      sendReasoning: false,
+      onError: publicChatError,
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+});
 
 chatRoutes.post("/", async (c) => {
   try {
