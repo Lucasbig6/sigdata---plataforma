@@ -49,7 +49,14 @@ export type HtmlPayload = {
   columns: string[];
   rows: Record<string, unknown>[];
   theme: HtmlTheme;
+  /** Escolha atual deste visual (feita por `sigdata.select`), para destacá-la no desenho. */
+  selection: { column: string; value: string } | null;
+  /** Há filtros de outros elementos aplicados aos dados recebidos. */
+  filtered?: boolean;
 };
+
+/** Mensagem do iframe pedindo para filtrar (`value` nulo = limpar). */
+export type HtmlSelectMessage = { column: string; value: string | null };
 
 /** Marca das mensagens trocadas com o iframe. */
 export const HTML_MESSAGE_TAG = "sigdata";
@@ -61,10 +68,18 @@ const escapeForTag = (code: string, tag: "style" | "script") =>
 const BRIDGE = `
 (function () {
   var listeners = [];
-  var api = { status: "loading", error: null, rows: [], columns: [], theme: {} };
+  var api = { status: "loading", error: null, rows: [], columns: [], theme: {}, selection: null, filtered: false };
   api.onData = function (fn) {
     listeners.push(fn);
     if (api.status !== "loading") fn(api);
+  };
+  // filtra os outros elementos do painel; repetir a mesma escolha remove o filtro
+  api.select = function (column, value) {
+    if (typeof column !== "string") return;
+    window.parent.postMessage({ ${HTML_MESSAGE_TAG}: 1, type: "select", column: column, value: value === null || value === undefined ? null : String(value) }, "*");
+  };
+  api.clear = function () {
+    window.parent.postMessage({ ${HTML_MESSAGE_TAG}: 1, type: "select", column: "", value: null }, "*");
   };
   window.sigdata = api;
   window.addEventListener("message", function (event) {
@@ -75,14 +90,24 @@ const BRIDGE = `
     api.rows = data.rows || [];
     api.columns = data.columns || [];
     api.theme = data.theme || {};
+    api.selection = data.selection || null;
+    api.filtered = !!data.filtered;
     var root = document.documentElement;
     Object.keys(api.theme).forEach(function (key) {
       if (key !== "dark") root.style.setProperty("--sd-" + key, api.theme[key]);
     });
     root.style.colorScheme = api.theme.dark ? "dark" : "light";
     listeners.slice().forEach(function (fn) {
-      try { fn(api); } catch (error) { console.error(error); }
+      try { fn(api); } catch (error) { console.error(error); reportError(error && error.message || error); }
     });
+  });
+  // erros do código do autor vão para a janela de código (e para o assistente, que se corrige)
+  function reportError(message) {
+    window.parent.postMessage({ ${HTML_MESSAGE_TAG}: 1, type: "error", message: String(message).slice(0, 300) }, "*");
+  }
+  window.addEventListener("error", function (event) { reportError(event.message); });
+  window.addEventListener("unhandledrejection", function (event) {
+    reportError(event.reason && event.reason.message || event.reason);
   });
   window.parent.postMessage({ ${HTML_MESSAGE_TAG}: 1, type: "ready" }, "*");
 })();

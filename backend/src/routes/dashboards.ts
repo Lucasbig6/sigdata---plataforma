@@ -485,7 +485,13 @@ const findElement = (elements: DashboardElement[], id: string) => {
 const publicDataSchema = z.object({
   elementId: z.string().min(1).max(64),
   filters: z
-    .array(z.object({ elementId: z.string().min(1).max(64), value: z.string().max(FILTER_VALUE_MAX) }))
+    .array(
+      z.object({
+        elementId: z.string().min(1).max(64),
+        value: z.string().max(FILTER_VALUE_MAX),
+        column: z.string().min(1).max(256).optional(),
+      }),
+    )
     .max(20)
     .optional(),
 });
@@ -533,6 +539,14 @@ const mountViewer = (
           const cb = (source.props as BoundProps).binding;
           return cb?.mode === "builder" && cb.table && cb.dimension
             ? [{ sourceId: cb.sourceId, table: cb.table, column: cb.dimension, value: filter.value }]
+            : [];
+        }
+        if (source.type === "html") {
+          // o código do visual escolhe a coluna, mas só entre as que o próprio visual recebe
+          const sb = (source.props as BoundProps).binding;
+          const allowed = (sb?.columns ?? []).filter(Boolean);
+          return sb?.mode === "builder" && sb.table && filter.column && (allowed.length === 0 || allowed.includes(filter.column))
+            ? [{ sourceId: sb.sourceId, table: sb.table, column: filter.column, value: filter.value }]
             : [];
         }
         return [];

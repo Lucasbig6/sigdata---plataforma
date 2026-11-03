@@ -19,7 +19,12 @@ export const parseRange = (value: string): { from: string; to: string } | null =
 };
 
 /** Filtro ativo na página pública: referencia o elemento de filtro salvo. */
-export type PublicFilter = { elementId: string; value: string };
+export type PublicFilter = {
+  elementId: string;
+  value: string;
+  /** Só em visual personalizado (HTML): coluna escolhida pelo código; o servidor confere contra o que foi salvo. */
+  column?: string;
+};
 
 /** `fresh` ignora o cache do servidor (botão "Atualizar" do dono do painel). */
 export type BindingDataRequest = { binding: DataBinding; filters?: ActiveFilter[]; fresh?: boolean };

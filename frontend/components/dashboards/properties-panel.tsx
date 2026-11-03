@@ -94,7 +94,7 @@ const GeometryFields = ({
 };
 
 /** Visual personalizado: título e o editor de código (só analistas e administradores mexem no código). */
-const HtmlFields = ({ props, set }: { props: HtmlProps; set: (patch: Record<string, unknown>, field: string) => void }) => {
+const HtmlFields = ({ elementId, props, set }: { elementId: string; props: HtmlProps; set: (patch: Record<string, unknown>, field: string) => void }) => {
   const role = useRole();
   const allowed = role !== null && canManageData(role);
   const [open, setOpen] = useState(false);
@@ -120,6 +120,7 @@ const HtmlFields = ({ props, set }: { props: HtmlProps; set: (patch: Record<stri
       <HtmlCodeDialog
         open={open}
         onOpenChange={setOpen}
+        elementId={elementId}
         code={{ html: props.html, css: props.css, js: props.js }}
         onChange={(lang, value) => set({ [lang]: value }, `code:${lang}`)}
       />
@@ -146,7 +147,7 @@ const TypeFieldsBody = ({
       return <ChartFields props={element.props as ChartProps} set={set} />;
 
     case "html":
-      return <HtmlFields props={element.props as HtmlProps} set={set} />;
+      return <HtmlFields elementId={element.id} props={element.props as HtmlProps} set={set} />;
 
     case "table":
       return (

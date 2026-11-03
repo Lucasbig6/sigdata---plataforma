@@ -18,6 +18,8 @@ import { withUserContext } from "../chat-context";
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, parseBody, requireUser } from "../http";
 import { getProject } from "../projects";
+import { canManageData } from "@shared/roles";
+import { HTML_AGENT_PROMPT } from "../html-agent";
 import { buildDashboardPrompt, dashboardServerTools, dashboardSources } from "../dashboard-chat";
 
 // consulta → (correção) → visualização/edição → resposta
@@ -79,7 +81,64 @@ const dashboardChatSchema = z.object({
   tools: chatBodySchema.shape.tools,
 });
 
+/** O código de um visual é uma resposta longa de uma vez: precisa de mais saída que o chat de análise. */
+const htmlOutputTokens = (base: number) => Math.max(base, Number(process.env.HTML_AGENT_MAX_OUTPUT_TOKENS) || 3500);
+
+/** Contexto do visual (código atual elidido, colunas, amostra): vem do navegador como `system`. */
+const HTML_CONTEXT_MAX = 14_000;
+
+const htmlChatSchema = z.object({
+  messages: dashboardChatSchema.shape.messages,
+  system: z.string().max(HTML_CONTEXT_MAX).optional(),
+  tools: chatBodySchema.shape.tools,
+});
+
 export const chatRoutes = new Hono();
+
+/** Agente que escreve o código do visual HTML personalizado (só analistas e admins: são eles que editam o código). */
+chatRoutes.post("/html", async (c) => {
+  try {
+    const req = c.req.raw;
+    const user = await requireUser(req.headers);
+    if (!canManageData(user.role)) throw new HttpError(403, "Só analistas e administradores editam o código do visual.");
+    const chatModel = resolveChatModel();
+
+    const retryAfter = chatLimit(user.id);
+    if (retryAfter !== null) {
+      c.header("Retry-After", String(retryAfter));
+      throw new HttpError(429, `Muitas mensagens em pouco tempo. Aguarde ${retryAfter}s.`);
+    }
+
+    const { messages, system, tools } = (await parseBody(req, htmlChatSchema)) as {
+      messages: UIMessage[];
+      system?: string;
+      tools?: FrontendToolDefs;
+    };
+    // só a ferramenta que aplica o código: o agente não ganha outro poder sobre o painel
+    const allowed = Object.fromEntries(Object.entries(tools ?? {}).filter(([name]) => name === "aplicar_codigo"));
+    const aiTools = frontendTools(allowed);
+
+    const result = streamText({
+      abortSignal: req.signal,
+      model: chatModel.model,
+      messages: await convertToModelMessages(await sanitizeMessages(messages), { tools: aiTools }),
+      system: [HTML_AGENT_PROMPT, system].filter(Boolean).join("\n\n"),
+      tools: aiTools,
+      stopWhen: isStepCount(4),
+      maxOutputTokens: htmlOutputTokens(chatModel.maxOutputTokens),
+      maxRetries: 1,
+    });
+
+    return result.toUIMessageStreamResponse({
+      originalMessages: messages,
+      generateMessageId: generateId,
+      sendReasoning: false,
+      onError: publicChatError,
+    });
+  } catch (error) {
+    return errorResponse(error);
+  }
+});
 
 /** Assistente que monta o dashboard aberto: mesmas regras de acesso às fontes do editor; nada é gravado aqui. */
 chatRoutes.post("/dashboard", async (c) => {

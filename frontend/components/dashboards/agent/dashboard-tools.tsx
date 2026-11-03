@@ -1,7 +1,6 @@
 "use client";
 
 import { Check, Eye, LayoutGrid, Loader2, Pencil, Plus, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
-import type { JSONSchema7 } from "ai";
 import { useAssistantTool, type AssistantToolProps, type ToolCallMessagePartProps } from "@assistant-ui/react";
 import { arrangeElements } from "@/lib/dashboards/auto-layout";
 import { findLibraryItem } from "@/lib/dashboards/presets";
@@ -17,6 +16,7 @@ import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import type { DataSource } from "@/lib/domain/sources";
 import type { ChartType } from "@shared/charts/types";
 import { cn } from "@/lib/utils";
+import { CHART_TYPES, SCHEMAS } from "./tool-schemas";
 
 /**
  * Ferramentas do assistente de dashboards: as mesmas ações do editor (adicionar, editar, mover,
@@ -33,10 +33,6 @@ export const setAgentTurn = (userMessages: number) => {
 
 const MAX_ELEMENTS_PER_PAGE = 40;
 
-const AGGS: Aggregation[] = ["sum", "avg", "count", "min", "max"];
-const SORTS: BindingSort[] = ["valor_desc", "valor_asc", "label_asc", "label_desc"];
-const CHART_TYPES: ChartType[] = ["bar", "line", "pie", "area", "hbar", "combo", "donut", "scatter", "radar", "funnel", "gauge", "treemap", "heatmap"];
-
 type Failure = { ok: false; error: string };
 
 const store = () => useDashboardsStore.getState();
@@ -49,6 +45,14 @@ const editable = (): Failure | null => {
 };
 
 const sources = (): DataSource[] => useDatasetsStore.getState().datasets.filter(isAnalysisDataset);
+
+/** O modelo costuma omitir fonte e tabela quando só existe uma: assume em vez de gastar um passo com erro. */
+const pickSource = (id: string | undefined): DataSource | undefined => {
+  const all = sources();
+  return all.find((entry) => entry.id === id) ?? (id === undefined || id === "" ? (all.length === 1 ? all[0] : undefined) : undefined);
+};
+const pickTable = (source: DataSource, name: string | undefined): string | undefined =>
+  source.tables.some((entry) => entry.name === name) ? name : !name && source.tables.length === 1 ? source.tables[0]!.name : name;
 
 /* ------------------------------------------------------------------ ligação */
 
@@ -68,22 +72,6 @@ type BindingArgs = {
   ys?: string[];
 };
 
-const BINDING_PROPERTIES = {
-  fonteId: { type: "string", description: "Id da fonte (lista no contexto do sistema)." },
-  tabela: { type: "string", description: "Tabela da fonte (modo construtor)." },
-  dimensao: { type: "string", description: "Coluna de categoria/agrupamento (eixo X do gráfico)." },
-  medida: { type: "string", description: "Coluna numérica agregada. Omita para contar linhas." },
-  agregacao: { type: "string", enum: AGGS, description: "sum, avg, count, min ou max (padrão sum; count se não houver medida)." },
-  ordenacao: { type: "string", enum: SORTS, description: "valor_desc, valor_asc, label_asc ou label_desc." },
-  limite: { type: "number", description: `Máximo de categorias/linhas (até ${BINDING_LIMIT_MAX}).` },
-  colunas: { type: "array", items: { type: "string" }, description: "Tabela sem agrupamento: colunas exibidas (vazio = todas)." },
-  dividirPor: { type: "string", description: "Coluna que vira uma série por valor (gráficos de várias séries)." },
-  sql: { type: "string", description: "Modo SQL (consulta SELECT na fonte) quando o construtor não basta. Use com x e y." },
-  x: { type: "string", description: "Modo SQL: coluna de categoria do resultado." },
-  y: { type: "string", description: "Modo SQL: coluna numérica do resultado." },
-  ys: { type: "array", items: { type: "string" }, description: "Modo SQL: colunas numéricas extras." },
-} satisfies Record<string, JSONSchema7>;
-
 const columnsOf = (source: DataSource, table: string) => source.tables.find((entry) => entry.name === table)?.columns ?? [];
 
 const listColumns = (source: DataSource, table: string) =>
@@ -99,7 +87,7 @@ const buildBinding = (
 ): { binding: DataBinding } | Failure => {
   const all = sources();
   const sourceId = args.fonteId ?? previous?.sourceId;
-  const source = all.find((entry) => entry.id === sourceId);
+  const source = pickSource(sourceId);
   if (!source) {
     return { ok: false, error: `Fonte "${sourceId ?? ""}" não existe. Fontes: ${all.map((entry) => `${entry.id} (${entry.name})`).join("; ") || "nenhuma"}.` };
   }
@@ -120,7 +108,7 @@ const buildBinding = (
     };
   }
 
-  const table = args.tabela ?? previous?.table;
+  const table = pickTable(source, args.tabela ?? previous?.table);
   if (!table || !source.tables.some((entry) => entry.name === table)) {
     return { ok: false, error: `Tabela "${table ?? ""}" não existe em "${source.name}". Tabelas: ${source.tables.map((entry) => entry.name).join(", ")}.` };
   }
@@ -237,10 +225,8 @@ const renderer =
 const readTool = {
   toolName: "ler_dashboard",
   type: "frontend",
-  description:
-    "Mostra o dashboard aberto: páginas, tamanho da tela e cada elemento (id, tipo, título, posição, tamanho, ligação de dados). " +
-    "Chame antes de editar, mover ou remover, e para não repetir o que já existe.",
-  parameters: { type: "object", properties: {} } satisfies JSONSchema7,
+  description: SCHEMAS.ler_dashboard.description,
+  parameters: SCHEMAS.ler_dashboard.parameters,
   execute: async (): Promise<Result> => {
     const state = store();
     const doc = state.current();
@@ -262,44 +248,16 @@ type AddArgs = BindingArgs & {
   tipo: "grafico" | "tabela" | "kpi" | "filtro" | "texto" | "titulo";
   titulo?: string;
   tipoGrafico?: ChartType;
-  unidade?: string;
   coluna?: string;
   filtroDePeriodo?: boolean;
-  global?: boolean;
   texto?: string;
-  posX?: number;
-  posY?: number;
-  largura?: number;
-  altura?: number;
 };
 
 const addTool = {
   toolName: "adicionar_elemento",
   type: "frontend",
-  description:
-    "Adiciona um elemento ao dashboard aberto (gráfico, tabela, indicador, filtro, texto ou título). " +
-    "Omita posX/posY e tamanho: o sistema posiciona; no fim chame organizar_layout. " +
-    "Gráfico: tipoGrafico + dimensao (+ medida/agregacao). Indicador (kpi): medida/agregacao, sem dimensao. " +
-    "Filtro: coluna (e filtroDePeriodo=true para coluna de data). Prefira o modo construtor; use sql só se for preciso.",
-  parameters: {
-    type: "object",
-    properties: {
-      tipo: { type: "string", enum: ["grafico", "tabela", "kpi", "filtro", "texto", "titulo"] },
-      titulo: { type: "string", description: "Título do elemento (rótulo do filtro; texto do título/texto)." },
-      tipoGrafico: { type: "string", enum: CHART_TYPES, description: "Só para gráficos. bar=barras, hbar=ranking, line=evolução, pie/donut=composição." },
-      unidade: { type: "string", description: "Indicador: unidade exibida (ex.: R$, %)." },
-      coluna: { type: "string", description: "Filtro: coluna que ele controla." },
-      filtroDePeriodo: { type: "boolean", description: "Filtro de intervalo de datas (a coluna deve ser de data)." },
-      global: { type: "boolean", description: "Filtro: vale para todas as páginas e tabelas com coluna de mesmo nome." },
-      texto: { type: "string", description: "Conteúdo de texto/título." },
-      ...BINDING_PROPERTIES,
-      posX: { type: "number" },
-      posY: { type: "number" },
-      largura: { type: "number" },
-      altura: { type: "number" },
-    },
-    required: ["tipo"],
-  } satisfies JSONSchema7,
+  description: SCHEMAS.adicionar_elemento.description,
+  parameters: SCHEMAS.adicionar_elemento.parameters,
   execute: async (args): Promise<Result> => {
     const blocked = editable();
     if (blocked) return blocked;
@@ -318,14 +276,15 @@ const addTool = {
       itemKey = args.tipo === "texto" ? "text" : "title";
       props = { content: content.slice(0, 2000) };
     } else if (args.tipo === "filtro") {
-      const source = sources().find((entry) => entry.id === args.fonteId);
+      const source = pickSource(args.fonteId);
       if (!source) return { ok: false, error: `Fonte "${args.fonteId ?? ""}" não existe. Fontes: ${sources().map((entry) => `${entry.id} (${entry.name})`).join("; ") || "nenhuma"}.` };
-      const table = args.tabela;
+      const table = pickTable(source, args.tabela);
       if (!table || !source.tables.some((entry) => entry.name === table)) {
         return { ok: false, error: `Informe a tabela. Tabelas de "${source.name}": ${source.tables.map((entry) => entry.name).join(", ")}.` };
       }
-      const column = columnsOf(source, table).find((entry) => entry.name === args.coluna);
-      if (!column) return { ok: false, error: `Coluna "${args.coluna ?? ""}" não existe em ${table}. Colunas: ${listColumns(source, table)}.` };
+      const wanted = args.coluna ?? args.dimensao;
+      const column = columnsOf(source, table).find((entry) => entry.name === wanted);
+      if (!column) return { ok: false, error: `Coluna "${wanted ?? ""}" não existe em ${table}. Colunas: ${listColumns(source, table)}.` };
       const range = args.filtroDePeriodo === true;
       if (range && column.kind !== "data") return { ok: false, error: `"${column.name}" não é uma coluna de data; não dá para fazer filtro de período.` };
       itemKey = range ? "filter-periodo" : "filter-categoria";
@@ -334,13 +293,12 @@ const addTool = {
         binding: { sourceId: source.id, table, column: column.name },
         options: [],
         value: "",
-        ...(args.global ? { global: true } : {}),
       };
     } else {
       const kind = args.tipo;
       const built = buildBinding(args, kind);
       if ("ok" in built) return built;
-      const source = sources().find((entry) => entry.id === built.binding.sourceId)!;
+      const source = pickSource(built.binding.sourceId)!;
       const title = args.titulo ?? (kind === "kpi" ? (built.binding.measure ?? "Registros") : (built.binding.dimension ?? source.name));
       if (kind === "grafico") {
         itemKey = args.tipoGrafico ?? "bar";
@@ -358,7 +316,7 @@ const addTool = {
         props = { title, binding: built.binding };
       } else {
         itemKey = "kpi";
-        props = { title, description: source.name, binding: built.binding, ...(args.unidade ? { unit: args.unidade } : {}) };
+        props = { title, description: source.name, binding: built.binding, };
       }
     }
 
@@ -366,16 +324,8 @@ const addTool = {
     if (!item) return { ok: false, error: `Tipo "${itemKey}" indisponível.` };
 
     return state.runAsOneStep(turnKey, () => {
-      const placement =
-        args.posX !== undefined && args.posY !== undefined ? { x: Math.round(args.posX), y: Math.round(args.posY) } : undefined;
-      const id = state.addElement(item, placement, props);
+      const id = state.addElement(item, undefined, props);
       if (!id) return { ok: false, error: "Não foi possível adicionar o elemento." } as Failure;
-      if (args.largura || args.altura) {
-        const added = store().current()?.elements.find((entry) => entry.id === id);
-        if (added) {
-          store().patchElement(id, { w: Math.round(args.largura ?? added.w), h: Math.round(args.altura ?? added.h) });
-        }
-      }
       const title = (props.title as string | undefined) ?? (props.label as string | undefined) ?? (props.content as string | undefined) ?? "";
       return { ok: true, id, resumo: `Adicionado: ${args.tipo === "grafico" ? "gráfico" : args.tipo} ${title}`.trim() };
     });
@@ -397,24 +347,8 @@ type EditArgs = BindingArgs & {
 const editTool = {
   toolName: "editar_elemento",
   type: "frontend",
-  description:
-    "Edita um elemento do dashboard: título, tipo de gráfico, dados (informe só o que muda; o resto é mantido), posição e tamanho. " +
-    "Use o id de ler_dashboard.",
-  parameters: {
-    type: "object",
-    properties: {
-      id: { type: "string" },
-      titulo: { type: "string" },
-      tipoGrafico: { type: "string", enum: CHART_TYPES },
-      texto: { type: "string", description: "Novo conteúdo (texto/título)." },
-      ...BINDING_PROPERTIES,
-      posX: { type: "number" },
-      posY: { type: "number" },
-      largura: { type: "number" },
-      altura: { type: "number" },
-    },
-    required: ["id"],
-  } satisfies JSONSchema7,
+  description: SCHEMAS.editar_elemento.description,
+  parameters: SCHEMAS.editar_elemento.parameters,
   execute: async (args): Promise<Result> => {
     const blocked = editable();
     if (blocked) return blocked;
@@ -467,8 +401,8 @@ type RemoveArgs = { id: string };
 const removeTool = {
   toolName: "remover_elemento",
   type: "frontend",
-  description: "Remove um elemento do dashboard. Só use se o usuário pediu para tirar/excluir.",
-  parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } satisfies JSONSchema7,
+  description: SCHEMAS.remover_elemento.description,
+  parameters: SCHEMAS.remover_elemento.parameters,
   execute: async (args): Promise<Result> => {
     const blocked = editable();
     if (blocked) return blocked;
@@ -486,10 +420,8 @@ const removeTool = {
 const arrangeTool = {
   toolName: "organizar_layout",
   type: "frontend",
-  description:
-    "Arruma a página ativa automaticamente: títulos no topo, filtros numa linha, indicadores lado a lado e gráficos/tabelas " +
-    "numa grade de duas colunas. Chame uma vez no fim, depois de adicionar os elementos.",
-  parameters: { type: "object", properties: {} } satisfies JSONSchema7,
+  description: SCHEMAS.organizar_layout.description,
+  parameters: SCHEMAS.organizar_layout.parameters,
   execute: async (): Promise<Result> => {
     const blocked = editable();
     if (blocked) return blocked;
@@ -511,10 +443,8 @@ type PageArgs = { nome?: string };
 const pageTool = {
   toolName: "adicionar_pagina",
   type: "frontend",
-  description:
-    "Cria uma página nova no dashboard e a deixa ativa; os próximos elementos entram nela. " +
-    "Atenção: criar página limpa o histórico de desfazer.",
-  parameters: { type: "object", properties: { nome: { type: "string", description: "Nome da página." } } } satisfies JSONSchema7,
+  description: SCHEMAS.adicionar_pagina.description,
+  parameters: SCHEMAS.adicionar_pagina.parameters,
   execute: async (args): Promise<Result> => {
     const blocked = editable();
     if (blocked) return blocked;
@@ -532,8 +462,8 @@ type SwitchArgs = { id: string };
 const switchTool = {
   toolName: "trocar_pagina",
   type: "frontend",
-  description: "Muda a página ativa (os elementos novos entram nela). Use o id de ler_dashboard.",
-  parameters: { type: "object", properties: { id: { type: "string" } }, required: ["id"] } satisfies JSONSchema7,
+  description: SCHEMAS.trocar_pagina.description,
+  parameters: SCHEMAS.trocar_pagina.parameters,
   execute: async (args): Promise<Result> => {
     const doc = store().current();
     if (!doc) return { ok: false, error: "Nenhum dashboard aberto." };

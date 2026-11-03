@@ -48,6 +48,10 @@ type FilterElement = DashboardElement & { type: "filter" };
 /** Gráfico que filtra os demais ao clicar numa categoria (filtro cruzado, como no Power BI). */
 type Selector = { id: string; binding: FilterBinding };
 
+/** Visual personalizado (HTML) que filtra os demais: o código escolhe coluna e valor. */
+type HtmlSelector = { id: string; sourceId: string; table: string; columns: string[] };
+type HtmlPick = { column: string; value: string };
+
 type Ctx = {
   mode: Mode;
   /** Valor escolhido em cada elemento de filtro ("" = todos). */
@@ -59,6 +63,11 @@ type Ctx = {
   selectors: Selector[];
   /** Clicar de novo na mesma categoria remove o filtro. */
   toggleSelection: (elementId: string, value: string) => void;
+  /** Seleções feitas por visuais personalizados (um por elemento). */
+  picks: Record<string, HtmlPick>;
+  htmlSelectors: HtmlSelector[];
+  /** Escolhe coluna e valor num visual personalizado; `null` limpa. Repetir a mesma escolha remove. */
+  pick: (elementId: string, column: string, value: string | null) => void;
   hasActiveFilters: boolean;
   clearAll: () => void;
   /** Incrementa para forçar nova busca de todos os elementos. */
@@ -98,6 +107,39 @@ export const DashboardDataProvider = ({
     [elements],
   );
 
+  const htmlSelectors = useMemo<HtmlSelector[]>(
+    () =>
+      elements.flatMap((el) => {
+        if (el.type !== "html" || el.hidden) return [];
+        const binding = el.props.binding;
+        if (binding?.mode !== "builder" || !binding.table) return [];
+        return [{ id: el.id, sourceId: binding.sourceId, table: binding.table, columns: (binding.columns ?? []).filter(Boolean) }];
+      }),
+    [elements],
+  );
+  const [picks, setPicks] = useState<Record<string, HtmlPick>>({});
+
+  const pick = useCallback(
+    (elementId: string, column: string, value: string | null) =>
+      setPicks((current) => {
+        const selector = htmlSelectors.find((entry) => entry.id === elementId);
+        if (!selector || value === null || value === "") {
+          if (!(elementId in current)) return current;
+          const { [elementId]: _removed, ...rest } = current;
+          return rest;
+        }
+        // só colunas que o próprio visual recebe (ligação com colunas escolhidas = só elas)
+        if (selector.columns.length > 0 && !selector.columns.includes(column)) return current;
+        const same = current[elementId]?.column === column && current[elementId]?.value === value;
+        if (same) {
+          const { [elementId]: _removed, ...rest } = current;
+          return rest;
+        }
+        return { ...current, [elementId]: { column, value } };
+      }),
+    [htmlSelectors],
+  );
+
   const toggleSelection = useCallback(
     (elementId: string, value: string) =>
       setValues((current) => ({ ...current, [elementId]: current[elementId] === value ? "" : value })),
@@ -107,6 +149,7 @@ export const DashboardDataProvider = ({
   // ao sair da pré-visualização as seleções de gráficos deixam de valer
   useEffect(() => {
     if (interactive) return;
+    setPicks((current) => (Object.keys(current).length === 0 ? current : {}));
     setValues((current) => {
       const ids = new Set(selectors.map((selector) => selector.id));
       const kept = Object.fromEntries(Object.entries(current).filter(([id]) => !ids.has(id)));
@@ -116,12 +159,12 @@ export const DashboardDataProvider = ({
 
   const hasActiveFilters =
     filterElements.some((el) => (values[el.id] ?? el.props.value ?? "") !== "") ||
-    (interactive && selectors.some((selector) => Boolean(values[selector.id])));
+    (interactive && (selectors.some((selector) => Boolean(values[selector.id])) || Object.keys(picks).length > 0));
 
-  const clearAll = useCallback(
-    () => setValues(Object.fromEntries(filterElements.map((el) => [el.id, ""]))),
-    [filterElements],
-  );
+  const clearAll = useCallback(() => {
+    setValues(Object.fromEntries(filterElements.map((el) => [el.id, ""])));
+    setPicks({});
+  }, [filterElements]);
 
   const setValue = useCallback(
     (elementId: string, value: string) => setValues((current) => ({ ...current, [elementId]: value })),
@@ -142,12 +185,15 @@ export const DashboardDataProvider = ({
       interactive,
       selectors,
       toggleSelection,
+      picks,
+      htmlSelectors,
+      pick,
       hasActiveFilters,
       clearAll,
       refreshKey,
       refresh,
     }),
-    [mode, values, setValue, filterElements, interactive, selectors, toggleSelection, hasActiveFilters, clearAll, refreshKey, refresh],
+    [mode, values, setValue, filterElements, interactive, selectors, toggleSelection, picks, htmlSelectors, pick, hasActiveFilters, clearAll, refreshKey, refresh],
   );
 
   return <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>;
@@ -253,7 +299,16 @@ export const useBindingData = (
             : [],
         )
       : [];
-    return [...fromFilters, ...fromCharts].filter((entry) => entry.value !== "");
+    // visuais personalizados que filtram (o próprio visual enxerga todos os dados e só destaca a escolha)
+    const fromHtml = ctx.interactive
+      ? ctx.htmlSelectors.flatMap((selector) => {
+          const chosen = ctx.picks[selector.id];
+          return chosen && selector.id !== elementId && selector.sourceId === binding.sourceId && selector.table === binding.table
+            ? [{ id: selector.id, binding: { sourceId: selector.sourceId, table: selector.table, column: chosen.column }, value: chosen.value, byName: false, range: false, column: chosen.column }]
+            : [];
+        })
+      : [];
+    return [...fromFilters, ...fromCharts, ...fromHtml].filter((entry) => entry.value !== "");
   }, [ctx, binding, ready, elementId, options.ignoreFilters]);
 
   let key: string | null = null;
@@ -263,7 +318,11 @@ export const useBindingData = (
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
       const base = viewerBase(ctx.mode);
-      const publicFilters: PublicFilter[] = filters.map((entry) => ({ elementId: entry.id, value: entry.value }));
+      const publicFilters: PublicFilter[] = filters.map((entry) => ({
+        elementId: entry.id,
+        value: entry.value,
+        ...("column" in entry && typeof entry.column === "string" && { column: entry.column }),
+      }));
       key = JSON.stringify(["pub", token, elementId, publicFilters, ctx.refreshKey]);
       load = () =>
         api<BindingData>(`${base}/data`, {

@@ -222,8 +222,8 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
-      // dentro do chat do assistente os atalhos são do campo de texto (Ctrl+Z desfaz a digitação)
-      if (target?.closest?.('[aria-label="Assistente de dashboards"]')) return;
+      // dentro do chat do assistente e de janelas (editor de código) os atalhos são do campo de texto (Ctrl+Z desfaz a digitação)
+      if (target?.closest?.('[aria-label="Assistente de dashboards"], [role="dialog"]')) return;
       const typing =
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||

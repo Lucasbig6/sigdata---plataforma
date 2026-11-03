@@ -77,7 +77,7 @@ test("o contexto do assistente lista ids, tabelas e colunas das fontes e as regr
   assert.match(prompt, /Fonte id=src-1 — "Vendas"/);
   assert.match(prompt, /tabela_0 — 10 linhas: regiao \(texto\), valor \(numero\)/);
   assert.match(prompt, /organizar_layout/);
-  assert.match(prompt, /Nunca invente fonte, tabela ou coluna/);
+  assert.match(prompt, /Use só fontes, tabelas e colunas listadas/);
 });
 
 test("sem fontes, o assistente é orientado a pedir um dataset", () => {
@@ -89,4 +89,24 @@ test("o contexto limita fontes e tabelas para não estourar o prompt", () => {
   const prompt = buildDashboardPrompt(many);
   assert.ok(!prompt.includes("Fonte id=s12"), "só as 12 primeiras fontes");
   assert.match(prompt, /e mais 15 tabelas/);
+});
+
+test("o que se reenvia a cada passo é enxuto (o plano gratuito do Groq aceita 7.000 tokens de entrada por minuto)", async () => {
+  const { SCHEMAS } = await import("../../frontend/components/dashboards/agent/tool-schemas");
+  const prompt = buildDashboardPrompt([source("src-1", "Vendas", 3)]);
+  const schemaChars = JSON.stringify(SCHEMAS).length;
+  // ~4 caracteres por token. Antes do enxugamento eram 6.100 caracteres de esquemas (~2.700 tokens por passo no total)
+  assert.ok(schemaChars < 4400, `esquemas com ${schemaChars} caracteres`);
+  assert.ok(prompt.length < 2600, `instruções com ${prompt.length} caracteres`);
+});
+
+test("cada ferramenta do assistente tem descrição e parâmetros do tipo objeto", async () => {
+  const { SCHEMAS } = await import("../../frontend/components/dashboards/agent/tool-schemas");
+  assert.deepEqual(Object.keys(SCHEMAS).sort(), [
+    "adicionar_elemento", "adicionar_pagina", "editar_elemento", "ler_dashboard", "organizar_layout", "remover_elemento", "trocar_pagina",
+  ]);
+  for (const [name, def] of Object.entries(SCHEMAS)) {
+    assert.ok(def.description.length > 10, name);
+    assert.equal(def.parameters.type, "object", name);
+  }
 });
