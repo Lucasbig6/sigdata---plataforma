@@ -24,7 +24,7 @@ Pré-requisitos: Node 24+ e Docker Desktop aberto.
 
 ```bash
 npm run setup                          # instala raiz, backend e frontend
-cp backend/.env.example backend/.env   # preencha os segredos e a ANTHROPIC_API_KEY (Claude) ou a GROQ_API_KEY
+cp backend/.env.example backend/.env   # preencha os segredos e a chave do provedor de IA (ANTHROPIC_API_KEY, GROQ_API_KEY ou OPENROUTER_API_KEY; veja AI_PROVIDER no .env.example)
 cp frontend/.env.example frontend/.env.local
 npm run db:up                          # Postgres 17 (projeto compose "sigdata-dev")
 npm run db:migrate                     # cria as tabelas

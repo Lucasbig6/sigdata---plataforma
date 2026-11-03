@@ -3,7 +3,20 @@ import assert from "node:assert/strict";
 import { afterEach, test } from "node:test";
 import { chatProvider, resolveChatModel } from "../src/ai-model";
 
-const KEYS = ["AI_PROVIDER", "ANTHROPIC_API_KEY", "ANTHROPIC_MODEL", "GROQ_API_KEY", "CHAT_MAX_OUTPUT_TOKENS"] as const;
+const KEYS = [
+  "AI_PROVIDER",
+  "ANTHROPIC_API_KEY",
+  "ANTHROPIC_MODEL",
+  "GROQ_API_KEY",
+  "CHAT_MAX_OUTPUT_TOKENS",
+  "OPENROUTER_API_KEY",
+  "OPENROUTER_MODEL",
+  "OPENROUTER_BASE_URL",
+  "AI_BASE_URL",
+  "AI_API_KEY",
+  "AI_MODEL",
+  "AI_MAX_OUTPUT_TOKENS",
+] as const;
 const saved = Object.fromEntries(KEYS.map((key) => [key, process.env[key]]));
 
 afterEach(() => {
@@ -43,4 +56,30 @@ test("Groq mantém o limite de saída curto do plano", () => {
   assert.throws(() => resolveChatModel(), /GROQ_API_KEY/);
   process.env.GROQ_API_KEY = "gsk-teste";
   assert.equal(resolveChatModel().maxOutputTokens, 900);
+});
+
+test("OpenRouter: exige chave e modelo, e limita a saída de forma folgada", () => {
+  clear();
+  process.env.AI_PROVIDER = "openrouter";
+  assert.equal(chatProvider(), "openrouter");
+  assert.throws(() => resolveChatModel(), /OPENROUTER_API_KEY/);
+  process.env.OPENROUTER_API_KEY = "sk-or-teste";
+  assert.throws(() => resolveChatModel(), /OPENROUTER_MODEL/);
+  process.env.OPENROUTER_MODEL = "provedor/modelo:free";
+  const chat = resolveChatModel();
+  assert.equal(chat.provider, "openrouter");
+  assert.equal(chat.maxOutputTokens, 4096);
+  process.env.AI_MAX_OUTPUT_TOKENS = "2000";
+  assert.equal(resolveChatModel().maxOutputTokens, 2000);
+});
+
+test("compatível com OpenAI: exige endereço e modelo; a chave é opcional (Ollama local)", () => {
+  clear();
+  process.env.AI_PROVIDER = "openai-compatible";
+  assert.throws(() => resolveChatModel(), /AI_BASE_URL/);
+  process.env.AI_BASE_URL = "http://localhost:11434/v1";
+  assert.throws(() => resolveChatModel(), /AI_MODEL/);
+  process.env.AI_MODEL = "qwen2.5:14b";
+  const chat = resolveChatModel();
+  assert.equal(chat.provider, "openai-compatible");
 });

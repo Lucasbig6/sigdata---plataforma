@@ -18,6 +18,7 @@
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.94",
     "@ai-sdk/groq": "^4.0.70",
+    "@ai-sdk/openai-compatible": "^3.0.84",
     "@duckdb/node-api": "1.5.6-r.2",
     "@hono/node-server": "^2.1.5",
     "ai": "^7.0.153",
