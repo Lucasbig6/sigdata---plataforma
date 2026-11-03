@@ -3,7 +3,7 @@
  * Compartilhados entre cliente e servidor (sem dependências de React ou Node).
  */
 
-import type { Pipeline } from "./transform";
+import type { Workspace } from "./transform";
 
 export type SourceKind = "demo" | "csv" | "xlsx" | "postgresql" | "dataset";
 
@@ -13,8 +13,8 @@ export type DatasetDefinition = {
   sourceName: string;
   sql: string;
   rowCount: number;
-  /** Tabela e etapas, quando o dataset foi montado na preparação de dados. */
-  pipeline?: Pipeline;
+  /** Consultas e etapas, quando o dataset foi montado na preparação de dados. */
+  workspace?: Workspace;
 };
 
 export type SourceStatus = "processando" | "pronta" | "erro";

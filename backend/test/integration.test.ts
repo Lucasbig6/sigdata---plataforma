@@ -212,7 +212,7 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
       assert.equal((await request(comum, "GET", `/api/sources/${dataset.id}`)).status, 404);
     });
 
-    test("preparação em etapas: prévia, perfil, erro por etapa e dataset com as etapas guardadas", async () => {
+    test("preparação em etapas: prévia, perfil, erro por etapa, combinar fontes e dataset com as etapas guardadas", async () => {
       const analista = await signUp("preparo@teste.dev");
       await setRole("preparo@teste.dev", "analista");
       const comum = await signUp("preparo-comum@teste.dev");
@@ -225,50 +225,86 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
         { id: "b", type: "renomear", from: "municipio", to: "município" },
         { id: "c", type: "ordenar", column: "receita_mi", dir: "desc" },
       ];
-      const body = { table: "municipios", steps, page: 1, pageSize: 25, count: true };
+      const workspace = { queries: [{ id: "q1", name: "Municípios", sourceId: demo.id, table: "municipios", steps }], target: "q1" };
+      const body = { workspace, page: 1, pageSize: 25, count: true };
 
-      assert.equal((await request(comum, "POST", `/api/sources/${demo.id}/pipeline/run`, body)).status, 403);
+      assert.equal((await request(comum, "POST", "/api/prep/run", body)).status, 403);
 
-      const run = await request(analista, "POST", `/api/sources/${demo.id}/pipeline/run`, body);
+      const run = await request(analista, "POST", "/api/prep/run", body);
       assert.equal(run.status, 200, await run.clone().text());
-      const page = (await run.json()) as { columns: { name: string }[]; rows: Record<string, unknown>[]; total: number; sql: string };
+      const page = (await run.json()) as { columns: { name: string }[]; rows: Record<string, unknown>[]; total: number; sql: string; stepSql: string[] };
       assert.ok(page.columns.some((column) => column.name === "município"));
       assert.ok(page.total > 0 && page.rows.length === page.total);
       assert.ok(page.rows.every((row) => Number(row.variacao_pct) > 0));
       assert.match(page.sql, /^WITH e0 AS/);
+      assert.equal(page.stepSql.length, 3);
 
-      const upTo = (await (await request(analista, "POST", `/api/sources/${demo.id}/pipeline/run`, { ...body, upTo: 0 })).json()) as {
-        columns: { name: string }[];
-      };
+      const upTo = (await (await request(analista, "POST", "/api/prep/run", { ...body, upTo: 0 })).json()) as { columns: { name: string }[] };
       assert.ok(upTo.columns.some((column) => column.name === "municipio"), "upTo=0 mostra a tabela original");
 
-      const profile = await request(analista, "POST", `/api/sources/${demo.id}/pipeline/profile`, { table: "municipios", steps });
+      const profile = await request(analista, "POST", "/api/prep/profile", { workspace });
       assert.equal(profile.status, 200, await profile.clone().text());
       const profiled = (await profile.json()) as { rowCount: number; columns: { name: string; profile?: { nulos: number } }[] };
       assert.equal(profiled.rowCount, page.total);
       assert.equal(profiled.columns.find((column) => column.name === "município")?.profile?.nulos, 0);
 
-      const broken = await request(analista, "POST", `/api/sources/${demo.id}/pipeline/run`, {
-        table: "municipios",
-        steps: [{ id: "x", type: "remover", columns: ["receita_mi"] }, { id: "y", type: "ordenar", column: "receita_mi", dir: "asc" }],
+      const values = (await (await request(analista, "POST", "/api/prep/values", { workspace, column: "município" })).json()) as { values: string[] };
+      assert.equal(values.values.length, page.total);
+
+      const broken = await request(analista, "POST", "/api/prep/run", {
+        workspace: { ...workspace, queries: [{ ...workspace.queries[0], steps: [{ id: "x", type: "remover", columns: ["receita_mi"] }, { id: "y", type: "ordenar", column: "receita_mi", dir: "asc" }] }] },
       });
       assert.equal(broken.status, 422);
       assert.match(((await broken.json()) as { error: string }).error, /Etapa 2 \(Ordenar\)/);
 
-      const created = await request(analista, "POST", "/api/sources/dataset", {
-        sourceId: demo.id,
-        pipeline: { table: "municipios", steps },
-        name: "Municípios em alta",
+      // combinar com uma consulta de OUTRA fonte (um dataset): a junção roda em memória, sem tocar nas origens
+      const other = (await (
+        await request(analista, "POST", "/api/sources/dataset", {
+          sourceId: demo.id,
+          sql: "SELECT municipio, indice AS nota FROM municipios",
+          name: "Notas",
+        })
+      ).json()) as { id: string; tables: { name: string }[] };
+      const combined = {
+        queries: [
+          { id: "q1", name: "Municípios", sourceId: demo.id, table: "municipios", steps: [] as unknown[] },
+          { id: "q2", name: "Notas", sourceId: other.id, table: other.tables[0]!.name, steps: [] },
+        ],
+        target: "q1",
+      };
+      combined.queries[0]!.steps = [
+        { id: "m", type: "mesclar", table: "", query: "q2", kind: "interna", on: [{ left: "municipio", right: "municipio" }], columns: ["nota"] },
+        { id: "o", type: "ordenar", column: "nota", dir: "desc" },
+      ];
+      const merged = await request(analista, "POST", "/api/prep/run", { workspace: combined, page: 1, pageSize: 25, count: true });
+      assert.equal(merged.status, 200, await merged.clone().text());
+      const mergedPage = (await merged.json()) as { columns: { name: string }[]; rows: Record<string, unknown>[]; total: number };
+      assert.ok(mergedPage.columns.some((column) => column.name === "nota"));
+      assert.equal(mergedPage.total, 6);
+      assert.ok(Number(mergedPage.rows[0]!.nota) >= Number(mergedPage.rows[5]!.nota), "ordenado pela nota");
+
+      const cycle = await request(analista, "POST", "/api/prep/run", {
+        workspace: {
+          queries: [
+            { id: "q1", name: "A", sourceId: demo.id, table: "municipios", steps: [{ id: "m", type: "acrescentar", query: "q2" }] },
+            { id: "q2", name: "B", sourceId: demo.id, table: "municipios", steps: [{ id: "n", type: "acrescentar", query: "q1" }] },
+          ],
+          target: "q1",
+        },
       });
+      assert.equal(cycle.status, 422);
+      assert.match(((await cycle.json()) as { error: string }).error, /ciclo/);
+
+      const created = await request(analista, "POST", "/api/sources/dataset", { workspace, name: "Municípios em alta" });
       assert.equal(created.status, 200, await created.clone().text());
       const dataset = (await created.json()) as {
-        definition: { sql: string; rowCount: number; pipeline?: { table: string; steps: unknown[] } };
+        definition: { sql: string; rowCount: number; workspace?: { target: string; queries: { steps: unknown[] }[] } };
       };
       assert.equal(dataset.definition.rowCount, page.total);
-      assert.equal(dataset.definition.pipeline?.steps.length, 3);
+      assert.equal(dataset.definition.workspace?.queries[0]?.steps.length, 3);
       assert.match(dataset.definition.sql, /^WITH e0 AS/);
 
-      assert.equal((await request(analista, "POST", "/api/sources/dataset", { sourceId: demo.id, name: "Sem nada" })).status, 400);
+      assert.equal((await request(analista, "POST", "/api/sources/dataset", { name: "Sem nada" })).status, 400);
     });
 
     test("admin altera papéis e não pode ficar sem administrador", async () => {

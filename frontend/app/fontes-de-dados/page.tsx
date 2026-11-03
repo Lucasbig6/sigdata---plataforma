@@ -1,6 +1,6 @@
 "use client";
 
-import { Code2, Database, Plus, Table2 } from "lucide-react";
+import { Code2, Database, Plus, Table2, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -167,10 +167,16 @@ function FontesDeDadosContent() {
           title="Fontes de dados"
           description="Arquivos, bancos e datasets que o assistente pode consultar."
           actions={
-            <Button render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
-              <Code2 aria-hidden />
-              Editor SQL
-            </Button>
+            <>
+              <Button render={<Link href="/fontes-de-dados/preparar" />} nativeButton={false}>
+                <Wand2 aria-hidden />
+                Preparar dados
+              </Button>
+              <Button variant="outline" render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
+                <Code2 aria-hidden />
+                Editor SQL
+              </Button>
+            </>
           }
         />
         <TabBar active={tab} counts={{ fontes: sources.length, datasets: saved.length }} onChange={changeTab} />

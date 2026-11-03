@@ -10,7 +10,7 @@ import type {
   SourceTable,
   TablePreview,
 } from "@shared/domain/sources";
-import type { Pipeline, Step } from "@shared/domain/transform";
+import type { Workspace } from "@shared/domain/transform";
 import { MUNICIPIOS, SERIE_TEMPORAL } from "@shared/demo-data";
 import type { Role } from "@shared/roles";
 import { decryptJson, encryptJson } from "../crypto";
@@ -18,10 +18,9 @@ import { db, schema } from "../db";
 import { HttpError, notFound } from "../http";
 import { ingestCsv, ingestRows, ingestXlsx, queryDuck, removeDuckFiles, sourceDir } from "./duck";
 import { introspectPg, profilePgTable, queryPg } from "./pg";
-import { compilePipeline, profileSql, readProfile, type Engine } from "./pipeline";
-import { assertReadOnlySql, quoteQualified, toTableName } from "./sql";
+import { assertReadOnlySql, quoteQualified, toTableName, type QueryOutput } from "./sql";
 
-type SourceRow = typeof schema.dataSources.$inferSelect;
+export type SourceRow = typeof schema.dataSources.$inferSelect;
 
 export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const PREVIEW_ROWS = 50;
@@ -262,7 +261,7 @@ export const deleteSource = async (actor: Actor, id: string, force = false) => {
   if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);
 };
 
-const findTable = (row: SourceRow, table: string) => {
+export const findTable = (row: SourceRow, table: string) => {
   const found = row.tables.find((entry) => entry.name === table);
   if (!found) throw notFound("Tabela", "a");
   return found;
@@ -314,9 +313,12 @@ export const toAnalyticResult = (row: typeof schema.results.$inferSelect): Analy
 export const EDITOR_PAGE_SIZES = [25, 50, 100, 200, 500, 1000] as const;
 
 /** Total de linhas de uma consulta (para "página X de N"); falha de contagem não derruba a página. */
-const countRows = async (row: SourceRow, sql: string): Promise<number | null> => {
+/** Executa uma consulta e devolve até `limit` linhas a partir de `offset`. */
+export type Executor = (sql: string, limit?: number, offset?: number) => Promise<QueryOutput>;
+
+const countRows = async (exec: Executor, sql: string): Promise<number | null> => {
   try {
-    const out = await execute(row, `SELECT COUNT(*) AS total FROM (${sql}\n) AS sigdata_c`, 1);
+    const out = await exec(`SELECT COUNT(*) AS total FROM (${sql}\n) AS sigdata_c`, 1);
     const total = Number(Object.values(out.rows[0] ?? {})[0]);
     return Number.isFinite(total) ? total : null;
   } catch {
@@ -324,14 +326,14 @@ const countRows = async (row: SourceRow, sql: string): Promise<number | null> =>
   }
 };
 
-type PageInput = { page: number; pageSize: number; count: boolean };
+export type PageInput = { page: number; pageSize: number; count: boolean };
 
 /** Uma página do resultado de `sql` (já validado), mais o total se pedido. */
-const runPage = async (row: SourceRow, sql: string, input: PageInput) => {
+export const runPage = async (exec: Executor, sql: string, input: PageInput) => {
   const offset = (input.page - 1) * input.pageSize;
   const [out, total] = await Promise.all([
-    execute(row, sql, input.pageSize, offset),
-    input.count ? countRows(row, sql) : Promise.resolve(null),
+    exec(sql, input.pageSize, offset),
+    input.count ? countRows(exec, sql) : Promise.resolve(null),
   ]);
   return {
     columns: out.columns,
@@ -354,84 +356,25 @@ export const runEditorQuery = async (
 ) => {
   const row = await getSourceRow(userId, input.sourceId);
   assertReady(row);
-  return runPage(row, assertReadOnlySql(input.sql), input);
-};
-
-const engineOf = (row: SourceRow): Engine => (row.kind === "postgresql" ? "postgres" : "duckdb");
-
-/**
- * Compila as `steps` (as primeiras `upTo`, se informado) sobre uma tabela da fonte.
- * O SQL sai do compilador, com identificadores e valores escapados, e não passa por
- * `assertReadOnlySql` (que recusaria `;` dentro de um valor de filtro); a barreira
- * de somente-leitura de cada motor continua valendo.
- */
-const compileForSource = async (
-  userId: string,
-  sourceId: string,
-  input: { table: string; steps: Step[]; upTo?: number | undefined },
-) => {
-  const row = await getSourceRow(userId, sourceId);
-  assertReady(row);
-  const table = findTable(row, input.table);
-  const steps = input.upTo === undefined ? input.steps : input.steps.slice(0, input.upTo);
-  return { row, table, compiled: compilePipeline(table, steps, engineOf(row)) };
-};
-
-/** Prévia paginada do resultado das etapas, sem gravar nada. */
-export const runPipeline = async (
-  userId: string,
-  sourceId: string,
-  input: PageInput & { table: string; steps: Step[]; upTo?: number | undefined },
-) => {
-  const { row, compiled } = await compileForSource(userId, sourceId, input);
-  const page = await runPage(row, compiled.sql, input);
-  return { ...page, sql: compiled.sql };
-};
-
-/** Perfil (nulos, distintos, min/max, média) das colunas do resultado até a etapa `upTo`. */
-export const profilePipeline = async (
-  userId: string,
-  sourceId: string,
-  input: { table: string; steps: Step[]; upTo?: number | undefined },
-) => {
-  const { row, compiled } = await compileForSource(userId, sourceId, input);
-  const out = await execute(row, profileSql(compiled.sql, compiled.columns, engineOf(row)), 1);
-  const { total, profiles } = readProfile(compiled.columns, out.rows[0] ?? {});
-  return { rowCount: total, columns: compiled.columns.map((column) => ({ ...column, profile: profiles[column.name] })) };
+  return runPage((sql, limit, offset) => execute(row, sql, limit, offset), assertReadOnlySql(input.sql), input);
 };
 
 /** Teto de linhas de um dataset (fica inteiro em memória durante a criação). */
 export const DATASET_ROW_LIMIT = 50_000;
 
-/**
- * Cria um dataset: roda a consulta do analista e grava o resultado como uma fonte
- * própria (tabela no DuckDB), que o chat e os dashboards usam como qualquer outra.
- */
-export const createDataset = async (
+/** Grava as linhas de um resultado como dataset da conta (uma cópia: a origem nunca é alterada). */
+export const persistDataset = async (
   userId: string,
   input: {
-    sourceId: string;
-    /** Consulta do editor SQL. Ignorada quando há `pipeline`. */
-    sql?: string | undefined;
-    /** Tabela e etapas da preparação de dados; o servidor gera o SQL. */
-    pipeline?: Pick<Pipeline, "table" | "steps"> | undefined;
+    origin: SourceRow;
+    sql: string;
+    out: QueryOutput;
+    workspace?: Workspace | undefined;
     name: string;
     description: string;
   },
 ) => {
-  const origin = await getSourceRow(userId, input.sourceId);
-  assertReady(origin);
-  let sql: string;
-  let pipeline: Pipeline | undefined;
-  if (input.pipeline) {
-    const { compiled } = await compileForSource(userId, input.sourceId, input.pipeline);
-    sql = compiled.sql;
-    pipeline = { sourceId: origin.id, table: input.pipeline.table, steps: input.pipeline.steps };
-  } else {
-    if (!input.sql) throw new HttpError(400, "Informe a consulta ou as etapas do dataset.");
-    sql = assertReadOnlySql(input.sql);
-  }
-  const out = await execute(origin, sql, DATASET_ROW_LIMIT);
+  const { origin, out } = input;
   if (out.rows.length === 0) throw new HttpError(422, "A consulta não retornou linhas: não há o que salvar.");
   if (out.truncated) {
     throw new HttpError(
@@ -451,9 +394,9 @@ export const createDataset = async (
     definition: {
       sourceId: origin.id,
       sourceName: origin.name,
-      sql,
+      sql: input.sql,
       rowCount: out.rows.length,
-      ...(pipeline ? { pipeline } : {}),
+      ...(input.workspace ? { workspace: input.workspace } : {}),
     },
   });
   try {
@@ -465,6 +408,37 @@ export const createDataset = async (
     await removeDuckFiles(id).catch(() => undefined);
     throw new HttpError(500, "Não foi possível salvar o dataset.");
   }
+};
+
+/**
+ * Cria um dataset a partir de uma consulta do editor SQL: roda a consulta e grava o
+ * resultado como uma fonte própria (tabela no DuckDB), que o chat e os dashboards usam.
+ */
+export const createDataset = async (
+  userId: string,
+  input: { sourceId: string; sql: string; name: string; description: string },
+) => {
+  const origin = await getSourceRow(userId, input.sourceId);
+  assertReady(origin);
+  const sql = assertReadOnlySql(input.sql);
+  const out = await execute(origin, sql, DATASET_ROW_LIMIT);
+  return persistDataset(userId, { origin, sql, out, name: input.name, description: input.description });
+};
+
+/** Salva o resultado de uma execução já preparada (preparação de dados) como dataset. */
+export const createDatasetFromPlan = async (
+  userId: string,
+  input: { workspace: Workspace; name: string; description: string; sql: string; origin: SourceRow; exec: Executor },
+) => {
+  const out = await input.exec(input.sql, DATASET_ROW_LIMIT);
+  return persistDataset(userId, {
+    origin: input.origin,
+    sql: input.sql,
+    out,
+    workspace: input.workspace,
+    name: input.name,
+    description: input.description,
+  });
 };
 
 /** Executa SQL de leitura numa fonte e grava o resultado (é o que a IA usa). */

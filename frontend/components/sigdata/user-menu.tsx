@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Code2, Database, LayoutDashboard, LogOut, Settings, Users } from "lucide-react";
+import { ChevronDown, Code2, Database, LayoutDashboard, LogOut, Settings, Users, Wand2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -33,6 +33,7 @@ export const UserMenu = () => {
     { label: "Configurações", href: "/configuracoes", icon: Settings },
     { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
     { label: "Fontes de dados", href: "/fontes-de-dados", icon: Database, roles: DATA_ROLES },
+    { label: "Preparar dados", href: "/fontes-de-dados/preparar", icon: Wand2, roles: DATA_ROLES },
     { label: "Editor SQL", href: "/fontes-de-dados/editor", icon: Code2, roles: DATA_ROLES },
     { label: "Gerenciar usuários", href: "/admin/usuarios", icon: Users, roles: ["admin"] },
   ] satisfies Link[]).filter((link: Link) => !link.roles || (role !== null && link.roles.includes(role)));

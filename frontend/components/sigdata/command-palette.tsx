@@ -10,6 +10,7 @@ import {
   Search,
   Settings,
   Users,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
@@ -111,6 +112,7 @@ export const CommandPalette = () => {
       ...(canManageData(role ?? "usuario")
         ? [
             { id: "a:fontes", group: "Ações" as const, label: "Fontes de dados", icon: Database, run: go("/fontes-de-dados") },
+            { id: "a:preparar", group: "Ações" as const, label: "Preparar dados", icon: Wand2, run: go("/fontes-de-dados/preparar") },
             { id: "a:editor", group: "Ações" as const, label: "Editor SQL", icon: Code2, run: go("/fontes-de-dados/editor") },
           ]
         : []),

@@ -12,6 +12,7 @@ import {
   type SourceKind,
   type SourceTable,
 } from "@/lib/domain/sources";
+import type { Workspace } from "@/lib/domain/transform";
 
 export type Dataset = DataSource;
 export type DatasetKind = SourceKind;
@@ -39,9 +40,11 @@ type DatasetsStore = {
     description: string;
     connection: PostgresConnectionInput;
   }) => Promise<DataSource>;
+  /** Com `sourceId` + `sql` (editor SQL) ou `workspace` (preparação de dados em etapas). */
   createDataset: (input: {
-    sourceId: string;
-    sql: string;
+    sourceId?: string;
+    sql?: string;
+    workspace?: Workspace;
     name: string;
     description: string;
   }) => Promise<DataSource>;

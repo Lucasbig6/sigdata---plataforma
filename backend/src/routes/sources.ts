@@ -3,7 +3,7 @@ import { z } from "zod";
 import { audit } from "../audit";
 import { handle, HttpError, parseBody } from "../http";
 import { getProject } from "../projects";
-import { createPostgresSchema, pipelineBodySchema, postgresConnectionSchema } from "../sources/schemas";
+import { createPostgresSchema, postgresConnectionSchema, workspaceSchema } from "../sources/schemas";
 import {
   createDataset,
   EDITOR_PAGE_SIZES,
@@ -15,19 +15,18 @@ import {
   getSourceRow,
   listSources,
   previewTable,
-  profilePipeline,
   profileTable,
   refreshSource,
   setPublished,
   sourceUsage,
   getManagedSource,
   runEditorQuery,
-  runPipeline,
   runQuery,
   testPostgres,
   toDataSource,
   updateSourceMeta,
 } from "../sources/service";
+import { createDatasetFromWorkspace } from "../sources/workspace";
 
 export const sourcesRoutes = new Hono();
 
@@ -63,19 +62,22 @@ sourcesRoutes.post(
 
 const datasetSchema = z
   .object({
-    sourceId: z.string().min(1),
+    sourceId: z.string().min(1).optional(),
     sql: z.string().min(1).max(20_000).optional(),
-    pipeline: pipelineBodySchema.pick({ table: true, steps: true }).optional(),
+    workspace: workspaceSchema.optional(),
     name: z.string().trim().min(1, "Dê um nome ao dataset.").max(120),
     description: z.string().max(500).default(""),
   })
-  .refine((body) => body.sql || body.pipeline, "Informe a consulta ou as etapas do dataset.");
+  .refine((body) => body.workspace || (body.sourceId && body.sql), "Informe a consulta ou as etapas do dataset.");
 
 /** Cria um dataset a partir de uma consulta SQL ou de etapas de preparação sobre uma fonte existente. */
 sourcesRoutes.post(
   "/dataset",
   analystHandle(async ({ req, user }) => {
-    const created = await createDataset(user.id, await parseBody(req, datasetSchema));
+    const body = await parseBody(req, datasetSchema);
+    const created = body.workspace
+      ? await createDatasetFromWorkspace(user.id, { workspace: body.workspace, name: body.name, description: body.description })
+      : await createDataset(user.id, { sourceId: body.sourceId!, sql: body.sql!, name: body.name, description: body.description });
     await audit(user, "dataset.criado", created.name);
     return created;
   }),
@@ -176,34 +178,6 @@ sourcesRoutes.post(
     );
     return runEditorQuery(user.id, { sourceId: params.id, ...body });
   }),
-);
-
-/** Preparação de dados: prévia do resultado das etapas, sem gravar nada. */
-sourcesRoutes.post(
-  "/:id/pipeline/run",
-  analystHandle<{ id: string }>(async ({ req, user, params }) => {
-    const body = await parseBody(
-      req,
-      pipelineBodySchema.extend({
-        page: z.number().int().min(1).max(100_000).default(1),
-        pageSize: z
-          .number()
-          .int()
-          .refine((size) => (EDITOR_PAGE_SIZES as readonly number[]).includes(size), "Tamanho de página inválido.")
-          .default(100),
-        count: z.boolean().default(false),
-      }),
-    );
-    return runPipeline(user.id, params.id, body);
-  }),
-);
-
-/** Preparação de dados: perfil das colunas do resultado até a etapa pedida. */
-sourcesRoutes.post(
-  "/:id/pipeline/profile",
-  analystHandle<{ id: string }>(async ({ req, user, params }) =>
-    profilePipeline(user.id, params.id, await parseBody(req, pipelineBodySchema)),
-  ),
 );
 
 sourcesRoutes.post(

@@ -12,6 +12,7 @@ import { adminRoutes } from "./routes/admin";
 import { chatRoutes } from "./routes/chat";
 import { analysesRoutes, dashboardsRoutes, publicRoutes, viewerRoutes } from "./routes/dashboards";
 import { projectsRoutes } from "./routes/projects";
+import { prepRoutes } from "./routes/prep";
 import { resultsRoutes, sourcesRoutes } from "./routes/sources";
 
 /**
@@ -37,6 +38,7 @@ app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
 
 app.route("/projects", projectsRoutes);
 app.route("/sources", sourcesRoutes);
+app.route("/prep", prepRoutes);
 app.route("/results", resultsRoutes);
 app.route("/analyses", analysesRoutes);
 // as rotas de leitura (/shared, /:id/view) vêm antes das do editor (/:id)

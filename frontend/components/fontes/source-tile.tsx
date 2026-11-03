@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, Code2, EyeOff, Globe, Loader2, Search, Trash2 } from "lucide-react";
+import { AlertTriangle, Code2, EyeOff, Globe, Loader2, Search, Trash2, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { DATASET_KIND_LABELS, type Dataset } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
@@ -20,6 +20,10 @@ const editorHref = (dataset: Dataset) => {
   }
   return `/fontes-de-dados/editor?${params.toString()}`;
 };
+
+/** Dataset feito em etapas reabre as etapas; as demais fontes abrem a preparação na própria fonte. */
+const prepHref = (dataset: Dataset) =>
+  dataset.definition?.workspace ? `/fontes-de-dados/preparar?dataset=${dataset.id}` : `/fontes-de-dados/preparar?source=${dataset.id}`;
 
 /** Cartão de uma fonte ou de um dataset salvo (que mostra de onde veio e o SQL que o criou). */
 export const SourceTile = ({
@@ -93,6 +97,20 @@ export const SourceTile = ({
       </div>
 
       <div className="mt-auto flex flex-wrap justify-end gap-2 pt-1">
+        {dataset.status === "pronta" ? (
+          <Link
+            href={prepHref(dataset)}
+            title={
+              definition?.workspace
+                ? "Reabrir as etapas que criaram este dataset (salvar cria um novo dataset)"
+                : "Tratar os dados em etapas, sem escrever SQL"
+            }
+            className="flex h-8 items-center gap-1.5 rounded-md border border-border/70 px-2.5 text-xs text-foreground transition-colors hover:bg-muted/60"
+          >
+            <Wand2 className="size-3.5" aria-hidden />
+            {definition?.workspace ? "Editar etapas" : "Preparar"}
+          </Link>
+        ) : null}
         {dataset.status === "pronta" ? (
           <Link
             href={editorHref(dataset)}

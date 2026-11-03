@@ -19,6 +19,10 @@ export const createPostgresSchema = z.object({
 });
 
 const columnName = z.string().min(1).max(128);
+const stepId = z.string().min(1).max(64);
+const stepValue = z.union([z.string().max(1000), z.number().finite(), z.boolean()]);
+const filterOp = z.enum(["=", "!=", ">", ">=", "<", "<=", "contem", "nulo", "nao_nulo"]);
+const aggFn = z.enum(["soma", "media", "minimo", "maximo", "contagem", "distintos"]);
 
 export const stepSchema = z.discriminatedUnion("type", [
   z.object({
@@ -39,12 +43,113 @@ export const stepSchema = z.discriminatedUnion("type", [
   z.object({ id: z.string().min(1).max(64), type: z.literal("ordenar"), column: columnName, dir: z.enum(["asc", "desc"]) }),
   z.object({ id: z.string().min(1).max(64), type: z.literal("remover_nulos"), columns: z.array(columnName).max(500) }),
   z.object({ id: z.string().min(1).max(64), type: z.literal("duplicadas"), columns: z.array(columnName).max(500) }),
+  z.object({
+    id: z.string().min(1).max(64),
+    type: z.literal("preencher"),
+    column: columnName,
+    value: z.union([z.string().max(1000), z.number().finite(), z.boolean()]),
+  }),
+  z.object({
+    id: z.string().min(1).max(64),
+    type: z.literal("agrupar"),
+    by: z.array(columnName).max(100),
+    aggregations: z
+      .array(
+        z.object({
+          column: columnName.nullable(),
+          fn: aggFn,
+          as: z.string().max(256),
+        }),
+      )
+      .max(100),
+  }),
+  z.object({
+    id: z.string().min(1).max(64),
+    type: z.literal("mesclar"),
+    table: z.string().max(256),
+    query: stepId.optional(),
+    kind: z.enum(["esquerda", "interna", "direita", "completa"]),
+    on: z.array(z.object({ left: columnName, right: columnName })).min(1).max(10),
+    columns: z.array(columnName).max(500),
+  }),
+  z.object({ id: stepId, type: z.literal("escolher"), columns: z.array(columnName).min(1).max(500) }),
+  z.object({ id: stepId, type: z.literal("limitar"), mode: z.enum(["manter", "remover"]), n: z.number().int().min(1).max(1_000_000) }),
+  z.object({
+    id: stepId,
+    type: z.literal("dividir"),
+    column: columnName,
+    delimiter: z.string().min(1).max(20),
+    parts: z.number().int().min(2).max(10),
+    removeOriginal: z.boolean(),
+  }),
+  z.object({ id: stepId, type: z.literal("substituir"), column: columnName, find: z.string().min(1).max(1000), with: z.string().max(1000) }),
+  z.object({
+    id: stepId,
+    type: z.literal("condicional"),
+    name: z.string().max(256),
+    column: columnName,
+    op: filterOp,
+    value: stepValue.optional(),
+    then: stepValue,
+    otherwise: stepValue,
+  }),
+  z.object({ id: stepId, type: z.literal("indice"), name: z.string().max(256), start: z.union([z.literal(0), z.literal(1)]) }),
+  z.object({
+    id: stepId,
+    type: z.literal("calcular"),
+    name: z.string().max(256),
+    left: columnName,
+    op: z.enum(["+", "-", "*", "/"]),
+    right: z.union([z.object({ column: columnName }), z.object({ value: z.number().finite() })]),
+  }),
+  z.object({ id: stepId, type: z.literal("texto"), column: columnName, fn: z.enum(["maiusculas", "minusculas", "aparar"]) }),
+  z.object({
+    id: stepId,
+    type: z.literal("data_parte"),
+    column: columnName,
+    part: z.enum(["ano", "mes", "dia", "trimestre", "dia_semana"]),
+    name: z.string().max(256),
+  }),
+  z.object({ id: stepId, type: z.literal("arredondar"), column: columnName, digits: z.number().int().min(0).max(10) }),
+  z.object({
+    id: stepId,
+    type: z.literal("filtrar_valores"),
+    column: columnName,
+    values: z.array(z.string().max(1000)).min(1).max(500),
+    mode: z.enum(["incluir", "excluir"]),
+  }),
+  z.object({ id: stepId, type: z.literal("acrescentar"), query: stepId }),
+  z.object({
+    id: z.string().min(1).max(64),
+    type: z.literal("dinamizar"),
+    column: columnName,
+    values: z.array(z.string().max(256)).min(1).max(50),
+    value: columnName,
+    fn: aggFn,
+    by: z.array(columnName).max(100),
+  }),
 ]);
 
-/** Tabela da fonte e etapas aplicadas sobre ela (no máximo 50; o compilador confere de novo). */
-export const pipelineBodySchema = z.object({
-  table: z.string().min(1).max(256),
-  steps: z.array(stepSchema).max(50),
-  /** Usa só as primeiras N etapas (ver os dados "naquele ponto"). */
-  upTo: z.number().int().min(0).max(50).optional(),
+/** Consultas abertas na preparação de dados e qual delas é o resultado. */
+export const workspaceSchema = z.object({
+  queries: z
+    .array(
+      z.object({
+        id: stepId,
+        name: z.string().max(120),
+        sourceId: z.string().min(1).max(64),
+        table: z.string().min(1).max(256),
+        steps: z.array(stepSchema).max(100),
+      }),
+    )
+    .min(1)
+    .max(8),
+  target: stepId,
+});
+
+/** Corpo comum da prévia, do perfil e dos valores distintos. */
+export const workspaceBodySchema = z.object({
+  workspace: workspaceSchema,
+  /** Usa só as primeiras N etapas da consulta de destino (ver os dados "naquele ponto"). */
+  upTo: z.number().int().min(0).max(100).optional(),
 });
