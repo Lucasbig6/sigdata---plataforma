@@ -160,7 +160,7 @@ export const SharedView = ({
 
       {embed ? null : (
         /* rodapé único: marca, páginas e ajuste de visualização; o painel ocupa todo o resto da tela */
-        <footer className="relative z-20 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 bg-card/80 px-3 py-1.5 backdrop-blur md:h-11 md:flex-nowrap md:py-0">
+        <footer className="relative z-20 flex shrink-0 flex-wrap items-center gap-x-3 gap-y-1 border-t border-border/60 bg-card/80 px-5 py-1.5 backdrop-blur md:h-20 md:flex-nowrap md:py-0">
           {backHref ? (
             <Link
               href={backHref}
