@@ -35,7 +35,7 @@ export const WorkspaceTopbar = ({
         aria-label="Ir para a página inicial"
         className="shrink-0 rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
       >
-        <Logo className="h-10 w-auto" />
+        <Logo className="h-[44px] w-auto" />
       </Link>
       <Button
         variant="ghost"
