@@ -10,6 +10,7 @@ import {
   LayoutGrid,
   LineChart,
   Map as MapIcon,
+  MapPin,
   MapPinned,
   PieChart,
   Radar,
@@ -35,6 +36,7 @@ export const WIDGET_ICON: Record<WidgetKind, LucideIcon> = {
   calor: Grid3x3,
   mapa: MapIcon,
   mapa_bolhas: MapPinned,
+  mapa_pontos: MapPin,
   kpi: Hash,
   tabela: Table2,
 };

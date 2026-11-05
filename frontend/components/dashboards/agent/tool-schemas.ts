@@ -9,7 +9,7 @@ import type { ChartType } from "@shared/charts/types";
 
 export const AGGS: Aggregation[] = ["sum", "avg", "count", "min", "max"];
 export const SORTS: BindingSort[] = ["valor_desc", "valor_asc", "label_asc", "label_desc"];
-export const CHART_TYPES: ChartType[] = ["bar", "line", "pie", "area", "hbar", "combo", "donut", "scatter", "radar", "funnel", "gauge", "treemap", "heatmap", "map", "mapbubbles"];
+export const CHART_TYPES: ChartType[] = ["bar", "line", "pie", "area", "hbar", "combo", "donut", "scatter", "radar", "funnel", "gauge", "treemap", "heatmap", "map", "mapbubbles", "mappoints"];
 
 /** Parâmetros de dados, curtos de propósito: tudo isto é reenviado ao modelo a cada passo. */
 export const BINDING_PROPERTIES = {

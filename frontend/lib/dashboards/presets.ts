@@ -25,6 +25,7 @@ import {
   Percent,
   PieChart as PieChartIcon,
   Map as MapIcon,
+  MapPin,
   MapPinned,
   Radar,
   RectangleHorizontal,
@@ -157,6 +158,7 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
       chartItem("heatmap", "Mapa de calor", "heatmap", "Intensidade entre duas categorias.", Grid3x3),
       chartItem("map", "Mapa coroplético", "map", "Valores por estado ou município, em cores.", MapIcon),
       chartItem("mapbubbles", "Mapa de bolhas", "mapbubbles", "Tamanho da bolha por região.", MapPinned),
+      chartItem("mappoints", "Mapa de pontos", "mappoints", "Pontos por latitude e longitude.", MapPin),
       {
         key: "table",
         label: "Tabela",

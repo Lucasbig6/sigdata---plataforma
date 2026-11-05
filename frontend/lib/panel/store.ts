@@ -32,6 +32,7 @@ export const WIDGET_DEFAULT_SIZE: Record<WidgetKind, { w: number; h: number }> =
   calor: { w: 340, h: 240 },
   mapa: { w: 380, h: 300 },
   mapa_bolhas: { w: 380, h: 300 },
+  mapa_pontos: { w: 380, h: 300 },
   kpi: { w: 220, h: 120 },
   tabela: { w: 380, h: 240 },
 };
@@ -52,6 +53,7 @@ export const WIDGET_MIN_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   calor: { w: 220, h: 180 },
   mapa: { w: 240, h: 200 },
   mapa_bolhas: { w: 240, h: 200 },
+  mapa_pontos: { w: 240, h: 200 },
   kpi: { w: 160, h: 96 },
   tabela: { w: 260, h: 140 },
 };
@@ -72,6 +74,7 @@ export const WIDGET_KIND_LABELS: Record<WidgetKind, string> = {
   calor: "Mapa de calor",
   mapa: "Mapa coroplético",
   mapa_bolhas: "Mapa de bolhas",
+  mapa_pontos: "Mapa de pontos",
   kpi: "Indicador",
   tabela: "Tabela",
 };

@@ -40,7 +40,7 @@ export const ChartPanel = ({ type, data, style, color = 2, className, label, sel
         const category =
           type === "heatmap" && Array.isArray(click.value)
             ? data.categories[Number(click.value[0])]
-            : geo && click.name
+            : geo && click.name && type !== "mappoints"
               ? data.categories.find((entry) => geo.resolve(entry) === click.name)
               : click.name;
         if (category !== undefined && data.categories.includes(category)) onSelect(category);

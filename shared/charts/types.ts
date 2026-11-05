@@ -19,7 +19,8 @@ export type ChartType =
   | "treemap"
   | "heatmap"
   | "map"
-  | "mapbubbles";
+  | "mapbubbles"
+  | "mappoints";
 
 export const CHART_TYPES: ChartType[] = [
   "bar",
@@ -37,6 +38,7 @@ export const CHART_TYPES: ChartType[] = [
   "heatmap",
   "map",
   "mapbubbles",
+  "mappoints",
 ];
 
 export const CHART_TYPE_LABELS: Record<ChartType, string> = {
@@ -55,6 +57,7 @@ export const CHART_TYPE_LABELS: Record<ChartType, string> = {
   heatmap: "Mapa de calor",
   map: "Mapa coroplético",
   mapbubbles: "Mapa de bolhas",
+  mappoints: "Mapa de pontos (lat/long)",
 };
 
 export type NumberFormat = "numero" | "moeda" | "percentual" | "compacto";

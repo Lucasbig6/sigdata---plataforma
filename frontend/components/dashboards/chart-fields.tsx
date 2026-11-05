@@ -254,7 +254,13 @@ export const ChartFields = ({ props, set }: { props: ChartProps; set: Set }) => 
             </p>
           </>
         ) : null}
-        {!cartesian && type !== "donut" && type !== "gauge" && type !== "map" && type !== "mapbubbles" ? (
+        {type === "mappoints" ? (
+          <p className="text-[10px] leading-snug text-muted-foreground">
+            Rótulo = categoria; primeira coluna de valor = latitude, segunda = longitude e, se houver, a terceira define o
+            tamanho do ponto. Colunas chamadas lat/latitude e lng/lon/longitude são reconhecidas em qualquer ordem.
+          </p>
+        ) : null}
+        {!cartesian && type !== "donut" && type !== "gauge" && type !== "map" && type !== "mapbubbles" && type !== "mappoints" ? (
           <p className="text-[10px] leading-snug text-muted-foreground">
             Este tipo usa as categorias e o primeiro valor{type === "radar" || type === "heatmap" ? " (e as séries extras)" : ""} da consulta.
           </p>

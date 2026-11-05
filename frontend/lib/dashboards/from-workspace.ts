@@ -27,6 +27,7 @@ const ITEM_KEY: Record<WidgetKind, string> = {
   calor: "heatmap",
   mapa: "map",
   mapa_bolhas: "mapbubbles",
+  mapa_pontos: "mappoints",
   kpi: "kpi",
   tabela: "table",
 };

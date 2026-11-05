@@ -27,7 +27,7 @@ export type GeoBundle = {
   center: (key: string) => [number, number] | null;
 };
 
-export const isMapType = (type: ChartType) => type === "map" || type === "mapbubbles";
+export const isMapType = (type: ChartType) => type === "map" || type === "mapbubbles" || type === "mappoints";
 
 const FILES: Record<GeoScope, string> = { uf: "/geo/br-uf.json", municipio: "/geo/br-municipios.json" };
 
@@ -146,8 +146,9 @@ export type GeoState = { bundle: GeoBundle | null; error: string | null };
 /** Malha do mapa para o gráfico (ou null enquanto carrega / quando o tipo não é mapa). */
 export const useGeo = (type: ChartType, style: ChartStyle | undefined, categories: string[]): GeoState => {
   const wanted = isMapType(type);
-  const scopeStyle = style?.mapScope ?? "auto";
-  const region = style?.mapRegion;
+  // mapa de pontos usa coordenadas: o fundo é sempre o contorno dos estados
+  const scopeStyle = type === "mappoints" ? "uf" : (style?.mapScope ?? "auto");
+  const region = type === "mappoints" ? undefined : style?.mapRegion;
   const [state, setState] = useState<GeoState>({ bundle: null, error: null });
   // as categorias só decidem o escopo no modo automático
   const sampleKey = scopeStyle === "auto" ? categories.slice(0, 60).join("\u0001") : "";

@@ -59,6 +59,77 @@ const niceMax = (value: number) => {
 
 const DIM = 0.28;
 
+/** Séries de latitude, longitude e valor: pelo nome da coluna (lat/lng/lon/valor) ou, sem pistas, pela ordem. */
+const pickCoordinates = (data: ChartData) => {
+  const named = (pattern: RegExp) => data.series.find((s) => pattern.test(s.name.trim().toLowerCase()));
+  const lat = named(/^(lat|latitude|y)$|latitude/) ?? data.series[0];
+  const lng = named(/^(lng|lon|long|longitude|x)$|longitude/) ?? data.series.find((s) => s !== lat);
+  const value = data.series.find((s) => s !== lat && s !== lng);
+  return { lat, lng, value };
+};
+
+/** Mapa de pontos: cada linha é um ponto em [longitude, latitude]; o tamanho acompanha o valor, se houver. */
+const buildPointsOption = (
+  { style, data, theme, palette, selected, geo }: BuildInput,
+  base: AnyRecord,
+  format: (value: unknown) => string,
+): AnyRecord => {
+  if (!geo) return { ...base, series: [] };
+  const { lat, lng, value } = pickCoordinates(data);
+  const points: { name: string; coord: [number, number]; value: number | null }[] = [];
+  let invalid = 0;
+  data.categories.forEach((name, index) => {
+    const y = lat?.values[index];
+    const x = lng?.values[index];
+    if (y == null || x == null || Math.abs(y) > 90 || Math.abs(x) > 180) {
+      invalid += 1;
+      return;
+    }
+    points.push({ name, coord: [x, y], value: value?.values[index] ?? null });
+  });
+  const sized = points.filter((p) => p.value !== null).map((p) => Math.abs(p.value as number));
+  const reach = Math.max(1, ...sized);
+  const size = (p: { value: number | null }) =>
+    p.value === null ? 7 : Math.max(4, Math.sqrt(Math.abs(p.value) / reach) * 28);
+  return {
+    ...base,
+    tooltip: {
+      ...(base.tooltip as AnyRecord),
+      trigger: "item",
+      formatter: (p: { name: string; value: number[] }) =>
+        `${p.name}<br/>${p.value[1].toFixed(4)}, ${p.value[0].toFixed(4)}${p.value[2] == null ? "" : `<br/>${format(p.value[2])}`}`,
+    },
+    title: invalid
+      ? { text: `${invalid} linha(s) sem coordenadas válidas`, left: 8, bottom: 2, textStyle: { color: theme.muted, fontSize: 10, fontWeight: "normal" } }
+      : { show: false },
+    geo: {
+      map: geo.mapName,
+      roam: true,
+      scaleLimit: { min: 1, max: 20 },
+      selectedMode: false,
+      top: 8,
+      bottom: 8,
+      label: { show: false },
+      silent: true,
+      itemStyle: { areaColor: theme.dark ? "#1f2a2e" : "#eef2f2", borderColor: theme.stroke, borderWidth: 0.8 },
+    },
+    series: [
+      {
+        type: "scatter",
+        coordinateSystem: "geo",
+        symbolSize: (v: number[]) => size({ value: v[2] ?? null }),
+        itemStyle: { color: palette[0], opacity: 0.65, borderColor: theme.stroke, borderWidth: 0.6 },
+        label: { show: false },
+        data: points.map((p) => ({
+          name: p.name,
+          value: [...p.coord, p.value],
+          ...(selected && p.name !== selected ? { itemStyle: { opacity: DIM / 2 } } : {}),
+        })),
+      },
+    ],
+  };
+};
+
 /** Mapa coroplético (cor por região) ou de bolhas (círculo no centro da região); a malha vem pronta em `geo`. */
 const buildMapOption = (
   { type, style, data, theme, palette, selected, geo }: BuildInput,
@@ -66,6 +137,7 @@ const buildMapOption = (
   format: (value: unknown) => string,
 ): AnyRecord => {
   if (!geo) return { ...base, series: [] };
+  if (type === "mappoints") return buildPointsOption({ type, style, data, theme, palette, selected, geo }, base, format);
   const first = data.series[0];
   const rows: { key: string; category: string; value: number }[] = [];
   const total = new Map<string, number>();
@@ -209,7 +281,7 @@ export const buildChartOption = ({ type, style, data, theme, palette, selected, 
       : legendMode === "auto"
         ? ["pie", "donut", "funnel", "treemap"].includes(type)
           ? type !== "treemap"
-          : series.length > 1 && !["gauge", "heatmap", "map", "mapbubbles"].includes(type)
+          : series.length > 1 && !["gauge", "heatmap", "map", "mapbubbles", "mappoints"].includes(type)
         : true;
   const legendPos = legendMode === "auto" || legendMode === "none" ? "top" : legendMode;
   const vertical = legendPos === "left" || legendPos === "right";
@@ -545,7 +617,7 @@ export const buildChartOption = ({ type, style, data, theme, palette, selected, 
         },
       ],
     };
-  } else if (type === "map" || type === "mapbubbles") {
+  } else if (type === "map" || type === "mapbubbles" || type === "mappoints") {
     option = buildMapOption({ type, style, data, theme, palette, selected, geo }, base, format);
   } else {
     // heatmap: categorias no eixo X, séries no eixo Y
