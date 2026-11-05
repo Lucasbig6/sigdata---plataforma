@@ -73,11 +73,11 @@ export const WorkspaceTitle = ({ fallback }: { fallback: string }) => {
         </h1>
       )}
       <span
-        className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:inline-flex"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground"
         title={source ? `Fonte ativa: ${source.name}` : "Escolha um conjunto de dados na barra lateral"}
       >
         <Database className="size-3 shrink-0" aria-hidden />
-        <span className="max-w-40 truncate">{source ? source.name : "Sem fonte"}</span>
+        <span className="max-w-24 truncate sm:max-w-40">{source ? source.name : "Sem fonte"}</span>
       </span>
     </>
   );

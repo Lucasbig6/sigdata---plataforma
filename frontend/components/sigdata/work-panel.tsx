@@ -479,6 +479,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
           <Button
             variant="ghost"
             size="icon-sm"
+            className="max-lg:hidden"
             onClick={togglePanelCollapsed}
             aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
             title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
@@ -558,11 +559,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
               <EmptyState />
             ) : (
               <>
-                <div className="flex flex-wrap items-center gap-2 px-3 pt-3">
-                  <Button size="xs" variant="outline" onClick={handleSaveAsDashboard}>
-                    <BookmarkPlus className="size-3.5" aria-hidden />
-                    Criar dashboard com estas
-                  </Button>
+                <div className="flex flex-wrap items-center gap-1 px-3 pt-3">
                   {widgets.length >= 4 ? (
                     <select
                       aria-label="Filtrar visualizações"
