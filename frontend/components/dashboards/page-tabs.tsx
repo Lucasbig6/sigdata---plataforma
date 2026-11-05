@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { MAX_PAGES } from "@/lib/dashboards/types";
 import { confirmAction } from "@/lib/feedback";
@@ -21,10 +21,9 @@ const tabCls = (active: boolean) =>
 
 /** Abas de páginas do dashboard (como as abas de uma planilha ou do Power BI). */
 export const PageTabs = ({ readOnly = false, flat = false, className = "" }: Props) => {
-  const pages = useDashboardsStore((state) => {
-    const doc = state.currentId ? state.dashboards[state.currentId] : undefined;
-    return doc?.pages?.map((page) => ({ id: page.id, name: page.name })) ?? null;
-  });
+  // o seletor devolve uma referência estável (um array novo a cada leitura entra em loop no React)
+  const docPages = useDashboardsStore((state) => (state.currentId ? state.dashboards[state.currentId]?.pages : undefined));
+  const pages = useMemo(() => docPages?.map((page) => ({ id: page.id, name: page.name })) ?? null, [docPages]);
   const activeId = useDashboardsStore((state) => state.activePageId);
   const switchPage = useDashboardsStore((state) => state.switchPage);
   const addPage = useDashboardsStore((state) => state.addPage);
@@ -95,7 +94,7 @@ export const PageTabs = ({ readOnly = false, flat = false, className = "" }: Pro
             title={readOnly ? page.name : `${page.name} — duplo clique para renomear`}
             onClick={() => switchPage(page.id)}
             onDoubleClick={() => {
-              if (readOnly || !pages) return;
+              if (readOnly) return;
               setDraft(page.name);
               setEditing(page.id);
             }}

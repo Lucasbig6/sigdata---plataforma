@@ -1147,7 +1147,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
 
     renamePage: (id, name) => {
       const doc = get().current();
-      if (!doc?.pages) return;
+      if (!doc) return;
       pushSnapshot(`page-name:${id}`);
       mutateCurrent((current) => ({ ...renamePage(current, id, name), updatedAt: Date.now() }));
     },
