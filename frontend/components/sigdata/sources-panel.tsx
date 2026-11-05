@@ -2,11 +2,12 @@
 
 import { Check, Database, PanelLeftClose, Plus } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { useRole } from "@/lib/auth-client";
 import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
+import { useChatStore } from "@/lib/chat/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { cn } from "@/lib/utils";
 import { canManageData } from "@shared/roles";
@@ -18,7 +19,7 @@ import { useNotebookId } from "@/lib/use-notebook-id";
 
 /**
  * Painel "Fontes" (esquerda): os datasets que o projeto pode usar — o escolhido fica marcado —
- * e, abaixo, os projetos recentes para trocar de conversa.
+ * e, abaixo, as conversas do projeto aberto (criar, alternar, renomear, excluir).
  */
 export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
   const router = useRouter();
@@ -28,18 +29,24 @@ export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
   const datasetsHydrated = useDatasetsStore((state) => state.hydrated);
   const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
   const datasets = useDatasetsStore((state) => state.datasets);
-  const notebooksHydrated = useNotebooksStore((state) => state.hydrated);
   const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
   const notebooks = useNotebooksStore((state) => state.notebooks);
-  const createNotebook = useNotebooksStore((state) => state.createNotebook);
-  const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
-  const deleteNotebook = useNotebooksStore((state) => state.deleteNotebook);
+  const chats = useChatStore((state) => (notebookId ? state.chatsByProject[notebookId] : undefined));
+  const createChat = useChatStore((state) => state.createChat);
+  const renameChat = useChatStore((state) => state.renameChat);
+  const deleteChat = useChatStore((state) => state.deleteChat);
+  const loadChats = useChatStore((state) => state.loadChats);
+  const activeChatId = useSearchParams().get("c");
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
 
   useEffect(() => {
     hydrateDatasets();
     hydrateNotebooks();
   }, [hydrateDatasets, hydrateNotebooks]);
+
+  useEffect(() => {
+    if (notebookId && !useChatStore.getState().chatsState[notebookId]) void loadChats(notebookId);
+  }, [loadChats, notebookId]);
 
   const active = notebooks.find((notebook) => notebook.id === notebookId) ?? null;
   const selectedId = active?.sourceId ?? null;
@@ -131,38 +138,40 @@ export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
         ) : null}
 
         <div className="mt-5 flex items-center justify-between px-1 pb-1.5">
-          <h3 className="text-xs font-medium text-muted-foreground">Projetos recentes</h3>
+          <h3 className="text-xs font-medium text-muted-foreground">Conversas</h3>
           <Button
             variant="ghost"
             size="icon-xs"
-            aria-label="Novo projeto"
-            title="Novo projeto"
-            onClick={() => router.push(projectHref(createNotebook()))}
+            aria-label="Nova conversa"
+            title="Nova conversa"
+            disabled={!notebookId}
+            onClick={() => notebookId && router.push(projectHref(notebookId, createChat(notebookId)))}
           >
             <Plus className="size-3.5" aria-hidden />
           </Button>
         </div>
-        {!notebooksHydrated ? (
+        {!chats ? (
           <LineSkeletons />
-        ) : notebooks.length === 0 ? (
-          <p className="px-1 text-xs leading-relaxed text-muted-foreground">Nenhum projeto ainda.</p>
+        ) : chats.length === 0 ? (
+          <p className="px-1 text-xs leading-relaxed text-muted-foreground">Nenhuma conversa ainda.</p>
         ) : (
           <ul className="flex flex-col gap-0.5">
-            {notebooks.map((notebook) => {
-              const isActive = notebook.id === notebookId;
+            {chats.map((chat) => {
+              const isActive = chat.id === activeChatId;
               return (
-                <li key={notebook.id}>
+                <li key={chat.id}>
                   <ChatListItem
-                    title={notebook.title}
+                    title={chat.title}
                     active={isActive}
-                    onOpen={() => router.push(projectHref(notebook.id))}
-                    onRename={(title) => renameNotebook(notebook.id, title)}
+                    onOpen={() => notebookId && router.push(projectHref(notebookId, chat.id))}
+                    onRename={(title) => notebookId && renameChat(notebookId, chat.id, title)}
                     onDelete={() => {
-                      deleteNotebook(notebook.id);
+                      if (!notebookId) return;
+                      deleteChat(notebookId, chat.id);
                       if (!isActive) return;
-                      // excluiu a conversa aberta: abre outra, ou cria uma nova se não sobrou nenhuma
-                      const next = notebooks.find((entry) => entry.id !== notebook.id);
-                      router.push(projectHref(next ? next.id : createNotebook()));
+                      // excluiu a conversa aberta: abre outra, ou começa uma nova se não sobrou nenhuma
+                      const next = chats.find((entry) => entry.id !== chat.id);
+                      router.push(projectHref(notebookId, next ? next.id : createChat(notebookId)));
                     }}
                   />
                 </li>

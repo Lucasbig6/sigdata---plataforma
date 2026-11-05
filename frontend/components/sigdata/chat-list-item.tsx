@@ -133,8 +133,8 @@ export const ChatListItem = ({ title, active, onOpen, onRename, onDelete }: Prop
           <DialogHeader>
             <DialogTitle>Excluir conversa?</DialogTitle>
             <DialogDescription>
-              Isso vai excluir &ldquo;{title}&rdquo; com as mensagens e as visualizações salvas nela.
-              Esta ação não pode ser desfeita.
+              Isso vai excluir &ldquo;{title}&rdquo; e as mensagens dela. As visualizações salvas ficam no
+              projeto. Esta ação não pode ser desfeita.
             </DialogDescription>
           </DialogHeader>
           <DialogFooter>

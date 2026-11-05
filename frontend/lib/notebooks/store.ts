@@ -109,7 +109,7 @@ export const useNotebooksStore = create<NotebooksStore>((set, get) => {
 
     deleteNotebook: (id) => {
       set({ notebooks: get().notebooks.filter((notebook) => notebook.id !== id) });
-      useChatStore.getState().clearNotebook(id);
+      useChatStore.getState().clearProject(id);
       usePanelStore.getState().clearNotebook(id);
       background(
         afterCreate(id, () => api(`/api/projects/${id}`, { method: "DELETE" })),
