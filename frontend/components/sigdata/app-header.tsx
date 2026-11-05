@@ -17,6 +17,7 @@ import { DATA_ROLES, type Role } from "@shared/roles";
 import { Button } from "@/components/ui/button";
 import { openCommandPalette } from "./command-palette";
 import { Logo } from "./logo";
+import { MobileMenu } from "./mobile-menu";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
 
@@ -105,7 +106,7 @@ export const AppHeader = ({ actions }: { actions?: ReactNode }) => {
             aria-label="SIGDATA — página inicial"
             className="flex shrink-0 items-center rounded-md outline-none focus-visible:ring-3 focus-visible:ring-ring/40"
           >
-            <Logo className="h-11 w-auto md:h-14" />
+            <Logo className="h-16 w-auto md:h-14" />
           </Link>
 
           <nav aria-label="Áreas" className="hidden items-center gap-1 md:flex">
@@ -129,7 +130,18 @@ export const AppHeader = ({ actions }: { actions?: ReactNode }) => {
             })}
           </nav>
 
-          <div className="ml-auto flex min-w-0 items-center gap-2">
+          <MobileMenu
+            links={items.map((item) => ({
+              label: item.label,
+              href: item.href,
+              icon: item.icon,
+              active: item.match(pathname),
+            }))}
+            pathname={pathname}
+            actions={actions}
+          />
+
+          <div className="ml-auto flex min-w-0 items-center gap-2 max-md:hidden">
             {actions}
             <Button
               variant="ghost"
