@@ -1,6 +1,6 @@
 "use client";
 
-import { Database, FileSpreadsheet, Globe, Loader2, Sheet, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,7 +10,6 @@ import type {
   ConnectionRequest,
   DataSource,
   GSheetsConnectionInput,
-  LiveSqlKind,
   SqlConnectionInput,
 } from "@/lib/domain/sources";
 import { cn } from "@/lib/utils";
@@ -19,17 +18,9 @@ import { ApiFields, EMPTY_API } from "./conexao/api-fields";
 import { Field } from "./conexao/field";
 import { SheetsFields, EMPTY_SHEETS } from "./conexao/sheets-fields";
 import { SqlFields, emptySqlConnection } from "./conexao/sql-fields";
+import { ConnectorPicker, connectorOf, type ConnectorMode } from "./connector-picker";
 
-type Mode = "arquivo" | LiveSqlKind | "api" | "gsheets";
-
-const TABS: { id: Mode; label: string; icon: typeof Database }[] = [
-  { id: "arquivo", label: "Arquivo CSV/XLSX", icon: FileSpreadsheet },
-  { id: "postgresql", label: "PostgreSQL", icon: Database },
-  { id: "mysql", label: "MySQL / MariaDB", icon: Database },
-  { id: "sqlserver", label: "SQL Server", icon: Database },
-  { id: "api", label: "API REST", icon: Globe },
-  { id: "gsheets", label: "Google Sheets", icon: Sheet },
-];
+type Mode = ConnectorMode;
 
 const NAME_HINT: Record<Mode, string> = {
   arquivo: "Ex.: Vendas por município",
@@ -54,7 +45,9 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
   const testConnection = useDatasetsStore((state) => state.testConnection);
   const connectSource = useDatasetsStore((state) => state.connectSource);
 
-  const [mode, setMode] = useState<Mode>("arquivo");
+  // null = ainda escolhendo o tipo de conector (primeira etapa)
+  const [chosen, setChosen] = useState<Mode | null>(null);
+  const mode: Mode = chosen ?? "arquivo";
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -80,7 +73,12 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
     if (next === "postgresql" || next === "mysql" || next === "sqlserver") {
       if (!sql.host && !sql.database) setSql(emptySqlConnection(next));
     }
-    setMode(next);
+    setChosen(next);
+    setMessage(null);
+  };
+
+  const backToPicker = () => {
+    setChosen(null);
     setMessage(null);
   };
 
@@ -130,25 +128,21 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
 
   const footnote = FOOTNOTE[mode];
 
+  if (chosen === null) return <ConnectorPicker onPick={changeMode} />;
+
+  const connector = connectorOf(chosen);
+
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div role="tablist" className="flex flex-wrap gap-1 self-start rounded-lg border border-border bg-muted/40 p-1">
-        {TABS.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={mode === tab.id}
-            onClick={() => changeMode(tab.id)}
-            className={cn(
-              "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-              mode === tab.id ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
-            )}
-          >
-            <tab.icon className="size-3.5" aria-hidden />
-            {tab.label}
-          </button>
-        ))}
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={backToPicker} className="-ms-2 gap-1.5 text-muted-foreground">
+          <ArrowLeft className="size-4" aria-hidden />
+          Trocar tipo
+        </Button>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground">
+          <connector.icon className="size-3.5 text-primary" aria-hidden />
+          {connector.label}
+        </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">

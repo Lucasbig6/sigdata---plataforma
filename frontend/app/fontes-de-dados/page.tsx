@@ -262,7 +262,7 @@ function FontesDeDadosContent() {
           <DialogHeader>
             <DialogTitle>Nova fonte de dados</DialogTitle>
             <DialogDescription>
-              Envie um arquivo CSV/XLSX ou conecte um banco PostgreSQL para consultar com o assistente e o editor SQL.
+              Escolha de onde vêm os dados: um arquivo, um banco ou um serviço na web. Depois é só consultar com o assistente e o editor SQL.
             </DialogDescription>
           </DialogHeader>
           <NewSourceForm
