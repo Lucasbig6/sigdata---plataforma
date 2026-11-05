@@ -45,7 +45,7 @@ export const createVisualizationParameters: JSONSchema7 = {
       type: "string",
       enum: WIDGET_KINDS,
       description:
-        "Tipo: linha, barras, barras_h (horizontais), area, combo (barras+linhas), pizza, rosca, dispersao, radar, funil, medidor (um valor), treemap, calor (mapa de calor: x × séries), kpi (indicador) ou tabela.",
+        "Tipo: linha, barras, barras_h (horizontais), area, combo (barras+linhas), pizza, rosca, dispersao, radar, funil, medidor (um valor), treemap, calor (mapa de calor: x × séries), mapa (coroplético: x = sigla/nome da UF ou código/nome do município, y = valor), mapa_bolhas (igual, com bolhas), kpi (indicador) ou tabela.",
     },
     titulo: {
       type: "string",

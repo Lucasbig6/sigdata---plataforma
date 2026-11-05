@@ -9,6 +9,8 @@ import {
   Hash,
   LayoutGrid,
   LineChart,
+  Map as MapIcon,
+  MapPinned,
   PieChart,
   Radar,
   Table2,
@@ -31,6 +33,8 @@ export const WIDGET_ICON: Record<WidgetKind, LucideIcon> = {
   medidor: Gauge,
   treemap: LayoutGrid,
   calor: Grid3x3,
+  mapa: MapIcon,
+  mapa_bolhas: MapPinned,
   kpi: Hash,
   tabela: Table2,
 };

@@ -17,7 +17,9 @@ export type ChartType =
   | "funnel"
   | "gauge"
   | "treemap"
-  | "heatmap";
+  | "heatmap"
+  | "map"
+  | "mapbubbles";
 
 export const CHART_TYPES: ChartType[] = [
   "bar",
@@ -33,6 +35,8 @@ export const CHART_TYPES: ChartType[] = [
   "gauge",
   "treemap",
   "heatmap",
+  "map",
+  "mapbubbles",
 ];
 
 export const CHART_TYPE_LABELS: Record<ChartType, string> = {
@@ -49,6 +53,8 @@ export const CHART_TYPE_LABELS: Record<ChartType, string> = {
   gauge: "Medidor",
   treemap: "Treemap",
   heatmap: "Mapa de calor",
+  map: "Mapa coroplético",
+  mapbubbles: "Mapa de bolhas",
 };
 
 export type NumberFormat = "numero" | "moeda" | "percentual" | "compacto";
@@ -95,6 +101,10 @@ export type ChartStyle = {
   /** Rosca: tamanho do furo (% do raio). */
   innerRadius?: number;
   gaugeMax?: number;
+  /** Mapas: malha usada; "auto" decide pelos valores (estados ou municípios). */
+  mapScope?: "auto" | "uf" | "municipio";
+  /** Mapas de municípios: sigla da UF que restringe o mapa (ex.: "SP"). */
+  mapRegion?: string;
   /** JSON com opções do ECharts mescladas por cima (personalização sem limite). */
   advanced?: string;
 };

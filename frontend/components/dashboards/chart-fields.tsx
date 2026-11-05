@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { parseAdvanced } from "@/lib/charts/build-option";
 import { themePalette, useChartTheme } from "@/lib/charts/theme";
-import type { ChartType, LegendPosition, NumberFormat } from "@shared/charts/types";
+import type { ChartStyle, ChartType, LegendPosition, NumberFormat } from "@shared/charts/types";
 import { CHART_TYPES, CHART_TYPE_LABELS } from "@shared/charts/types";
 import type { ChartColor, ChartProps } from "@/lib/dashboards/types";
 import { Field, Grid2, NumberField, Section, Segmented, SelectField, SwitchRow, inputCls } from "./panel-ui";
@@ -16,6 +16,12 @@ const COLOR_OPTIONS: { value: ChartColor; label: string }[] = [
   { value: 3, label: "Azul" },
   { value: 4, label: "Verde" },
   { value: 5, label: "Coral" },
+];
+
+const MAP_SCOPES: { value: NonNullable<ChartStyle["mapScope"]>; label: string }[] = [
+  { value: "auto", label: "Automático" },
+  { value: "uf", label: "Estados (UF)" },
+  { value: "municipio", label: "Municípios" },
 ];
 
 const LEGENDS: { value: LegendPosition; label: string }[] = [
@@ -229,7 +235,26 @@ export const ChartFields = ({ props, set }: { props: ChartProps; set: Set }) => 
             </Field>
           </Grid2>
         ) : null}
-        {!cartesian && type !== "donut" && type !== "gauge" ? (
+        {type === "map" || type === "mapbubbles" ? (
+          <>
+            <Field label="Divisão do mapa">
+              <SelectField value={props.mapScope ?? "auto"} options={MAP_SCOPES} onChange={(value) => set({ mapScope: value }, "mapScope")} />
+            </Field>
+            {props.mapScope === "municipio" ? (
+              <Field label="Só uma UF (sigla)">
+                <TextField
+                  value={props.mapRegion ?? ""}
+                  placeholder="Ex.: SP"
+                  onChange={(value) => set({ mapRegion: value.trim().slice(0, 2).toUpperCase() || undefined }, "mapRegion")}
+                />
+              </Field>
+            ) : null}
+            <p className="text-[10px] leading-snug text-muted-foreground">
+              A categoria deve ser a sigla ou o nome da UF, ou o código ou nome do município (aceita “Campinas - SP”).
+            </p>
+          </>
+        ) : null}
+        {!cartesian && type !== "donut" && type !== "gauge" && type !== "map" && type !== "mapbubbles" ? (
           <p className="text-[10px] leading-snug text-muted-foreground">
             Este tipo usa as categorias e o primeiro valor{type === "radar" || type === "heatmap" ? " (e as séries extras)" : ""} da consulta.
           </p>

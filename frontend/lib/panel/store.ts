@@ -30,6 +30,8 @@ export const WIDGET_DEFAULT_SIZE: Record<WidgetKind, { w: number; h: number }> =
   medidor: { w: 340, h: 240 },
   treemap: { w: 340, h: 240 },
   calor: { w: 340, h: 240 },
+  mapa: { w: 380, h: 300 },
+  mapa_bolhas: { w: 380, h: 300 },
   kpi: { w: 220, h: 120 },
   tabela: { w: 380, h: 240 },
 };
@@ -48,6 +50,8 @@ export const WIDGET_MIN_SIZE: Record<WidgetKind, { w: number; h: number }> = {
   medidor: { w: 220, h: 180 },
   treemap: { w: 220, h: 180 },
   calor: { w: 220, h: 180 },
+  mapa: { w: 240, h: 200 },
+  mapa_bolhas: { w: 240, h: 200 },
   kpi: { w: 160, h: 96 },
   tabela: { w: 260, h: 140 },
 };
@@ -66,6 +70,8 @@ export const WIDGET_KIND_LABELS: Record<WidgetKind, string> = {
   medidor: "Medidor",
   treemap: "Treemap",
   calor: "Mapa de calor",
+  mapa: "Mapa coroplético",
+  mapa_bolhas: "Mapa de bolhas",
   kpi: "Indicador",
   tabela: "Tabela",
 };
