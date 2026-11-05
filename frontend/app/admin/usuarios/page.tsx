@@ -269,8 +269,8 @@ const UsersTable = () => {
       </ul>
 
       <div className="overflow-x-auto rounded-xl border border-border/70">
-        <table className="w-full min-w-[44rem] text-sm">
-          <thead className="bg-muted/40 text-left text-xs text-muted-foreground">
+        <table className="w-full text-sm md:min-w-[44rem] max-md:block">
+          <thead className="bg-muted/40 text-left text-xs text-muted-foreground max-md:hidden">
             <tr>
               <th className="px-4 py-2.5 font-medium">Pessoa</th>
               <th className="px-4 py-2.5 font-medium">Perfil</th>
@@ -280,10 +280,11 @@ const UsersTable = () => {
               <th className="px-4 py-2.5 text-right font-medium">Acesso</th>
             </tr>
           </thead>
-          <tbody className="divide-y divide-border/60">
+          {/* celular: cada pessoa vira um cartão (nome e ações em cima, perfil, depois os totais) */}
+          <tbody className="divide-y divide-border/60 max-md:block">
             {users.map((user) => (
-              <tr key={user.id}>
-                <td className="px-4 py-3">
+              <tr key={user.id} className="max-md:flex max-md:flex-wrap max-md:items-start max-md:gap-x-3 max-md:gap-y-2 max-md:p-3">
+                <td className="px-4 py-3 max-md:order-1 max-md:min-w-0 max-md:flex-1 max-md:p-0">
                   <span className="block font-medium text-foreground">
                     {user.name}
                     {user.id === session?.user.id ? <span className="ml-1.5 text-xs font-normal text-muted-foreground">(você)</span> : null}
@@ -295,14 +296,14 @@ const UsersTable = () => {
                   </span>
                   <span className="block text-xs text-muted-foreground">{user.email}</span>
                 </td>
-                <td className="px-4 py-3">
+                <td className="px-4 py-3 max-md:order-3 max-md:w-full max-md:p-0">
                   <div className="flex items-center gap-2">
                     <select
                       aria-label={`Perfil de ${user.name}`}
                       value={user.role}
                       disabled={saving === user.id}
                       onChange={(event) => void changeRole(user, event.target.value as Role)}
-                      className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                      className="h-8 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50 max-md:h-10 max-md:w-full max-md:text-sm"
                     >
                       {ROLES.map((role) => (
                         <option key={role} value={role}>
@@ -313,10 +314,10 @@ const UsersTable = () => {
                     {saving === user.id ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-hidden /> : null}
                   </div>
                 </td>
-                <td className="px-4 py-3 text-right tabular-nums">{user.projects}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{user.dashboards}</td>
-                <td className="px-4 py-3 text-right tabular-nums">{user.sources}</td>
-                <td className="px-4 py-3 text-right">
+                <td data-label="Projetos" className="px-4 py-3 text-right tabular-nums max-md:order-4 max-md:p-0 max-md:text-xs max-md:text-muted-foreground max-md:before:mr-1 max-md:before:content-[attr(data-label)]">{user.projects}</td>
+                <td data-label="Dashboards" className="px-4 py-3 text-right tabular-nums max-md:order-4 max-md:p-0 max-md:text-xs max-md:text-muted-foreground max-md:before:mr-1 max-md:before:content-[attr(data-label)]">{user.dashboards}</td>
+                <td data-label="Fontes" className="px-4 py-3 text-right tabular-nums max-md:order-4 max-md:p-0 max-md:text-xs max-md:text-muted-foreground max-md:before:mr-1 max-md:before:content-[attr(data-label)]">{user.sources}</td>
+                <td className="px-4 py-3 text-right max-md:order-2 max-md:p-0">
                   <DropdownMenu>
                     <DropdownMenuTrigger
                       aria-label={`Ações de ${user.name}`}
