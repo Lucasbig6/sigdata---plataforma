@@ -50,7 +50,7 @@ export const WorkspaceTopbar = ({
           aria-pressed={sourcesOpen}
           title="Fontes"
           onClick={onToggleSources}
-          className="ml-1"
+          className="ml-1 max-sm:size-10"
         >
           <PanelLeft className="size-4" aria-hidden />
         </Button>
@@ -92,6 +92,7 @@ export const WorkspaceTopbar = ({
         <Button
           variant="ghost"
           size="icon-sm"
+          className="max-sm:size-10"
           aria-label="Mostrar ou ocultar o estúdio"
           aria-pressed={studioOpen}
           title="Estúdio"

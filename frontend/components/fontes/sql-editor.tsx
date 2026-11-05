@@ -406,13 +406,13 @@ export const SqlEditor = ({
         </button>
         <span className="mx-0.5 h-5 w-px bg-border" aria-hidden />
 
-        <label className="flex min-w-0 items-center gap-1.5">
+        <label className="flex min-w-0 items-center gap-1.5 max-sm:flex-1">
           <Database className="size-3.5 shrink-0 text-primary" aria-hidden />
           <span className="sr-only">Fonte de dados</span>
           <select
             value={source?.id ?? ""}
             onChange={(event) => changeSource(event.target.value)}
-            className="h-8 max-w-56 min-w-0 rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+            className="h-8 max-w-56 min-w-0 max-sm:w-full max-sm:max-w-none rounded-md border border-border bg-background px-2 text-xs text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
           >
             {!source ? <option value="">Escolha uma fonte…</option> : null}
             {ready.map((dataset) => (
