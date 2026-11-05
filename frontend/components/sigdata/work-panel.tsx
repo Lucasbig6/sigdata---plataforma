@@ -10,7 +10,6 @@ import {
   ChevronRight,
   Code2,
   Database,
-  LayoutDashboard,
   Loader2,
   Minus,
   Pencil,
@@ -38,6 +37,7 @@ import { cn } from "@/lib/utils";
 import { useRole } from "@/lib/auth-client";
 import { canManageData } from "@shared/roles";
 import { NotesPanel } from "./notes-panel";
+import { ProjectDashboardsPanel, useProjectDashboardIds } from "./project-dashboards-panel";
 import { StudioTools } from "./studio-tools";
 import { WidgetView } from "./widget-view";
 import { useNotesStore } from "@/lib/notes/store";
@@ -199,9 +199,10 @@ const WidgetEditor = ({
   );
 };
 
-type StudioTab = "visualizacoes" | "notas";
+type StudioTab = "visualizacoes" | "dashboards" | "notas";
 const STUDIO_TABS: { id: StudioTab; label: string }[] = [
   { id: "visualizacoes", label: "Visualizações" },
+  { id: "dashboards", label: "Dashboards" },
   { id: "notas", label: "Notas" },
 ];
 
@@ -342,33 +343,6 @@ const QueryInfo = ({ resultId }: { resultId: string }) => {
   );
 };
 
-/** Dashboards criados a partir deste projeto: volta rápida para o que já foi montado. */
-const ProjectDashboards = ({ notebookId }: { notebookId: string }) => {
-  const order = useDashboardsStore((state) => state.order);
-  const dashboards = useDashboardsStore((state) => state.dashboards);
-  const projectIds = useDashboardsStore((state) => state.projectIds);
-  const hydrate = useDashboardsStore((state) => state.hydrate);
-  useEffect(() => hydrate(), [hydrate]);
-
-  const own = order.filter((id) => projectIds[id] === notebookId && dashboards[id]);
-  if (own.length === 0) return null;
-
-  return (
-    <div className="flex shrink-0 flex-wrap items-center gap-1.5 px-3 pt-3" aria-label="Dashboards deste projeto">
-      <LayoutDashboard className="size-3.5 text-muted-foreground" aria-hidden />
-      {own.map((id) => (
-        <Link
-          key={id}
-          href={`/dashboards/${id}`}
-          className="max-w-44 truncate rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] text-foreground outline-none transition-colors hover:border-primary/50 focus-visible:ring-2 focus-visible:ring-ring/50"
-        >
-          {dashboards[id]!.name}
-        </Link>
-      ))}
-    </div>
-  );
-};
-
 const EmptyState = () => (
   <div className="flex h-full flex-col items-center justify-center gap-3 px-6 text-center">
     <span className="flex size-11 items-center justify-center rounded-xl border border-border bg-muted/40 text-muted-foreground">
@@ -416,6 +390,9 @@ export const WorkPanel = ({ className }: { className?: string }) => {
 
   const [note, setNote] = useState<string | null>(null);
   const [studioTab, setStudioTab] = useState<StudioTab>("visualizacoes");
+  const dashboardCount = useProjectDashboardIds(notebookId).length;
+  const hydrateDashboards = useDashboardsStore((state) => state.hydrate);
+  useEffect(() => hydrateDashboards(), [hydrateDashboards]);
   const noteCount = useNotesStore((state) => (notebookId ? state.notesByNotebook[notebookId]?.length ?? 0 : 0));
   useEffect(() => {
     if (notebookId) void useNotesStore.getState().load(notebookId);
@@ -541,7 +518,7 @@ export const WorkPanel = ({ className }: { className?: string }) => {
                 aria-selected={studioTab === tab.id}
                 onClick={() => setStudioTab(tab.id)}
                 className={cn(
-                  "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none",
+                  "flex-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors outline-none",
                   "focus-visible:ring-2 focus-visible:ring-ring/50",
                   studioTab === tab.id
                     ? "bg-background text-foreground shadow-sm"
@@ -550,14 +527,22 @@ export const WorkPanel = ({ className }: { className?: string }) => {
               >
                 {tab.label}
                 {tab.id === "visualizacoes" && widgets.length > 0 ? ` (${widgets.length})` : null}
+                {tab.id === "dashboards" && dashboardCount > 0 ? ` (${dashboardCount})` : null}
                 {tab.id === "notas" && noteCount > 0 ? ` (${noteCount})` : null}
               </button>
             ))}
           </div>
           </div>
         ) : null}
-        {panelVisible && notebookId ? <ProjectDashboards notebookId={notebookId} /> : null}
-        {!panelVisible ? null : studioTab === "notas" ? (
+        {!panelVisible ? null : studioTab === "dashboards" ? (
+          notebookId ? (
+            <ProjectDashboardsPanel
+              notebookId={notebookId}
+              visualizationCount={widgets.length}
+              onCreateFromVisualizations={handleSaveAsDashboard}
+            />
+          ) : null
+        ) : studioTab === "notas" ? (
           notebookId ? <NotesPanel notebookId={notebookId} /> : null
         ) : (
           <div className="flex min-h-48 flex-1 flex-col">
