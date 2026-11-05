@@ -502,3 +502,10 @@
 html[data-resizing] [data-slot^="sidebar"] {
   transition: none !important;
 }
+
+/* Barra de navegação fixa do celular (AppHeader): reserva o espaço para o conteúdo não ficar por baixo dela. */
+@media (max-width: 767px) {
+  body:has([data-mobile-nav]) {
+    padding-bottom: calc(3.5rem + env(safe-area-inset-bottom));
+  }
+}
