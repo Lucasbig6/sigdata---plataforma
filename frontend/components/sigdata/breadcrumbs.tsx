@@ -12,8 +12,9 @@ export const Breadcrumbs = ({ items }: { items: Crumb[] }) => (
         const last = index === items.length - 1;
         return (
           <Fragment key={item.label}>
-            {index > 0 ? <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60" aria-hidden /> : null}
-            <li className="min-w-0">
+            {index > 0 ? <ChevronRight className="size-3.5 shrink-0 text-muted-foreground/60 max-sm:hidden" aria-hidden /> : null}
+            {/* celular: só a página atual; o botão de voltar do cabeçalho leva aos níveis acima */}
+            <li className={last ? "min-w-0" : "min-w-0 max-sm:hidden"}>
               {item.href && !last ? (
                 <Link
                   href={item.href}

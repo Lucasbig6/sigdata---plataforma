@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, LayoutGrid, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardDataProvider } from "@/lib/dashboards/live-data";
@@ -122,6 +122,8 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   const saveError = useDashboardsStore((state) => state.saveError);
   const loadError = useDashboardsStore((state) => state.loadError);
   const [assistantOpen, setAssistantOpen] = useState(false);
+  // telas estreitas: biblioteca e propriedades (que ficam fixas só em telas largas) abrem como folha
+  const [sheet, setSheet] = useState<"library" | "properties" | null>(null);
   const projectId = useDashboardsStore((state) => state.projectIds[dashboardId] ?? null);
   const projectTitle = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === projectId)?.title);
   const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
@@ -361,7 +363,28 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
 
           {!preview ? <PageMenu width={doc.canvas.width} height={doc.canvas.height} /> : null}
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40">
+          {!preview ? (
+            <div className="absolute left-3 top-16 z-20 flex gap-1.5 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setSheet("library")}
+                className="flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-popover/95 px-3.5 text-xs font-medium text-foreground shadow-sm backdrop-blur lg:hidden"
+              >
+                <LayoutGrid className="size-4" aria-hidden />
+                Elementos
+              </button>
+              <button
+                type="button"
+                onClick={() => setSheet("properties")}
+                className="flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-popover/95 px-3.5 text-xs font-medium text-foreground shadow-sm backdrop-blur"
+              >
+                <SlidersHorizontal className="size-4" aria-hidden />
+                Propriedades
+              </button>
+            </div>
+          ) : null}
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40 max-md:bottom-16 max-md:px-3">
             <PageTabs readOnly={preview} className="pointer-events-auto" />
           </div>
 
@@ -403,6 +426,31 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
 
         {assistantOpen ? <AgentPanel onClose={() => setAssistantOpen(false)} /> : !preview ? <PropertiesPanel /> : null}
       </div>
+
+      {sheet && !preview ? (
+        <div
+          className={`fixed inset-0 z-40 ${sheet === "library" ? "lg:hidden" : "xl:hidden"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={sheet === "library" ? "Elementos" : "Propriedades"}
+        >
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSheet(null)} aria-hidden />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-2xl border-t border-border bg-card shadow-2xl [&>aside]:flex! [&>aside]:min-h-0 [&>aside]:w-full [&>aside]:flex-1 [&>aside]:border-0">
+            <div className="flex shrink-0 items-center justify-between px-4 pt-3 pb-1">
+              <span className="text-sm font-medium text-foreground">{sheet === "library" ? "Elementos" : "Propriedades"}</span>
+              <button
+                type="button"
+                onClick={() => setSheet(null)}
+                aria-label="Fechar"
+                className="grid size-9 place-items-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+            {sheet === "library" ? <ElementLibrary /> : <PropertiesPanel />}
+          </div>
+        </div>
+      ) : null}
     </div>
     </DashboardDataProvider>
   );
