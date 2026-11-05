@@ -5,7 +5,25 @@
 
 import type { Workspace } from "./transform";
 
-export type SourceKind = "demo" | "csv" | "xlsx" | "postgresql" | "dataset";
+export type SourceKind =
+  | "demo"
+  | "csv"
+  | "xlsx"
+  | "postgresql"
+  | "mysql"
+  | "sqlserver"
+  | "api"
+  | "gsheets"
+  | "dataset";
+
+/** Bancos consultados ao vivo na origem (somente leitura); o resto é copiado para o DuckDB. */
+export const LIVE_SQL_KINDS = ["postgresql", "mysql", "sqlserver"] as const;
+export type LiveSqlKind = (typeof LIVE_SQL_KINDS)[number];
+export const isLiveSqlKind = (kind: SourceKind): kind is LiveSqlKind =>
+  (LIVE_SQL_KINDS as readonly string[]).includes(kind);
+
+/** Fontes importadas de um endereço: guardam a configuração para "Atualizar dados". */
+export const isRemoteImportKind = (kind: SourceKind) => kind === "api" || kind === "gsheets";
 
 /** Como um dataset foi criado: a consulta feita pelo analista sobre uma fonte. */
 export type DatasetDefinition = {
@@ -82,6 +100,35 @@ export type PostgresConnectionInput = {
   schemas?: string[];
 };
 
+/** Conexão com MySQL/MariaDB ou SQL Server: mesmos campos do Postgres. */
+export type SqlConnectionInput = PostgresConnectionInput;
+
+export type ApiHeader = { name: string; value: string };
+
+export type ApiConnectionInput = {
+  url: string;
+  headers: ApiHeader[];
+  /** Caminho até a lista de registros na resposta (ex.: `data.items`); vazio = a própria resposta. */
+  recordsPath: string;
+  pagination:
+    | { type: "none" }
+    | { type: "page"; param: string; start: number; sizeParam?: string; size?: number }
+    | { type: "next"; path: string };
+  maxPages: number;
+};
+
+export type GSheetsConnectionInput = { url: string };
+
+/** SELECT de amostra de uma tabela, no dialeto da fonte (o T-SQL não tem LIMIT). */
+export const sampleSql = (kind: SourceKind, table: string, rows = 100) =>
+  kind === "sqlserver" ? `SELECT TOP ${rows} *\nFROM ${table}` : `SELECT *\nFROM ${table}\nLIMIT ${rows}`;
+
+/** Pedido de conexão (testar ou criar): o tipo decide o formato da configuração. */
+export type ConnectionRequest =
+  | { kind: LiveSqlKind; connection: SqlConnectionInput }
+  | { kind: "api"; connection: ApiConnectionInput }
+  | { kind: "gsheets"; connection: GSheetsConnectionInput };
+
 export type ResultColumn = {
   name: string;
   dbType: string;
@@ -112,6 +159,10 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   csv: "CSV",
   xlsx: "Excel",
   postgresql: "PostgreSQL",
+  mysql: "MySQL / MariaDB",
+  sqlserver: "SQL Server",
+  api: "API REST",
+  gsheets: "Google Sheets",
   dataset: "Dataset",
 };
 

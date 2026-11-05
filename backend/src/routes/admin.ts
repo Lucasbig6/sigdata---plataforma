@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { and, count, desc, eq, ne, sql } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
+import { isLiveSqlKind } from "@shared/domain/sources";
 import { ROLES } from "@shared/roles";
 import { captureAccessLink, withAdminCreation } from "../access";
 import { audit } from "../audit";
@@ -151,7 +152,7 @@ adminRoutes.delete(
     await db.delete(schema.user).where(eq(schema.user.id, target.id));
     for (const source of owned) {
       invalidateSourceCache(source.id);
-      if (source.kind !== "postgresql") await removeDuckFiles(source.id).catch(() => undefined);
+      if (!isLiveSqlKind(source.kind)) await removeDuckFiles(source.id).catch(() => undefined);
     }
     await audit(user, "usuario.removido", target.email);
     return { ok: true };

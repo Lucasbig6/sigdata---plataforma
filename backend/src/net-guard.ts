@@ -73,3 +73,26 @@ export const resolveSafeHost = async (host: string): Promise<string> => {
   }
   return first;
 };
+
+/**
+ * `lookup` para http/https.request: resolve e recusa endereços internos NO MOMENTO da conexão
+ * (vale também para cada redirecionamento e não deixa brecha para DNS rebinding).
+ */
+export const safeLookup = (
+  hostname: string,
+  options: { all?: boolean; family?: number | string },
+  callback: (error: Error | null, address?: unknown, family?: number) => void,
+) => {
+  lookup(hostname, { all: true, family: Number(options.family) || 0 })
+    .then((entries) => {
+      if (entries.length === 0) throw new HttpError(422, `Não foi possível resolver o host "${hostname}".`);
+      if (!allowPrivate() && entries.some((entry) => isPrivateAddress(entry.address))) {
+        throw new HttpError(422, "Este endereço aponta para uma rede interna e não é permitido.");
+      }
+      if (options.all) callback(null, entries);
+      else callback(null, entries[0]!.address, entries[0]!.family);
+    })
+    .catch((error: Error) =>
+      callback(error instanceof HttpError ? error : new HttpError(422, `Não foi possível resolver o host "${hostname}".`)),
+    );
+};

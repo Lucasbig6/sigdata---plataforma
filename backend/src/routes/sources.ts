@@ -3,12 +3,12 @@ import { z } from "zod";
 import { audit } from "../audit";
 import { handle, HttpError, parseBody } from "../http";
 import { getProject } from "../projects";
-import { createPostgresSchema, postgresConnectionSchema, workspaceSchema } from "../sources/schemas";
+import { createSourceSchema, testSourceSchema, workspaceSchema } from "../sources/schemas";
 import {
   createDataset,
   EDITOR_PAGE_SIZES,
   createFromUpload,
-  createPostgres,
+  createConnected,
   deleteSource,
   getResult,
   listRecentResults,
@@ -22,7 +22,7 @@ import {
   getManagedSource,
   runEditorQuery,
   runQuery,
-  testPostgres,
+  testConnection,
   toDataSource,
   updateSourceMeta,
 } from "../sources/service";
@@ -38,7 +38,7 @@ const analystHandle = <P extends Record<string, string> = Record<string, string>
 
 sourcesRoutes.get("/", handle(async ({ user }) => listSources(user)));
 
-/** multipart (arquivo CSV/XLSX) ou JSON (conexão Postgres). */
+/** multipart (arquivo CSV/XLSX) ou JSON (conexão com banco, API ou planilha). */
 sourcesRoutes.post(
   "/",
   analystHandle(async ({ req, user }) => {
@@ -55,7 +55,7 @@ sourcesRoutes.post(
       await audit(user, "fonte.importada", created.name, file.name);
       return created;
     }
-    const created = await createPostgres(user.id, await parseBody(req, createPostgresSchema));
+    const created = await createConnected(user.id, await parseBody(req, createSourceSchema));
     await audit(user, "fonte.conectada", created.name, created.connectionLabel ?? "");
     return created;
   }),
@@ -93,7 +93,7 @@ sourcesRoutes.post(
 
 sourcesRoutes.post(
   "/test",
-  analystHandle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema))),
+  analystHandle(async ({ req }) => testConnection(await parseBody(req, testSourceSchema))),
 );
 
 sourcesRoutes.get(

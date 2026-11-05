@@ -58,7 +58,14 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
       "peça para escolher uma fonte em 'Conjuntos de dados' na barra lateral (ou criar uma em Fontes de dados).",
     ].join("\n");
   }
-  const dialect = source.kind === "postgresql" ? "PostgreSQL" : "DuckDB (sintaxe próxima do PostgreSQL)";
+  const dialect =
+    source.kind === "postgresql"
+      ? "PostgreSQL"
+      : source.kind === "mysql"
+        ? 'MySQL/MariaDB (identificadores entre aspas duplas, LIMIT para limitar linhas)'
+        : source.kind === "sqlserver"
+          ? "SQL Server / T-SQL (sem LIMIT: use TOP; sem subconsulta com ORDER BY)"
+          : "DuckDB (sintaxe próxima do PostgreSQL)";
   return [
     ...base,
     "",

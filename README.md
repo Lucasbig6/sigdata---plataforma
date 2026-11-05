@@ -1,7 +1,7 @@
 # SIGDATA
 
 Plataforma de análise de dados: chat com IA que consulta fontes reais (CSV, XLSX,
-PostgreSQL), painel de visualizações por projeto e editor de dashboards compartilháveis.
+PostgreSQL, MySQL/MariaDB, SQL Server, API REST, Google Sheets), painel de visualizações por projeto e editor de dashboards compartilháveis.
 
 ## Estrutura
 
@@ -44,7 +44,7 @@ demonstração consultável e três dashboards de exemplo.
 | Rotas da API | `backend/src/routes/*.ts` (montadas em `backend/src/server.ts`) |
 | Login / sessão | `backend/src/auth.ts` (Better Auth) |
 | Tabelas do banco e migrações | `backend/src/db/schema.ts`, `backend/drizzle/` |
-| Fontes de dados, DuckDB, Postgres externo, datasets | `backend/src/sources/` |
+| Fontes de dados, DuckDB, bancos externos (Postgres, MySQL, SQL Server), API REST, Google Sheets, datasets | `backend/src/sources/` |
 | Editor SQL (frontend) | `frontend/components/fontes/sql/`, `frontend/lib/sql-editor/` |
 | Testes automatizados | `backend/test/`, `frontend/test/` |
 | Chat: prompt, ferramenta `consultar_dados`, salvamento da conversa | `backend/src/chat.ts`, `backend/src/routes/chat.ts` |
@@ -54,7 +54,14 @@ demonstração consultável e três dashboards de exemplo.
 
 - Só uma instrução `SELECT`/`WITH` por vez, executada como subconsulta com `LIMIT`.
 - DuckDB aberto somente-leitura, sem acesso a arquivos/extensões e com configuração travada.
-- Postgres externo em transação `READ ONLY` com `statement_timeout` (15 s) e `ROLLBACK`.
+- Bancos externos consultados ao vivo, sempre em leitura e com limite de 15 s: Postgres e MySQL/MariaDB em
+  transação `READ ONLY` com `ROLLBACK`; SQL Server não tem esse modo, então aceita só `SELECT`/`WITH` (sem `INTO`,
+  `EXEC`, `OPENROWSET`…) e pede um usuário só de leitura.
+- API REST e Google Sheets (planilha compartilhada por link) são **importadas**: os dados viram uma tabela no DuckDB
+  da fonte, e "Atualizar dados" busca de novo. Cabeçalhos e endereço ficam criptografados; cada conexão (e
+  redirecionamento) passa pela checagem de rede interna (`net-guard.ts`).
+- MySQL e SQL Server não têm o dialeto das etapas da preparação de dados: a tabela (até 50 mil linhas) é copiada em
+  leitura para a memória e as etapas rodam lá.
   Use um usuário só de leitura mesmo assim.
 - Senhas de conexões externas criptografadas com AES-256-GCM (`SIGDATA_ENCRYPTION_KEY`).
 

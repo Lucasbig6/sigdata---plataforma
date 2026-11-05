@@ -7,18 +7,25 @@ import type {
   AnalyticResult,
   DataSource,
   DatasetDefinition,
-  PostgresConnectionInput,
+  ApiConnectionInput,
+  GSheetsConnectionInput,
   SourceTable,
+  SqlConnectionInput,
   TablePreview,
 } from "@shared/domain/sources";
 import type { Workspace } from "@shared/domain/transform";
+import { isLiveSqlKind, isRemoteImportKind, type LiveSqlKind } from "@shared/domain/sources";
 import { MUNICIPIOS, SERIE_TEMPORAL } from "@shared/demo-data";
 import type { Role } from "@shared/roles";
 import { decryptJson, encryptJson } from "../crypto";
 import { db, schema } from "../db";
 import { HttpError, notFound } from "../http";
 import { ingestCsv, ingestRows, ingestXlsx, queryDuck, removeDuckFiles, sourceDir } from "./duck";
+import { ingestApi, ingestSheets, fetchApiRows, importTableName, sheetsExportUrl } from "./imports";
+import { introspectMssql, profileMssqlTable, queryMssql } from "./mssql";
+import { introspectMysql, profileMysqlTable, queryMysql } from "./mysql";
 import { introspectPg, profilePgTable, queryPg } from "./pg";
+import type { CreateSourceInput, TestSourceInput } from "./schemas";
 import { assertReadOnlySql, quoteQualified, toTableName, type QueryOutput } from "./sql";
 
 export type SourceRow = typeof schema.dataSources.$inferSelect;
@@ -27,22 +34,41 @@ export const MAX_UPLOAD_BYTES = 50 * 1024 * 1024;
 const PREVIEW_ROWS = 50;
 
 const connectionOf = (row: SourceRow) => {
-  if (row.kind !== "postgresql" || !row.connection) {
+  if (!isLiveSqlKind(row.kind) || !row.connection) {
     throw new HttpError(400, "Fonte sem conexão configurada.");
   }
-  return decryptJson<PostgresConnectionInput>(row.connection);
+  return decryptJson<SqlConnectionInput>(row.connection);
+};
+
+/** Motor de cada banco consultado ao vivo. */
+const driverOf = (kind: LiveSqlKind) =>
+  ({
+    postgresql: { introspect: introspectPg, query: queryPg, profile: profilePgTable },
+    mysql: { introspect: introspectMysql, query: queryMysql, profile: profileMysqlTable },
+    sqlserver: { introspect: introspectMssql, query: queryMssql, profile: profileMssqlTable },
+  })[kind];
+
+/** Rótulo da conexão sem segredos (senha, cabeçalhos e a query string do endereço ficam de fora). */
+const labelOf = (row: SourceRow): string | null => {
+  if (!row.connection) return null;
+  try {
+    if (isLiveSqlKind(row.kind)) {
+      const cfg = decryptJson<SqlConnectionInput>(row.connection);
+      return `${cfg.user}@${cfg.host}:${cfg.port}/${cfg.database}`;
+    }
+    if (row.kind === "api") {
+      const url = new URL(decryptJson<ApiConnectionInput>(row.connection).url);
+      return `${url.origin}${url.pathname}`;
+    }
+    if (row.kind === "gsheets") return "Google Sheets";
+  } catch {
+    return "credencial ilegível";
+  }
+  return null;
 };
 
 export const toDataSource = (row: SourceRow): DataSource => {
-  let connectionLabel: string | null = null;
-  if (row.kind === "postgresql" && row.connection) {
-    try {
-      const cfg = decryptJson<PostgresConnectionInput>(row.connection);
-      connectionLabel = `${cfg.user}@${cfg.host}:${cfg.port}/${cfg.database}`;
-    } catch {
-      connectionLabel = "credencial ilegível";
-    }
-  }
+  const connectionLabel = labelOf(row);
   return {
     id: row.id,
     name: row.name,
@@ -160,12 +186,10 @@ export const createFromUpload = async (
   }
 };
 
-/** Conexão Postgres externa: testa, lê o schema e guarda a credencial criptografada. */
-export const createPostgres = async (
-  userId: string,
-  input: { name: string; description: string; connection: PostgresConnectionInput },
-) => {
-  const tables = await introspectPg(input.connection);
+/** Banco externo (PostgreSQL, MySQL, SQL Server): testa, lê o schema e guarda a credencial criptografada. */
+const createLiveSql = async (userId: string, input: Extract<CreateSourceInput, { connection: SqlConnectionInput }>) => {
+  const kind = input.kind as LiveSqlKind;
+  const tables = await driverOf(kind).introspect(input.connection);
   if (tables.length === 0) {
     throw new HttpError(422, "Conectou, mas nenhuma tabela visível foi encontrada para este usuário.");
   }
@@ -176,7 +200,7 @@ export const createPostgres = async (
       userId,
       name: input.name.trim() || input.connection.database,
       description: input.description.trim(),
-      kind: "postgresql",
+      kind,
       status: "pronta",
       connection: encryptJson(input.connection),
       tables,
@@ -185,17 +209,72 @@ export const createPostgres = async (
   return toDataSource(row);
 };
 
-export const testPostgres = async (connection: PostgresConnectionInput) => {
-  const tables = await introspectPg(connection);
-  return { ok: true as const, tables: tables.length };
+/** API REST ou Google Sheets: busca os dados e copia para o DuckDB da fonte. */
+const createImported = async (
+  userId: string,
+  input: Extract<CreateSourceInput, { kind: "api" | "gsheets" }>,
+) => {
+  const id = randomUUID();
+  const fallback = input.kind === "api" ? new URL(input.connection.url.trim()).hostname : "Planilha Google";
+  const name = input.name.trim() || fallback;
+  await db.insert(schema.dataSources).values({
+    id,
+    userId,
+    name,
+    description: input.description.trim(),
+    kind: input.kind,
+    status: "processando",
+    connection: encryptJson(input.connection),
+  });
+  try {
+    const table = importTableName(name);
+    const tables =
+      input.kind === "api" ? await ingestApi(id, input.connection, table) : await ingestSheets(id, input.connection, table);
+    return await finish(id, { status: "pronta", tables, error: null });
+  } catch (error) {
+    await db.delete(schema.dataSources).where(eq(schema.dataSources.id, id));
+    await removeDuckFiles(id).catch(() => undefined);
+    if (error instanceof HttpError) throw error;
+    console.error("[sigdata] importação", error);
+    throw new HttpError(500, "Falha ao importar os dados.");
+  }
 };
 
-/** Relê o schema (útil quando o banco externo mudou). */
+export const createConnected = (userId: string, input: CreateSourceInput) => {
+  if (input.kind === "api" || input.kind === "gsheets") return createImported(userId, input);
+  return createLiveSql(userId, input);
+};
+
+export const testConnection = async (input: TestSourceInput) => {
+  if (input.kind === "api") {
+    const rows = await fetchApiRows(input.connection);
+    return { ok: true as const, tables: 1, rows: rows.length };
+  }
+  if (input.kind === "gsheets") {
+    sheetsExportUrl(input.connection.url);
+    return { ok: true as const, tables: 1, rows: null };
+  }
+  const tables = await driverOf(input.kind).introspect(input.connection);
+  return { ok: true as const, tables: tables.length, rows: null };
+};
+
+/** Banco externo: relê o schema. API/Planilha: busca os dados de novo e substitui a tabela. */
 export const refreshSource = async (actor: Actor, id: string) => {
   const row = await getManagedSource(actor, id);
-  if (row.kind !== "postgresql") return toDataSource(row);
-  const tables = await introspectPg(connectionOf(row));
-  return finish(id, { tables, status: "pronta", error: null });
+  if (isLiveSqlKind(row.kind)) {
+    const tables = await driverOf(row.kind).introspect(connectionOf(row));
+    return finish(id, { tables, status: "pronta", error: null });
+  }
+  if (isRemoteImportKind(row.kind) && row.connection) {
+    const table = row.tables[0]?.name ?? importTableName(row.name);
+    const tables =
+      row.kind === "api"
+        ? await ingestApi(id, decryptJson<ApiConnectionInput>(row.connection), table)
+        : await ingestSheets(id, decryptJson<GSheetsConnectionInput>(row.connection), table);
+    invalidateSourceCache(id);
+    return finish(id, { tables, status: "pronta", error: null });
+  }
+  return toDataSource(row);
 };
 
 export const updateSourceMeta = async (
@@ -259,7 +338,7 @@ export const deleteSource = async (actor: Actor, id: string, force = false) => {
   await assertUnusedOrForced(actor, id, force);
   await db.delete(schema.dataSources).where(eq(schema.dataSources.id, row.id));
   invalidateSourceCache(row.id);
-  if (row.kind !== "postgresql") await removeDuckFiles(row.id).catch(() => undefined);
+  if (!isLiveSqlKind(row.kind)) await removeDuckFiles(row.id).catch(() => undefined);
 };
 
 export const findTable = (row: SourceRow, table: string) => {
@@ -275,8 +354,8 @@ export const assertReady = (row: SourceRow) => {
 };
 
 export const execute = (row: SourceRow, sql: string, limit?: number, offset?: number) =>
-  row.kind === "postgresql"
-    ? queryPg(connectionOf(row), sql, limit, offset)
+  isLiveSqlKind(row.kind)
+    ? driverOf(row.kind).query(connectionOf(row), sql, limit, offset)
     : queryDuck(row.id, sql, limit, offset);
 
 export const previewTable = async (userId: string, id: string, table: string): Promise<TablePreview> => {
@@ -287,13 +366,13 @@ export const previewTable = async (userId: string, id: string, table: string): P
   return { table: found.name, columns: out.columns, rows: out.rows };
 };
 
-/** Perfil de colunas: arquivos já têm (calculado na ingestão); Postgres calcula e guarda no cache. */
+/** Perfil de colunas: arquivos já têm (calculado na ingestão); bancos externos calculam e guardam no cache. */
 export const profileTable = async (userId: string, id: string, table: string): Promise<SourceTable> => {
   const row = await getSourceRow(userId, id);
   assertReady(row);
   const found = findTable(row, table);
-  if (row.kind !== "postgresql" || found.columns.every((column) => column.profile)) return found;
-  const profiled = await profilePgTable(connectionOf(row), found);
+  if (!isLiveSqlKind(row.kind) || found.columns.every((column) => column.profile)) return found;
+  const profiled = await driverOf(row.kind).profile(connectionOf(row), found);
   await finish(id, { tables: row.tables.map((entry) => (entry.name === found.name ? profiled : entry)) });
   return profiled;
 };

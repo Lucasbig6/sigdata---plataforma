@@ -23,7 +23,7 @@ import { Button } from "@/components/ui/button";
 import { api } from "@/lib/api/client";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import type { DataSource, ResultColumn } from "@/lib/domain/sources";
-import { toTableName } from "@shared/domain/sources";
+import { SOURCE_KIND_LABELS, isLiveSqlKind, sampleSql, toTableName } from "@shared/domain/sources";
 import { useScriptsStore } from "@/lib/sql-editor/scripts";
 import { cn } from "@/lib/utils";
 import { CodeEditor, type EditorHandle } from "./sql/code-editor";
@@ -72,10 +72,10 @@ const HISTORY_LIMIT = 60;
 
 const starterSql = (source: DataSource | undefined | null) => {
   const table = source?.tables[0]?.name;
-  return table ? `SELECT *\nFROM ${table}\nLIMIT 100;` : "";
+  return table && source ? `${sampleSql(source.kind, table)};` : "";
 };
 
-const dialectOf = (source: DataSource | null) => (source?.kind === "postgresql" ? "PostgreSQL" : "DuckDB");
+const dialectOf = (source: DataSource | null) => (source && isLiveSqlKind(source.kind) ? SOURCE_KIND_LABELS[source.kind] : "DuckDB");
 
 export const SqlEditor = ({
   initialSourceId,
@@ -267,7 +267,7 @@ export const SqlEditor = ({
   const previewTable = (table: string) => {
     const target = navEntry?.source ?? source;
     if (!target) return;
-    const sql = `SELECT *\nFROM ${table}\nLIMIT 100;`;
+    const sql = `${sampleSql(target.kind, table)};`;
     const id = open({ sourceId: target.id, sql, name: table.split(".").pop() });
     const created = useScriptsStore.getState().scripts.find((entry) => entry.id === id);
     if (created) void executeRef.current(sql, created, target);

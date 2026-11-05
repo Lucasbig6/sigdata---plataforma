@@ -11,12 +11,59 @@ export const postgresConnectionSchema = z.object({
   schemas: z.array(z.string().trim().max(128)).max(20).optional(),
 });
 
-export const createPostgresSchema = z.object({
-  kind: z.literal("postgresql"),
-  name: z.string().max(120).default(""),
-  description: z.string().max(500).default(""),
-  connection: postgresConnectionSchema,
+const sqlSource = <K extends "postgresql" | "mysql" | "sqlserver">(kind: K) =>
+  z.object({
+    kind: z.literal(kind),
+    name: z.string().max(120).default(""),
+    description: z.string().max(500).default(""),
+    connection: postgresConnectionSchema,
+  });
+
+export const apiConnectionSchema = z.object({
+  url: z.string().trim().min(1, "informe o endereço").max(2000),
+  headers: z
+    .array(z.object({ name: z.string().trim().max(100), value: z.string().max(2000) }))
+    .max(20)
+    .default([]),
+  recordsPath: z.string().trim().max(200).default(""),
+  pagination: z
+    .discriminatedUnion("type", [
+      z.object({ type: z.literal("none") }),
+      z.object({
+        type: z.literal("page"),
+        param: z.string().trim().min(1).max(60),
+        start: z.coerce.number().int().min(0).max(1_000_000).default(1),
+        sizeParam: z.string().trim().max(60).optional(),
+        size: z.coerce.number().int().min(1).max(10_000).optional(),
+      }),
+      z.object({ type: z.literal("next"), path: z.string().trim().min(1).max(200) }),
+    ])
+    .default({ type: "none" }),
+  maxPages: z.coerce.number().int().min(1).max(100).default(10),
 });
+
+export const gsheetsConnectionSchema = z.object({ url: z.string().trim().min(1, "informe o link").max(2000) });
+
+const meta = { name: z.string().max(120).default(""), description: z.string().max(500).default("") };
+
+/** Corpo de criação de uma fonte conectada (arquivos vão por multipart, em outra rota). */
+export const createSourceSchema = z.discriminatedUnion("kind", [
+  sqlSource("postgresql"),
+  sqlSource("mysql"),
+  sqlSource("sqlserver"),
+  z.object({ kind: z.literal("api"), ...meta, connection: apiConnectionSchema }),
+  z.object({ kind: z.literal("gsheets"), ...meta, connection: gsheetsConnectionSchema }),
+]);
+
+/** Corpo do "Testar conexão". */
+export const testSourceSchema = z.discriminatedUnion("kind", [
+  z.object({ kind: z.enum(["postgresql", "mysql", "sqlserver"]), connection: postgresConnectionSchema }),
+  z.object({ kind: z.literal("api"), connection: apiConnectionSchema }),
+  z.object({ kind: z.literal("gsheets"), connection: gsheetsConnectionSchema }),
+]);
+
+export type CreateSourceInput = z.infer<typeof createSourceSchema>;
+export type TestSourceInput = z.infer<typeof testSourceSchema>;
 
 const columnName = z.string().min(1).max(128);
 const stepId = z.string().min(1).max(64);

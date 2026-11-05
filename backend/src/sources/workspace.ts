@@ -25,6 +25,12 @@ const DISTINCT_LIMIT = 50;
 
 const engineOf = (row: SourceRow): Engine => (row.kind === "postgresql" ? "postgres" : "duckdb");
 
+/**
+ * MySQL e SQL Server não têm o dialeto das etapas: as linhas da tabela (até MAX_COMBINE_ROWS) são
+ * copiadas, em leitura, para a área em memória, e as etapas rodam lá.
+ */
+const copiesToMemory = (row: SourceRow) => row.kind === "mysql" || row.kind === "sqlserver";
+
 const usesQuery = (step: Step) => step.type === "acrescentar" || (step.type === "mesclar" && Boolean(step.query));
 
 const referencedQueries = (steps: Step[]) => [
@@ -75,7 +81,7 @@ const buildPlan = async (
   const table = findTable(row, query.table);
   const steps = options.upTo === undefined ? query.steps : query.steps.slice(0, options.upTo);
   const engine = engineOf(row);
-  const split = steps.findIndex(usesQuery);
+  const split = copiesToMemory(row) ? 0 : steps.findIndex(usesQuery);
 
   if (split < 0) {
     const compiled = compilePipeline(table, steps, engine, row.tables);
@@ -83,7 +89,7 @@ const buildPlan = async (
   }
 
   // 1) trecho que roda na origem
-  const prefix = compilePipeline(table, steps.slice(0, split), engine, row.tables);
+  const prefix = compilePipeline(table, steps.slice(0, split), copiesToMemory(row) ? "postgres" : engine, row.tables);
   const base = await execute(row, prefix.sql, MAX_COMBINE_ROWS);
   assertWithinLimit(base, query.name);
 

@@ -8,7 +8,7 @@ import { api } from "@/lib/api/client";
 import {
   SOURCE_KIND_LABELS,
   type DataSource,
-  type PostgresConnectionInput,
+  type ConnectionRequest,
   type SourceKind,
   type SourceTable,
 } from "@/lib/domain/sources";
@@ -34,12 +34,9 @@ type DatasetsStore = {
   hydrate: () => void;
   reload: () => Promise<void>;
   uploadFile: (input: { file: File; name: string; description: string }) => Promise<DataSource>;
-  testPostgres: (connection: PostgresConnectionInput) => Promise<{ tables: number }>;
-  connectPostgres: (input: {
-    name: string;
-    description: string;
-    connection: PostgresConnectionInput;
-  }) => Promise<DataSource>;
+  testConnection: (request: ConnectionRequest) => Promise<{ tables: number; rows: number | null }>;
+  /** Banco externo, API REST ou planilha Google. */
+  connectSource: (input: ConnectionRequest & { name: string; description: string }) => Promise<DataSource>;
   /** Com `sourceId` + `sql` (editor SQL) ou `workspace` (preparação de dados em etapas). */
   createDataset: (input: {
     sourceId?: string;
@@ -103,16 +100,11 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
       return upsert(await api<DataSource>("/api/sources", { method: "POST", body: form }));
     },
 
-    testPostgres: (connection) =>
-      api<{ tables: number }>("/api/sources/test", { method: "POST", json: connection }),
+    testConnection: (request) =>
+      api<{ tables: number; rows: number | null }>("/api/sources/test", { method: "POST", json: request }),
 
-    connectPostgres: async (input) =>
-      upsert(
-        await api<DataSource>("/api/sources", {
-          method: "POST",
-          json: { kind: "postgresql", ...input },
-        }),
-      ),
+    connectSource: async (input) =>
+      upsert(await api<DataSource>("/api/sources", { method: "POST", json: input })),
 
     createDataset: async (input) =>
       upsert(await api<DataSource>("/api/sources/dataset", { method: "POST", json: input })),
