@@ -13,7 +13,8 @@ import {
 import { Hono } from "hono";
 import { z } from "zod";
 import { userLimiter } from "../rate-limit";
-import { buildSystemPrompt, loadActiveSource, persistConversation, serverTools } from "../chat";
+import { buildSystemPrompt, loadActiveSource, serverTools } from "../chat";
+import { ensureChat, persistConversation } from "../chats";
 import { withUserContext } from "../chat-context";
 import { sanitizeMessages } from "../extract-file";
 import { errorResponse, HttpError, parseBody, requireUser } from "../http";
@@ -42,6 +43,7 @@ const frontendTools = (defs: FrontendToolDefs): ToolSet =>
 /** Corpo da requisição: limites evitam abuso de cota e payloads gigantes. */
 const chatBodySchema = z.object({
   projectId: z.string().min(1).max(64),
+  chatId: z.string().min(1).max(64),
   messages: z.array(z.custom<UIMessage>((value) => typeof value === "object" && value !== null)).min(1).max(100),
   system: z.string().max(4000).optional(),
   tools: z
@@ -201,14 +203,16 @@ chatRoutes.post("/", async (c) => {
       throw new HttpError(429, `Muitas mensagens em pouco tempo. Aguarde ${retryAfter}s.`);
     }
 
-    const { messages, system, tools, projectId } = (await parseBody(req, chatBodySchema)) as {
+    const { messages, system, tools, projectId, chatId } = (await parseBody(req, chatBodySchema)) as {
       messages: UIMessage[];
       system?: string;
       tools?: FrontendToolDefs;
       projectId: string;
+      chatId: string;
     };
 
     const project = await getProject(user.id, projectId);
+    await ensureChat(project.id, chatId);
     const source = await loadActiveSource(user.id, project.sourceId);
 
     const aiTools = {
@@ -234,7 +238,7 @@ chatRoutes.post("/", async (c) => {
       sendReasoning: true,
       onEnd: async ({ messages: finalMessages }) => {
         try {
-          await persistConversation(project.id, finalMessages);
+          await persistConversation(project.id, chatId, finalMessages);
         } catch (error) {
           console.error("[sigdata] falha ao salvar conversa", error);
         }

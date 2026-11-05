@@ -154,12 +154,27 @@ export const projects = pgTable(
   (table) => [index("projects_user_idx").on(table.userId, table.updatedAt)],
 );
 
-export const messages = pgTable(
-  "messages",
+/** Conversas de um projeto. Resultados, painel, notas e fonte ativa pertencem ao projeto, não à conversa. */
+export const chats = pgTable(
+  "chats",
   {
+    id: text("id").primaryKey(),
     projectId: text("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("chats_project_idx").on(table.projectId, table.updatedAt)],
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    chatId: text("chat_id")
+      .notNull()
+      .references(() => chats.id, { onDelete: "cascade" }),
     id: text("id").notNull(),
     position: integer("position").notNull(),
     role: text("role").$type<UIMessage["role"]>().notNull(),
@@ -168,8 +183,8 @@ export const messages = pgTable(
     createdAt: createdAt(),
   },
   (table) => [
-    primaryKey({ columns: [table.projectId, table.id] }),
-    index("messages_order_idx").on(table.projectId, table.position),
+    primaryKey({ columns: [table.chatId, table.id] }),
+    index("messages_order_idx").on(table.chatId, table.position),
   ],
 );
 

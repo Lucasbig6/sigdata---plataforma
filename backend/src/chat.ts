@@ -1,8 +1,7 @@
-import { tool, type UIMessage } from "ai";
-import { eq } from "drizzle-orm";
+import { tool } from "ai";
 import { z } from "zod";
 import type { SourceTable } from "@shared/domain/sources";
-import { db, schema } from "./db";
+import type { schema } from "./db";
 import { HttpError } from "./http";
 import { getSourceRow, runQuery } from "./sources/service";
 
@@ -122,37 +121,3 @@ export const serverTools = (ctx: { userId: string; projectId: string; source: So
     },
   }),
 });
-
-/**
- * Arquivos anexados chegam como data URL (podem ter vários MB). No banco guardamos
- * só a referência; o conteúdo já foi usado na resposta.
- */
-const stripInlineFiles = (message: UIMessage): UIMessage => ({
-  ...message,
-  parts: message.parts.map((part) =>
-    part.type === "file" && part.url.startsWith("data:") ? { ...part, url: "" } : part,
-  ),
-});
-
-/** Substitui o histórico do projeto pela versão final da conversa. */
-export const persistConversation = async (projectId: string, messages: UIMessage[]) => {
-  await db.transaction(async (tx) => {
-    await tx.delete(schema.messages).where(eq(schema.messages.projectId, projectId));
-    if (messages.length > 0) {
-      await tx.insert(schema.messages).values(
-        messages.map((message, position) => {
-          const clean = stripInlineFiles(message);
-          return {
-            projectId,
-            id: clean.id || `m-${position}`,
-            position,
-            role: clean.role,
-            parts: clean.parts,
-            metadata: clean.metadata ?? null,
-          };
-        }),
-      );
-    }
-    await tx.update(schema.projects).set({ updatedAt: new Date() }).where(eq(schema.projects.id, projectId));
-  });
-};

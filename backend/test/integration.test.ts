@@ -485,5 +485,34 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
       assert.equal((await request(outra, "DELETE", `/api/projects/${project.id}/notes/${note.id}`)).status, 404);
       assert.equal((await request(dona, "DELETE", `/api/projects/${project.id}/notes/${note.id}`)).status, 200);
     });
+
+    test("conversas do projeto: várias por projeto, renomear, excluir e isolar", async () => {
+      const dona = await signUp("chats1@teste.dev");
+      const outra = await signUp("chats2@teste.dev");
+      const project = (await (await request(dona, "POST", "/api/projects", { title: "Com conversas" })).json()) as { id: string };
+      const other = (await (await request(dona, "POST", "/api/projects", { title: "Outro" })).json()) as { id: string };
+
+      const first = (await (await request(dona, "POST", `/api/projects/${project.id}/chats`, {})).json()) as { id: string; title: string };
+      assert.equal(first.title, "Nova conversa");
+      const second = (await (await request(dona, "POST", `/api/projects/${project.id}/chats`, {})).json()) as { id: string };
+      // criar conversa não cria projeto
+      const projects = (await (await request(dona, "GET", "/api/projects")).json()) as unknown[];
+      assert.equal(projects.length, 2);
+
+      assert.equal((await request(dona, "PATCH", `/api/projects/${project.id}/chats/${first.id}`, { title: "Vendas" })).status, 200);
+      const list = (await (await request(dona, "GET", `/api/projects/${project.id}/chats`)).json()) as { id: string; title: string }[];
+      assert.deepEqual(list.map((chat) => chat.id).sort(), [first.id, second.id].sort());
+      assert.equal(list.find((chat) => chat.id === first.id)?.title, "Vendas");
+
+      assert.deepEqual(await (await request(dona, "GET", `/api/projects/${project.id}/chats/${first.id}/messages`)).json(), []);
+      // a conversa não é visível por outro projeto nem por outra pessoa
+      assert.equal((await request(dona, "GET", `/api/projects/${other.id}/chats/${first.id}/messages`)).status, 404);
+      assert.equal((await request(outra, "GET", `/api/projects/${project.id}/chats`)).status, 404);
+      assert.equal((await request(outra, "DELETE", `/api/projects/${project.id}/chats/${first.id}`)).status, 404);
+
+      assert.equal((await request(dona, "DELETE", `/api/projects/${project.id}/chats/${first.id}`)).status, 200);
+      const rest = (await (await request(dona, "GET", `/api/projects/${project.id}/chats`)).json()) as unknown[];
+      assert.equal(rest.length, 1);
+    });
   });
 });

@@ -2,10 +2,11 @@ import { and, asc, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { UIMessage } from "ai";
-import { DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
+import { DEFAULT_CHAT_TITLE, DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
 import { WIDGET_KINDS, type PanelWidget } from "@shared/panel";
 import { db, schema } from "../db";
 import { handle, HttpError, notFound, parseBody } from "../http";
+import { ensureChat, getChat, listChats, toChat } from "../chats";
 import { getProject, toNotebook } from "../projects";
 import { getSourceRow } from "../sources/service";
 
@@ -87,16 +88,67 @@ projectsRoutes.delete(
   }),
 );
 
-/* -------------------------------------------------------------- mensagens */
+/* ---------------------------------------------------------------- conversas */
+
+const MAX_CHATS_PER_PROJECT = 200;
 
 projectsRoutes.get(
-  "/:id/messages",
+  "/:id/chats",
   handle<{ id: string }>(async ({ user, params }) => {
     const project = await getProject(user.id, params.id);
+    return (await listChats(project.id)).map(toChat);
+  }),
+);
+
+projectsRoutes.post(
+  "/:id/chats",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    // id gerado no cliente (a conversa abre na hora); repetir o id devolve a mesma conversa
+    const body = await parseBody(req, z.object({ id: z.uuid().optional(), title: z.string().max(200).optional() }));
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.chats)
+      .where(eq(schema.chats.projectId, project.id));
+    if ((total ?? 0) >= MAX_CHATS_PER_PROJECT) throw new HttpError(409, "Limite de conversas do projeto atingido.");
+    return toChat(await ensureChat(project.id, body.id ?? crypto.randomUUID(), body.title?.trim() || undefined));
+  }),
+);
+
+projectsRoutes.patch(
+  "/:id/chats/:chatId",
+  handle<{ id: string; chatId: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
+    const body = await parseBody(req, z.object({ title: z.string().max(200) }));
+    const [row] = await db
+      .update(schema.chats)
+      .set({ title: body.title.trim() || DEFAULT_CHAT_TITLE })
+      .where(eq(schema.chats.id, chat.id))
+      .returning();
+    return toChat(row);
+  }),
+);
+
+projectsRoutes.delete(
+  "/:id/chats/:chatId",
+  handle<{ id: string; chatId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
+    await db.delete(schema.chats).where(eq(schema.chats.id, chat.id));
+    return { ok: true };
+  }),
+);
+
+projectsRoutes.get(
+  "/:id/chats/:chatId/messages",
+  handle<{ id: string; chatId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
     const rows = await db
       .select()
       .from(schema.messages)
-      .where(eq(schema.messages.projectId, project.id))
+      .where(eq(schema.messages.chatId, chat.id))
       .orderBy(asc(schema.messages.position));
     return rows.map(
       (row) =>

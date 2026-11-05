@@ -57,6 +57,13 @@
       "when": 1793722641680,
       "tag": "0007_dashboards_por_projeto",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793899766410,
+      "tag": "0008_chats_por_projeto",
+      "breakpoints": true
     }
   ]
 }
