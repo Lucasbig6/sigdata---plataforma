@@ -1,33 +1,41 @@
 "use client";
 
-import { Database, FileSpreadsheet, Globe, Sheet } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { LiveSqlKind } from "@/lib/domain/sources";
+import {
+  ApiLogo,
+  FileLogo,
+  GoogleSheetsLogo,
+  MysqlLogo,
+  PostgresqlLogo,
+  SqlServerLogo,
+  type ConnectorLogo,
+} from "./connector-logos";
 
 export type ConnectorMode = "arquivo" | LiveSqlKind | "api" | "gsheets";
 
-export type Connector = { id: ConnectorMode; label: string; description: string; icon: typeof Database };
+export type Connector = { id: ConnectorMode; label: string; description: string; Logo: ConnectorLogo };
 
 export const CONNECTOR_GROUPS: { title: string; connectors: Connector[] }[] = [
   {
     title: "Arquivos",
     connectors: [
-      { id: "arquivo", label: "Arquivo CSV / XLSX", description: "Envie uma planilha; cada aba do Excel vira uma tabela.", icon: FileSpreadsheet },
+      { id: "arquivo", label: "Arquivo CSV / XLSX", description: "Envie uma planilha; cada aba do Excel vira uma tabela.", Logo: FileLogo },
     ],
   },
   {
     title: "Bancos de dados",
     connectors: [
-      { id: "postgresql", label: "PostgreSQL", description: "Consulta ao vivo, somente leitura.", icon: Database },
-      { id: "mysql", label: "MySQL / MariaDB", description: "Consulta ao vivo, somente leitura.", icon: Database },
-      { id: "sqlserver", label: "SQL Server", description: "Consulta ao vivo com usuário só de leitura.", icon: Database },
+      { id: "postgresql", label: "PostgreSQL", description: "Consulta ao vivo, somente leitura.", Logo: PostgresqlLogo },
+      { id: "mysql", label: "MySQL / MariaDB", description: "Consulta ao vivo, somente leitura.", Logo: MysqlLogo },
+      { id: "sqlserver", label: "SQL Server", description: "Consulta ao vivo com usuário só de leitura.", Logo: SqlServerLogo },
     ],
   },
   {
     title: "Serviços na web",
     connectors: [
-      { id: "api", label: "API REST", description: "Importa os dados de um endereço JSON.", icon: Globe },
-      { id: "gsheets", label: "Google Sheets", description: "Importa uma planilha compartilhada por link.", icon: Sheet },
+      { id: "api", label: "API REST", description: "Importa os dados de um endereço JSON.", Logo: ApiLogo },
+      { id: "gsheets", label: "Google Sheets", description: "Importa uma planilha compartilhada por link.", Logo: GoogleSheetsLogo },
     ],
   },
 ];
@@ -52,8 +60,8 @@ export const ConnectorPicker = ({ onPick }: { onPick: (id: ConnectorMode) => voi
                   "hover:border-primary/50 hover:bg-muted/40 focus-visible:ring-2 focus-visible:ring-ring/50",
                 )}
               >
-                <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-muted/60 text-primary">
-                  <connector.icon className="size-4" aria-hidden />
+                <span className="grid size-10 shrink-0 place-items-center rounded-lg border border-border bg-background">
+                  <connector.Logo className="size-6" />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-medium text-foreground">{connector.label}</span>

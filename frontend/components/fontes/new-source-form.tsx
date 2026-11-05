@@ -140,7 +140,7 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
           Trocar tipo
         </Button>
         <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground">
-          <connector.icon className="size-3.5 text-primary" aria-hidden />
+          <connector.Logo className="size-4" />
           {connector.label}
         </span>
       </div>
