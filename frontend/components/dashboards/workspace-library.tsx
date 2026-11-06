@@ -21,7 +21,7 @@ const keyOf = (projectId: string, visual: WorkspaceVisual) => `${projectId}:${vi
 export const useAddVisual = () => {
   const addElement = useDashboardsStore((state) => state.addElement);
   return useCallback(
-    (key: string, placement?: { x?: number; y?: number }) => {
+    (key: string, placement?: { x?: number; y?: number; exact?: boolean }) => {
       const entry = registry.get(key);
       const draft = entry ? draftFromVisual(entry.visual, entry.projectTitle) : null;
       if (!draft) return false;

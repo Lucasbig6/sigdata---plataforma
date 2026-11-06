@@ -9,7 +9,7 @@ export const MOBILE_WIDTH = 390;
 const SIDE = 12;
 const GAP = 12;
 
-type View = { canvas: { width: number; height: number; background?: string; palette?: string[] }; elements: DashboardElement[] };
+type View = { canvas: { width: number; height: number; background?: string; palette?: string[]; layout?: "grid" }; elements: DashboardElement[] };
 
 const isIndicator = (el: DashboardElement) => el.type === "kpi" || el.type === "percent" || el.type === "comparison";
 
@@ -61,7 +61,7 @@ export const toMobileLayout = (doc: View): View => {
   }
 
   return {
-    canvas: { ...doc.canvas, width: MOBILE_WIDTH, height: Math.max(y + SIDE - GAP, 480) },
+    canvas: { ...doc.canvas, layout: undefined, width: MOBILE_WIDTH, height: Math.max(y + SIDE - GAP, 480) },
     elements: placed.map((el, index) => ({ ...el, z: index }) as DashboardElement),
   };
 };

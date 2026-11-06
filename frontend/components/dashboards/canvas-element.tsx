@@ -5,7 +5,7 @@ import { memo, useRef, useState, type ReactNode } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Rnd } from "react-rnd";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { ELEMENT_MIN, type DashboardElement } from "@/lib/dashboards/types";
+import { ELEMENT_MIN, GRID_ROW, type DashboardElement } from "@/lib/dashboards/types";
 import { ELEMENT_LABELS, ElementView } from "./element-renderers";
 
 const HANDLE_CLASSES = {
@@ -27,6 +27,8 @@ type Props = {
   multi?: boolean;
   preview: boolean;
   snap?: boolean;
+  /** Página em grade: largura de uma coluna (px lógicos). */
+  gridColumn?: number;
 };
 
 const GRID = 8;
@@ -105,6 +107,7 @@ export const CanvasElement = memo(function CanvasElement({
   multi = false,
   preview,
   snap = false,
+  gridColumn,
 }: Props) {
   const select = useDashboardsStore((state) => state.select);
   const toggleSelect = useDashboardsStore((state) => state.toggleSelect);
@@ -132,8 +135,8 @@ export const CanvasElement = memo(function CanvasElement({
       resizeHandleClasses={preview ? undefined : HANDLE_CLASSES}
       minWidth={min.w}
       minHeight={min.h}
-      dragGrid={snap ? [GRID, GRID] : undefined}
-      resizeGrid={snap ? [GRID, GRID] : undefined}
+      dragGrid={gridColumn ? [gridColumn, GRID_ROW] : snap ? [GRID, GRID] : undefined}
+      resizeGrid={gridColumn ? [gridColumn, GRID_ROW] : snap ? [GRID, GRID] : undefined}
       cancel=".no-drag"
       onDragStart={() => {
         dragged.current = false;
@@ -177,6 +180,8 @@ export const CanvasElement = memo(function CanvasElement({
         }}
         className="relative h-full w-full"
         style={{
+          // em grade a célula inteira é do elemento; o respiro entre cartões fica por dentro
+          ...(gridColumn ? { margin: 8, width: "calc(100% - 16px)", height: "calc(100% - 16px)" } : {}),
           outline: selected && !preview ? "2px solid var(--selection-outline)" : undefined,
           outlineOffset: 1,
           opacity: element.hidden ? 0.3 : 1,

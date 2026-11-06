@@ -23,6 +23,14 @@ export type { ChartType, NumberFormat };
 
 export const DASHBOARD_SCHEMA_VERSION = 1;
 
+/**
+ * Páginas em modo grade (`canvas.layout === "grid"`): 12 colunas de largura igual e linhas de
+ * GRID_ROW px. As posições continuam em px lógicos no mesmo modelo (x, y, w, h), sempre múltiplas
+ * da célula; o editor empurra e compacta os elementos para não haver sobreposição nem buracos.
+ */
+export const GRID_COLUMNS = 12;
+export const GRID_ROW = 20;
+
 export const CANVAS = { width: 1600, height: 1000 } as const;
 
 export const CANVAS_LIMITS = { min: { w: 480, h: 320 }, max: { w: 4000, h: 6000 } } as const;
@@ -359,7 +367,7 @@ export type DashboardElement =
 export type DashboardPage = {
   id: string;
   name: string;
-  canvas: { width: number; height: number; background?: string; palette?: string[] };
+  canvas: { width: number; height: number; background?: string; palette?: string[]; layout?: "grid" };
   elements: DashboardElement[];
 };
 
@@ -381,7 +389,7 @@ export type Dashboard = {
   createdAt: number;
   updatedAt: number;
   /** `background` ausente = cor padrão do tema; `palette` = cores dos gráficos do painel. */
-  canvas: { width: number; height: number; background?: string; palette?: string[] };
+  canvas: { width: number; height: number; background?: string; palette?: string[]; layout?: "grid" };
   elements: DashboardElement[];
 };
 
@@ -494,6 +502,7 @@ const sanitizeCanvas = (raw: unknown): Dashboard["canvas"] =>
         height: typeof raw.height === "number" ? raw.height : CANVAS.height,
         ...(isPageBackground(raw.background) && { background: raw.background }),
         ...(isPagePalette(raw.palette) && { palette: raw.palette }),
+        ...(raw.layout === "grid" && { layout: "grid" as const }),
       }
     : { ...CANVAS };
 

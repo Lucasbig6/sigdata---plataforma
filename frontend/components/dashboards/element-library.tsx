@@ -16,7 +16,7 @@ export const useAddLibraryItem = () => {
   const addElement = useDashboardsStore((state) => state.addElement);
   const datasets = useDatasetsStore((state) => state.datasets).filter(isAnalysisDataset);
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
-  return (item: LibraryItem, placement?: { x?: number; y?: number }) =>
+  return (item: LibraryItem, placement?: { x?: number; y?: number; exact?: boolean }) =>
     addElement(
       item,
       placement,

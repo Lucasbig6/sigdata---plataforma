@@ -3,7 +3,10 @@
 import { RotateCw } from "lucide-react";
 import { useEffect, useState } from "react";
 import { PAGE_PALETTES } from "@/lib/dashboards/page-themes";
+import { useRole } from "@/lib/auth-client";
+import { isGrid } from "@/lib/dashboards/grid";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { canManageData } from "@shared/roles";
 import { CANVAS_LIMITS, PAGE_PRESETS, clamp } from "@/lib/dashboards/types";
 import { inputCls } from "./binding-editor";
 
@@ -68,6 +71,8 @@ const BACKGROUNDS = ["#ffffff", "#f3f5f7", "#1b2326", "#0b1114", "#102a43", "#f5
 export const PageSettings = () => {
   const canvas = useDashboardsStore((s) => (s.currentId ? s.dashboards[s.currentId]?.canvas : undefined));
   const setCanvasSize = useDashboardsStore((s) => s.setCanvasSize);
+  const setLayoutMode = useDashboardsStore((s) => s.setLayoutMode);
+  const role = useRole();
   const setCanvasBackground = useDashboardsStore((s) => s.setCanvasBackground);
   const setCanvasPalette = useDashboardsStore((s) => s.setCanvasPalette);
   const showGrid = useDashboardsStore((s) => s.showGrid);
@@ -79,8 +84,38 @@ export const PageSettings = () => {
   const preset = PAGE_PRESETS.find((p) => p.width === canvas.width && p.height === canvas.height);
   const landscape = canvas.width >= canvas.height;
 
+  const grid = isGrid(canvas);
+  // o canvas livre é recurso avançado: quem não é analista só o vê numa página que já o usa
+  const canChoose = role !== null && canManageData(role);
+
   return (
     <div className="flex flex-col gap-2.5">
+      <div className="flex flex-col gap-1">
+        <span className="text-[11px] text-muted-foreground">Organização da página</span>
+        {canChoose || !grid ? (
+          <div className="grid grid-cols-2 gap-1 rounded-lg border border-border/70 p-0.5" role="group" aria-label="Organização da página">
+            {(["grid", "free"] as const).map((mode) => (
+              <button
+                key={mode}
+                type="button"
+                aria-pressed={grid === (mode === "grid")}
+                disabled={mode === "free" && !canChoose}
+                onClick={() => setLayoutMode(mode)}
+                className={`rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-40 ${
+                  grid === (mode === "grid") ? "bg-primary/15 text-primary" : "text-foreground hover:bg-muted/60"
+                }`}
+              >
+                {mode === "grid" ? "Grade" : "Livre"}
+              </button>
+            ))}
+          </div>
+        ) : null}
+        <p className="text-[10px] leading-snug text-muted-foreground">
+          {grid
+            ? "12 colunas: os elementos se encaixam, não se sobrepõem e a página cresce com o conteúdo."
+            : "Livre: posição e tamanho em pixels, com sobreposição. Ao mudar para Grade a página é reorganizada sozinha (Ctrl+Z desfaz)."}
+        </p>
+      </div>
       <label className="flex flex-col gap-1">
         <span className="text-[11px] text-muted-foreground">Tamanho</span>
         <select
@@ -108,11 +143,11 @@ export const PageSettings = () => {
           onCommit={(width) => setCanvasSize({ width, height: canvas.height })}
         />
         <SizeInput
-          label="Altura"
+          label={grid ? "Altura (automática)" : "Altura"}
           value={canvas.height}
           min={CANVAS_LIMITS.min.h}
           max={CANVAS_LIMITS.max.h}
-          onCommit={(height) => setCanvasSize({ width: canvas.width, height })}
+          onCommit={(height) => !grid && setCanvasSize({ width: canvas.width, height })}
         />
         <button
           type="button"
@@ -198,7 +233,7 @@ export const PageSettings = () => {
         Ao reduzir a página, elementos são movidos e encolhidos para caber. Ctrl+Z desfaz.
       </p>
       <Toggle label="Mostrar grade" checked={showGrid} onChange={setShowGrid} />
-      <Toggle label="Encaixar na grade (8 px)" checked={snapToGrid} onChange={setSnapToGrid} />
+      {grid ? null : <Toggle label="Encaixar na grade (8 px)" checked={snapToGrid} onChange={setSnapToGrid} />}
     </div>
   );
 };
