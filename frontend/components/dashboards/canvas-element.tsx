@@ -131,7 +131,14 @@ export const CanvasElement = memo(function CanvasElement({
       position={{ x: element.x, y: element.y }}
       scale={zoom}
       disableDragging={preview}
-      enableResizing={preview || multi ? false : undefined}
+      // grade (como no Metabase): só direita, baixo e o canto; a posição de cima/esquerda vem do arrasto
+      enableResizing={
+        preview || multi
+          ? false
+          : gridColumn
+            ? { right: true, bottom: true, bottomRight: true, top: false, left: false, topLeft: false, topRight: false, bottomLeft: false }
+            : undefined
+      }
       resizeHandleClasses={preview ? undefined : HANDLE_CLASSES}
       minWidth={min.w}
       minHeight={min.h}

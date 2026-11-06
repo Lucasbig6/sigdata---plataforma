@@ -10,6 +10,7 @@ import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { CANVAS } from "@/lib/dashboards/types";
 import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
+import { isGrid } from "@/lib/dashboards/grid";
 import { DashboardCanvas } from "./canvas";
 import { ElementLibrary } from "./element-library";
 import { ArrangeToolbar } from "./arrange-toolbar";
@@ -31,7 +32,7 @@ const PRIVATE_MODE = { kind: "private" } as const;
 const EDIT_PADDING = 120;
 
 /** Menu flutuante com o tamanho da página, cor de fundo e grade. */
-const PageMenu = ({ width, height }: { width: number; height: number }) => {
+const PageMenu = ({ width, height, grid }: { width: number; height: number; grid: boolean }) => {
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
 
@@ -68,7 +69,7 @@ const PageMenu = ({ width, height }: { width: number; height: number }) => {
         className="flex items-center gap-1.5 rounded-md border border-border/70 bg-popover/90 px-2 py-1.5 text-[11px] font-medium text-foreground shadow-sm backdrop-blur transition-colors hover:bg-muted/60"
       >
         <FileText className="size-3.5 text-primary" aria-hidden />
-        Página · <span className="tabular-nums">{width} × {height}</span>
+        {grid ? "Página" : <>Página · <span className="tabular-nums">{width} × {height}</span></>}
       </button>
     </div>
   );
@@ -361,7 +362,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
             </div>
           ) : null}
 
-          {!preview ? <PageMenu width={doc.canvas.width} height={doc.canvas.height} /> : null}
+          {!preview ? <PageMenu width={doc.canvas.width} height={doc.canvas.height} grid={isGrid(doc.canvas)} /> : null}
 
           {!preview ? (
             <div className="absolute left-3 top-16 z-20 flex gap-1.5 xl:hidden">

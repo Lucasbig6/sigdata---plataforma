@@ -16,7 +16,7 @@ export const FIT_LABELS: Record<Exclude<FitMode, "custom">, string> = {
 };
 
 type Options = {
-  canvas: { width: number; height: number };
+  canvas: { width: number; height: number; layout?: "grid" };
   /** Espaço (px) reservado em volta da página dentro da área visível. */
   padding: number;
   minZoom?: number;
@@ -44,10 +44,12 @@ export const useZoomFit = ({ canvas, padding, minZoom = 0.1, maxZoom = 4, initia
 
   const availW = Math.max(1, box.w - padding);
   const availH = Math.max(1, box.h - padding);
+  // grade: a página cresce para baixo com o conteúdo, então "ajustar à página" vira "à largura"
+  const fitsWidthOnly = canvas.layout === "grid";
   const fitted =
-    mode === "page"
+    mode === "page" && !fitsWidthOnly
       ? Math.min(availW / canvas.width, availH / canvas.height)
-      : mode === "width"
+      : mode === "width" || mode === "page"
         ? availW / canvas.width
         : mode === "actual"
           ? 1

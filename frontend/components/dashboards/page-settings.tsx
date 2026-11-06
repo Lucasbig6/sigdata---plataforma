@@ -45,7 +45,15 @@ const SizeInput = ({
   );
 };
 
-const Toggle = ({ label, checked, onChange }: { label: string; checked: boolean; onChange: (v: boolean) => void }) => (
+const Toggle = ({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) => (
   <div className="flex items-center justify-between gap-2">
     <span className="text-xs text-foreground">{label}</span>
     <button
@@ -69,7 +77,9 @@ const BACKGROUNDS = ["#ffffff", "#f3f5f7", "#1b2326", "#0b1114", "#102a43", "#f5
 
 /** Tamanho da página (predefinições, personalizado, orientação) e grade do editor. */
 export const PageSettings = () => {
-  const canvas = useDashboardsStore((s) => (s.currentId ? s.dashboards[s.currentId]?.canvas : undefined));
+  const canvas = useDashboardsStore((s) =>
+    s.currentId ? s.dashboards[s.currentId]?.canvas : undefined,
+  );
   const setCanvasSize = useDashboardsStore((s) => s.setCanvasSize);
   const setLayoutMode = useDashboardsStore((s) => s.setLayoutMode);
   const role = useRole();
@@ -93,7 +103,11 @@ export const PageSettings = () => {
       <div className="flex flex-col gap-1">
         <span className="text-[11px] text-muted-foreground">Organização da página</span>
         {canChoose || !grid ? (
-          <div className="grid grid-cols-2 gap-1 rounded-lg border border-border/70 p-0.5" role="group" aria-label="Organização da página">
+          <div
+            className="grid grid-cols-2 gap-1 rounded-lg border border-border/70 p-0.5"
+            role="group"
+            aria-label="Organização da página"
+          >
             {(["grid", "free"] as const).map((mode) => (
               <button
                 key={mode}
@@ -102,7 +116,9 @@ export const PageSettings = () => {
                 disabled={mode === "free" && !canChoose}
                 onClick={() => setLayoutMode(mode)}
                 className={`rounded-md px-2 py-1 text-xs transition-colors disabled:opacity-40 ${
-                  grid === (mode === "grid") ? "bg-primary/15 text-primary" : "text-foreground hover:bg-muted/60"
+                  grid === (mode === "grid")
+                    ? "bg-primary/15 text-primary"
+                    : "text-foreground hover:bg-muted/60"
                 }`}
               >
                 {mode === "grid" ? "Grade" : "Livre"}
@@ -116,49 +132,57 @@ export const PageSettings = () => {
             : "Livre: posição e tamanho em pixels, com sobreposição. Ao mudar para Grade a página é reorganizada sozinha (Ctrl+Z desfaz)."}
         </p>
       </div>
-      <label className="flex flex-col gap-1">
-        <span className="text-[11px] text-muted-foreground">Tamanho</span>
-        <select
-          className={`${inputCls} cursor-pointer`}
-          value={preset?.id ?? "custom"}
-          onChange={(e) => {
-            const next = PAGE_PRESETS.find((p) => p.id === e.target.value);
-            if (next) setCanvasSize({ width: next.width, height: next.height });
-          }}
-        >
-          {PAGE_PRESETS.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.label}
-            </option>
-          ))}
-          {!preset ? <option value="custom">Personalizado ({canvas.width} × {canvas.height})</option> : null}
-        </select>
-      </label>
-      <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
-        <SizeInput
-          label="Largura"
-          value={canvas.width}
-          min={CANVAS_LIMITS.min.w}
-          max={CANVAS_LIMITS.max.w}
-          onCommit={(width) => setCanvasSize({ width, height: canvas.height })}
-        />
-        <SizeInput
-          label={grid ? "Altura (automática)" : "Altura"}
-          value={canvas.height}
-          min={CANVAS_LIMITS.min.h}
-          max={CANVAS_LIMITS.max.h}
-          onCommit={(height) => !grid && setCanvasSize({ width: canvas.width, height })}
-        />
-        <button
-          type="button"
-          title={landscape ? "Mudar para retrato" : "Mudar para paisagem"}
-          aria-label="Girar orientação da página"
-          onClick={() => setCanvasSize({ width: canvas.height, height: canvas.width })}
-          className="grid h-[30px] w-8 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-        >
-          <RotateCw className="size-3.5" aria-hidden />
-        </button>
-      </div>
+      {grid ? null : (
+        <>
+          <label className="flex flex-col gap-1">
+            <span className="text-[11px] text-muted-foreground">Tamanho</span>
+            <select
+              className={`${inputCls} cursor-pointer`}
+              value={preset?.id ?? "custom"}
+              onChange={(e) => {
+                const next = PAGE_PRESETS.find((p) => p.id === e.target.value);
+                if (next) setCanvasSize({ width: next.width, height: next.height });
+              }}
+            >
+              {PAGE_PRESETS.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.label}
+                </option>
+              ))}
+              {!preset ? (
+                <option value="custom">
+                  Personalizado ({canvas.width} × {canvas.height})
+                </option>
+              ) : null}
+            </select>
+          </label>
+          <div className="grid grid-cols-[1fr_1fr_auto] items-end gap-2">
+            <SizeInput
+              label="Largura"
+              value={canvas.width}
+              min={CANVAS_LIMITS.min.w}
+              max={CANVAS_LIMITS.max.w}
+              onCommit={(width) => setCanvasSize({ width, height: canvas.height })}
+            />
+            <SizeInput
+              label="Altura"
+              value={canvas.height}
+              min={CANVAS_LIMITS.min.h}
+              max={CANVAS_LIMITS.max.h}
+              onCommit={(height) => setCanvasSize({ width: canvas.width, height })}
+            />
+            <button
+              type="button"
+              title={landscape ? "Mudar para retrato" : "Mudar para paisagem"}
+              aria-label="Girar orientação da página"
+              onClick={() => setCanvasSize({ width: canvas.height, height: canvas.width })}
+              className="grid h-[30px] w-8 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
+            >
+              <RotateCw className="size-3.5" aria-hidden />
+            </button>
+          </div>
+        </>
+      )}
       <div className="flex flex-col gap-1">
         <span className="text-[11px] text-muted-foreground">Cor de fundo</span>
         <div className="flex flex-wrap items-center gap-1.5">
@@ -171,7 +195,9 @@ export const PageSettings = () => {
               onClick={() => setCanvasBackground(color)}
               style={{ backgroundColor: color }}
               className={`size-6 rounded-md border transition-shadow ${
-                canvas.background === color ? "border-primary ring-2 ring-primary/40" : "border-border/70"
+                canvas.background === color
+                  ? "border-primary ring-2 ring-primary/40"
+                  : "border-border/70"
               }`}
             />
           ))}
@@ -204,12 +230,18 @@ export const PageSettings = () => {
                 aria-pressed={on}
                 onClick={() => setCanvasPalette(palette.colors)}
                 className={`flex items-center gap-2 rounded-md border px-2 py-1 text-left text-[11px] transition-colors hover:bg-muted/60 ${
-                  on ? "border-primary bg-primary/10 text-primary" : "border-border/70 text-foreground"
+                  on
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border/70 text-foreground"
                 }`}
               >
                 <span className="flex shrink-0">
                   {palette.colors.slice(0, 5).map((color) => (
-                    <span key={color} className="-ml-1 size-3.5 rounded-full border border-background first:ml-0" style={{ background: color }} />
+                    <span
+                      key={color}
+                      className="-ml-1 size-3.5 rounded-full border border-background first:ml-0"
+                      style={{ background: color }}
+                    />
                   ))}
                 </span>
                 {palette.label}
@@ -233,7 +265,9 @@ export const PageSettings = () => {
         Ao reduzir a página, elementos são movidos e encolhidos para caber. Ctrl+Z desfaz.
       </p>
       <Toggle label="Mostrar grade" checked={showGrid} onChange={setShowGrid} />
-      {grid ? null : <Toggle label="Encaixar na grade (8 px)" checked={snapToGrid} onChange={setSnapToGrid} />}
+      {grid ? null : (
+        <Toggle label="Encaixar na grade (8 px)" checked={snapToGrid} onChange={setSnapToGrid} />
+      )}
     </div>
   );
 };

@@ -664,7 +664,7 @@ export const PropertiesPanel = () => {
           <p className="text-xs font-semibold text-foreground">Página</p>
           <p className="text-[10px] text-muted-foreground">Nenhum elemento selecionado</p>
         </div>
-        <Section title="Tamanho da página">
+        <Section title="Página">
           <PageSettings />
         </Section>
         <Section title="Painel">

@@ -299,6 +299,7 @@
   transition: opacity 120ms ease;
 }
 
+.sd-canvas .sd-rnd:hover .sd-handle,
 .sd-canvas .sd-rnd.is-selected .sd-handle {
   opacity: 1;
 }
