@@ -1,9 +1,9 @@
 "use client";
 
 import { useAISDKChat } from "@assistant-ui/ai-sdk";
-import { Database, Upload } from "lucide-react";
+import { Database, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import { useRole, useSession } from "@/lib/auth-client";
 import { canManageData } from "@shared/roles";
 import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
@@ -12,6 +12,7 @@ import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
 import { useActiveSource } from "@/lib/workspace/use-active-source";
 import { cn } from "@/lib/utils";
 import { useNotebookId } from "@/lib/use-notebook-id";
+import { ACCEPTED_DATA_FILES, useProjectDataUpload } from "@/lib/workspace/upload-data";
 
 const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   const chat = useAISDKChat();
@@ -45,18 +46,41 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
   const ready = datasets.filter(isAnalysisDataset);
   const canManage = canManageData(useRole() ?? "usuario");
+  const { upload, busy } = useProjectDataUpload();
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-4 text-start">
       <p className="text-sm font-medium text-foreground">Escolha os dados para começar</p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente só responde com números dos datasets preparados pelos analistas. Selecione um
-        para este projeto.
+        Envie uma planilha sua (ela fica só neste projeto) ou use um dataset preparado pelos analistas.
       </p>
+      <label
+        htmlFor="project-data-file"
+        className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-background px-3 py-3 transition-colors hover:border-primary/50 hover:bg-muted/40"
+      >
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="size-4" aria-hidden />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-foreground">{busy ? "Lendo a planilha…" : "Enviar planilha (CSV ou Excel)"}</span>
+          <span className="block text-[11px] text-muted-foreground">Ou arraste o arquivo para qualquer lugar do chat. Até 50 MB.</span>
+        </span>
+        <input
+          id="project-data-file"
+          type="file"
+          accept={ACCEPTED_DATA_FILES}
+          className="sr-only"
+          disabled={busy || !notebookId}
+          onChange={(event) => {
+            void upload(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+      </label>
       {hydrated && ready.length === 0 ? (
         <p className="text-xs text-muted-foreground">
           {canManage
-            ? "Ainda não há datasets. Crie um no editor SQL a partir de uma fonte."
+            ? "Ainda não há datasets publicados. Crie um no editor SQL a partir de uma fonte."
             : "Ainda não há datasets publicados. Peça a um analista para publicar um."}
         </p>
       ) : null}

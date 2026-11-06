@@ -1,11 +1,14 @@
 "use client";
 
 import {
+  ChevronDown,
+  Code2,
   Database,
   FolderKanban,
   LayoutDashboard,
   Search,
   Shield,
+  Wand2,
   type LucideIcon,
 } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +18,12 @@ import { useRole } from "@/lib/auth-client";
 import { cn } from "@/lib/utils";
 import { DATA_ROLES, type Role } from "@shared/roles";
 import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { openCommandPalette } from "./command-palette";
 import { Logo } from "./logo";
 import { MobileMenu } from "./mobile-menu";
@@ -29,6 +38,8 @@ type NavItem = {
   icon: LucideIcon;
   match: (path: string) => boolean;
   roles?: readonly Role[];
+  /** Grupo no cabeçalho do computador: abre um menu com estas páginas (a barra do celular usa só o item). */
+  children?: { label: string; href: string; icon: LucideIcon }[];
 };
 
 const NAV: NavItem[] = [
@@ -47,12 +58,17 @@ const NAV: NavItem[] = [
     match: (path) => path.startsWith("/dashboards"),
   },
   {
-    label: "Fontes de dados",
-    short: "Fontes",
+    label: "Dados",
+    short: "Dados",
     href: "/fontes-de-dados",
     icon: Database,
     match: (path) => path.startsWith("/fontes-de-dados"),
     roles: DATA_ROLES,
+    children: [
+      { label: "Fontes de dados", href: "/fontes-de-dados", icon: Database },
+      { label: "Preparar dados", href: "/fontes-de-dados/preparar", icon: Wand2 },
+      { label: "Editor SQL", href: "/fontes-de-dados/editor", icon: Code2 },
+    ],
   },
   {
     label: "Administração",
@@ -112,17 +128,40 @@ export const AppHeader = ({ actions }: { actions?: ReactNode }) => {
           <nav aria-label="Áreas" className="hidden items-center gap-1 md:flex">
             {items.map((item) => {
               const active = item.match(pathname);
+              const linkClass = cn(
+                "rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
+                active
+                  ? "bg-muted font-medium text-foreground"
+                  : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
+              );
+              if (item.children) {
+                return (
+                  <DropdownMenu key={item.href}>
+                    <DropdownMenuTrigger className={cn(linkClass, "inline-flex items-center gap-1")}>
+                      {item.label}
+                      <ChevronDown className="size-3.5" aria-hidden />
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-52">
+                      {item.children.map((child) => (
+                        <DropdownMenuItem
+                          key={child.href}
+                          render={<Link href={child.href} />}
+                          className="gap-2"
+                        >
+                          <child.icon className="size-4 shrink-0" aria-hidden />
+                          {child.label}
+                        </DropdownMenuItem>
+                      ))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              }
               return (
                 <Link
                   key={item.href}
                   href={item.href}
                   aria-current={active ? "page" : undefined}
-                  className={cn(
-                    "rounded-md px-3 py-1.5 text-sm whitespace-nowrap transition-colors outline-none focus-visible:ring-3 focus-visible:ring-ring/40",
-                    active
-                      ? "bg-muted font-medium text-foreground"
-                      : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                  )}
+                  className={linkClass}
                 >
                   {item.label}
                 </Link>

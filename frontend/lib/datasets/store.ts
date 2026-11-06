@@ -34,6 +34,8 @@ type DatasetsStore = {
   hydrate: () => void;
   reload: () => Promise<void>;
   uploadFile: (input: { file: File; name: string; description: string }) => Promise<DataSource>;
+  /** Entra na lista um dataset criado fora das telas de fontes (ex.: dados enviados pelo projeto). */
+  addDataset: (source: DataSource) => void;
   testConnection: (request: ConnectionRequest) => Promise<{ tables: number; rows: number | null }>;
   /** Banco externo, API REST ou planilha Google. */
   connectSource: (input: ConnectionRequest & { name: string; description: string }) => Promise<DataSource>;
@@ -91,6 +93,8 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
         set({ hydrated: true, error: (error as Error).message });
       }
     },
+
+    addDataset: (source) => void upsert(source),
 
     uploadFile: async ({ file, name, description }) => {
       const form = new FormData();

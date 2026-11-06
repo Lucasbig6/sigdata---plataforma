@@ -88,7 +88,7 @@ export const SourcesPanel = ({ onCollapse }: { onCollapse?: () => void }) => {
             <p className="text-xs leading-relaxed text-muted-foreground">
               {canManage
                 ? "Nenhum dataset ainda. Crie um no editor SQL a partir de uma fonte."
-                : "Nenhum dataset publicado ainda. Peça a um analista."}
+                : "Nenhum dataset publicado ainda. Envie uma planilha em “Dados” ou peça a um analista."}
             </p>
           </div>
         ) : (

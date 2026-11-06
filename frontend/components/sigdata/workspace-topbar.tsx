@@ -11,6 +11,7 @@ import { Logo } from "./logo";
 import { openCommandPalette } from "./command-palette";
 import { ThemeToggle } from "./theme-toggle";
 import { UserMenu } from "./user-menu";
+import { DataPicker } from "./data-picker";
 import { WorkspaceTitle } from "./workspace-title";
 import { projectHref } from "@/lib/routes";
 
@@ -65,6 +66,7 @@ export const WorkspaceTopbar = ({
             ›
           </span>
           <WorkspaceTitle fallback={fallbackTitle} />
+          <DataPicker className="ml-2" />
         </div>
         <div className="flex-1 md:hidden" aria-hidden />
 
@@ -109,6 +111,7 @@ export const WorkspaceTopbar = ({
         <div className="flex min-w-0 flex-1 items-center gap-2">
           <WorkspaceTitle fallback={fallbackTitle} />
         </div>
+        <DataPicker className="shrink-0" />
         {notebookId ? (
           <Button
             variant="outline"

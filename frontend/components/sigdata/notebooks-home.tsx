@@ -15,6 +15,7 @@ import { useSession } from "@/lib/auth-client";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { GettingStarted } from "./getting-started";
 import { NewProjectTile, NotebookCard } from "./notebook-card";
+import { QuickActions } from "./quick-actions";
 import { NotebooksHeader } from "./notebooks-header";
 import { CardSkeletons, EmptyState, ErrorState } from "./list-states";
 
@@ -78,6 +79,8 @@ export const NotebooksHome = () => {
             </Button>
           ) : null}
         </div>
+
+        {hydrated && !loadError && !query.trim() ? <QuickActions /> : null}
 
         <GettingStarted />
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, Code2, Database, LayoutDashboard, LogOut, Settings, Users, Wand2 } from "lucide-react";
+import { ChevronDown, LogOut, Settings, Users } from "lucide-react";
 import { useRouter } from "next/navigation";
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { signOut, useRole, useSession } from "@/lib/auth-client";
-import { DATA_ROLES, ROLE_LABELS, type Role } from "@shared/roles";
+import { ROLE_LABELS, type Role } from "@shared/roles";
 
 const initialsOf = (name: string) =>
   name
@@ -31,10 +31,6 @@ export const UserMenu = () => {
   type Link = { label: string; href: string; icon: typeof Settings; roles?: readonly Role[] };
   const links = ([
     { label: "Configurações", href: "/configuracoes", icon: Settings },
-    { label: "Dashboards", href: "/dashboards", icon: LayoutDashboard },
-    { label: "Fontes de dados", href: "/fontes-de-dados", icon: Database, roles: DATA_ROLES },
-    { label: "Preparar dados", href: "/fontes-de-dados/preparar", icon: Wand2, roles: DATA_ROLES },
-    { label: "Editor SQL", href: "/fontes-de-dados/editor", icon: Code2, roles: DATA_ROLES },
     { label: "Gerenciar usuários", href: "/admin/usuarios", icon: Users, roles: ["admin"] },
   ] satisfies Link[]).filter((link: Link) => !link.roles || (role !== null && link.roles.includes(role)));
 

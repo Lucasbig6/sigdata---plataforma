@@ -10,6 +10,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { AppShell } from "@/components/sigdata/app-shell";
 import { VisualizationTools } from "@/components/sigdata/create-visualization-tool";
+import { ChatDropZone } from "@/components/sigdata/chat-drop-zone";
 import { PanelTools } from "@/components/sigdata/panel-tools";
 import { WelcomeScreen } from "@/components/sigdata/welcome-screen";
 import { Button } from "@/components/ui/button";
@@ -70,7 +71,9 @@ const AssistantRuntimeInner = ({
       <PanelTools />
       <ChatTitleBinder notebookId={notebookId} chatId={chatId} />
       <AppShell>
-        <Thread components={{ Welcome: WelcomeScreen }} />
+        <ChatDropZone>
+          <Thread components={{ Welcome: WelcomeScreen }} />
+        </ChatDropZone>
       </AppShell>
     </AssistantRuntimeProvider>
   );

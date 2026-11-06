@@ -28,6 +28,8 @@ let hydrating: Promise<void> | null = null;
 /** Criações ainda não confirmadas pelo servidor (PATCH precisa esperar o POST). */
 const pendingCreates = new Map<string, Promise<unknown>>();
 
+/** Resolve quando o projeto já existe no servidor (criação otimista ainda em andamento). */
+export const whenProjectSaved = (id: string): Promise<unknown> => (pendingCreates.get(id) ?? Promise.resolve()).catch(() => undefined);
 const afterCreate = (id: string, fn: () => Promise<unknown>) =>
   (pendingCreates.get(id) ?? Promise.resolve()).then(fn);
 
