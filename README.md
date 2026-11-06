@@ -1,7 +1,27 @@
 # SIGDATA
 
-Plataforma de análise de dados: chat com IA que consulta fontes reais (CSV, XLSX,
-PostgreSQL, MySQL/MariaDB, SQL Server, API REST, Google Sheets), painel de visualizações por projeto e editor de dashboards compartilháveis.
+Plataforma de análise de dados que reúne, num só ambiente organizado por projetos, um **assistente de IA que consulta os
+dados de verdade**, exploração de fontes, visualizações e **dashboards compartilháveis**. Funciona com CSV, XLSX,
+PostgreSQL, MySQL/MariaDB, SQL Server, API REST e Google Sheets, sempre em leitura na origem.
+
+![Fluxo geral](docs/img/fluxo-geral.svg)
+
+## Documentação
+
+| Documento | Conteúdo |
+|---|---|
+| [Visão geral](docs/01-visao-geral.md) | O que é, para quem serve, conceitos e limites |
+| [Fluxo do sistema](docs/02-fluxo-do-sistema.md) | Da fonte ao dashboard compartilhado, com diagramas |
+| [Guia de uso](docs/03-guia-de-uso.md) | Telas e passo a passo por perfil, atalhos |
+| [Tecnologias e arquitetura](docs/04-tecnologias-e-arquitetura.md) | Stack, código, modelo de dados, segurança, configuração |
+| [API](docs/05-api.md) | Rotas do backend |
+| [Integração com o CIEGES PI](docs/06-integracao-cieges-pi.md) | Proposta e perguntas em aberto |
+
+## Tecnologias
+
+Next.js 16 · React 19 · TypeScript · Tailwind CSS v4 · Assistant UI · ECharts · Zustand — no backend, Node + Hono ·
+Better Auth · PostgreSQL com Drizzle · DuckDB · AI SDK (Claude, Groq, OpenRouter ou API no formato OpenAI). Detalhes em
+[Tecnologias e arquitetura](docs/04-tecnologias-e-arquitetura.md).
 
 ## Estrutura
 
