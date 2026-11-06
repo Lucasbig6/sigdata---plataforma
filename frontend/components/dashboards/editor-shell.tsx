@@ -8,9 +8,9 @@ import { useDatasetsStore } from "@/lib/datasets/store";
 import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { CANVAS, GRID_ROW } from "@/lib/dashboards/types";
+import { CANVAS } from "@/lib/dashboards/types";
 import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
-import { columnWidth, isGrid } from "@/lib/dashboards/grid";
+import { isGrid } from "@/lib/dashboards/grid";
 import { DashboardCanvas } from "./canvas";
 import { ElementLibrary } from "./element-library";
 import { ArrangeToolbar } from "./arrange-toolbar";
@@ -301,14 +301,11 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
       }
       if (selectedIds.length > 0 && event.key.startsWith("Arrow")) {
         event.preventDefault();
-        // grade: a seta anda uma célula (coluna ou linha); livre: pixels
-        const gridDoc = isGrid(doc?.canvas);
-        const stepX = gridDoc && doc ? (event.shiftKey ? 3 : 1) * columnWidth(doc.canvas) : event.shiftKey ? 10 : 1;
-        const stepY = gridDoc ? (event.shiftKey ? 3 : 1) * GRID_ROW : event.shiftKey ? 10 : 1;
-        if (event.key === "ArrowUp") moveSelected(0, -stepY);
-        if (event.key === "ArrowDown") moveSelected(0, stepY);
-        if (event.key === "ArrowLeft") moveSelected(-stepX, 0);
-        if (event.key === "ArrowRight") moveSelected(stepX, 0);
+        const step = event.shiftKey ? 10 : 1;
+        if (event.key === "ArrowUp") moveSelected(0, -step);
+        if (event.key === "ArrowDown") moveSelected(0, step);
+        if (event.key === "ArrowLeft") moveSelected(-step, 0);
+        if (event.key === "ArrowRight") moveSelected(step, 0);
       }
     };
 

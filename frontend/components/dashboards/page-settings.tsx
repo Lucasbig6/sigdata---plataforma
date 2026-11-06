@@ -261,11 +261,9 @@ export const PageSettings = () => {
           Vale para os gráficos que não têm cores próprias.
         </p>
       </div>
-      {grid ? null : (
-        <p className="text-[10px] leading-snug text-muted-foreground">
-          Ao reduzir a página, elementos são movidos e encolhidos para caber. Ctrl+Z desfaz.
-        </p>
-      )}
+      <p className="text-[10px] leading-snug text-muted-foreground">
+        Ao reduzir a página, elementos são movidos e encolhidos para caber. Ctrl+Z desfaz.
+      </p>
       <Toggle label="Mostrar grade" checked={showGrid} onChange={setShowGrid} />
       {grid ? null : (
         <Toggle label="Encaixar na grade (8 px)" checked={snapToGrid} onChange={setSnapToGrid} />
