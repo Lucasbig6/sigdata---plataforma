@@ -118,10 +118,14 @@ export const removePage = (
   return { doc: withActive({ ...synced, pages: remaining }, nextActive), activeId: nextActive.id };
 };
 
-export const renamePage = (doc: Dashboard, pageId: string, name: string): Dashboard => ({
-  ...doc,
-  pages: doc.pages?.map((page) => (page.id === pageId ? { ...page, name: name.slice(0, 60) } : page)),
-});
+/** Painel de página única ("single") ainda não tem lista: renomear cria a lista com a página nomeada. */
+export const renamePage = (doc: Dashboard, pageId: string, name: string): Dashboard => {
+  const clean = name.slice(0, 60);
+  if (!doc.pages) {
+    return { ...doc, pages: [{ id: uid("pg"), name: clean, canvas: doc.canvas, elements: doc.elements }] };
+  }
+  return { ...doc, pages: doc.pages.map((page) => (page.id === pageId ? { ...page, name: clean } : page)) };
+};
 
 export const movePage = (doc: Dashboard, activeId: string | null, pageId: string, direction: -1 | 1): Dashboard => {
   const synced = syncActive(doc, activeId);

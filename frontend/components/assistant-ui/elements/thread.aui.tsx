@@ -5,6 +5,13 @@ import {
   ComposerAttachments,
   UserMessageAttachments,
 } from "@/components/assistant-ui/elements/attachment.aui";
+import { DirectiveText } from "@/components/assistant-ui/elements/directive-text.aui";
+import {
+  ComposerQuotePreview,
+  QuoteBlock,
+  SelectionToolbar,
+} from "@/components/assistant-ui/elements/quote.aui";
+import { ComposerTriggers } from "@/components/sigdata/composer-triggers";
 import { File, getFileHref } from "@/components/assistant-ui/elements/file";
 import { ThreadFollowupSuggestions } from "@/components/assistant-ui/elements/follow-up-suggestions.aui";
 import { Image } from "@/components/assistant-ui/elements/image";
@@ -42,6 +49,7 @@ import {
   type ImageMessagePartComponent,
   type TextMessagePartComponent,
   type ToolCallMessagePartComponent,
+  unstable_useComposerInputHistory,
   useAuiState,
 } from "@assistant-ui/react";
 import {
@@ -72,6 +80,7 @@ import {
   type FC,
   type PropsWithChildren,
 } from "react";
+import { PinNoteButton } from "@/components/sigdata/pin-note-button";
 
 export type ThreadGroupPart = MessagePrimitive.GroupedParts.GroupPart;
 
@@ -252,12 +261,16 @@ const ThreadRoot: FC<{ isEmpty: boolean; autoFocus: boolean }> = ({
             <ThreadScrollToBottom />
             <ThreadFollowupSuggestions />
             <Composer autoFocus={autoFocus} />
+            <p className="-mt-2 text-center text-[11px] text-muted-foreground/80">
+              O assistente pode cometer erros. Confira os números nas consultas.
+            </p>
             <AuiIf condition={(s) => isNewChatView(s) && s.composer.isEmpty}>
               <ThreadSuggestions />
             </AuiIf>
           </ThreadPrimitive.ViewportFooter>
         </div>
       </ThreadPrimitive.Viewport>
+      <SelectionToolbar />
     </ThreadPrimitive.Root>
   );
 };
@@ -473,17 +486,23 @@ const ThreadSuggestionItem: FC = () => {
 };
 
 const Composer: FC<{ autoFocus: boolean }> = ({ autoFocus }) => {
+  const history = unstable_useComposerInputHistory();
+
   return (
+    <ComposerPrimitive.TriggerPopoverRoot>
     <ComposerPrimitive.Root className="aui-composer-root relative flex w-full flex-col">
-      <ComposerPrimitive.AttachmentDropzone render={<div data-slot="aui_composer-shell" className="border-border focus-within:border-primary/50 data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]" />}><ComposerAttachments /><ComposerPrimitive.Input
-                      placeholder="Envie uma mensagem..."
+      <ComposerPrimitive.AttachmentDropzone render={<div data-slot="aui_composer-shell" className="border-border focus-within:border-primary/50 data-[dragging=true]:border-ring flex w-full cursor-text flex-col gap-2 rounded-(--composer-radius) border bg-(--composer-bg) p-(--composer-padding) transition-[border-color] data-[dragging=true]:border-dashed data-[dragging=true]:bg-[color-mix(in_oklab,var(--color-accent)_50%,var(--color-background))]" />}><ComposerAttachments /><ComposerQuotePreview /><ComposerPrimitive.Input
+                      {...history}
+                      placeholder="Envie uma mensagem... (@ cita uma tabela, / abre atalhos)"
                       className="aui-composer-input caret-primary placeholder:text-muted-foreground/60 max-h-48 min-h-10 w-full resize-none bg-transparent px-2.5 py-1 text-base leading-6 outline-none"
                       rows={1}
                       autoFocus={autoFocus}
                       enterKeyHint="send"
                       aria-label="Campo de mensagem"
                     /><ComposerAction /></ComposerPrimitive.AttachmentDropzone>
+      <ComposerTriggers />
     </ComposerPrimitive.Root>
+    </ComposerPrimitive.TriggerPopoverRoot>
   );
 };
 
@@ -673,6 +692,7 @@ const AssistantActionBar: FC = () => {
         <ActionBarPrimitive.FeedbackPositive render={<TooltipIconButton tooltip="Útil" className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground" />}><ThumbsUpIcon /></ActionBarPrimitive.FeedbackPositive>
         <ActionBarPrimitive.FeedbackNegative render={<TooltipIconButton tooltip="Não útil" className="data-[submitted=true]:bg-accent data-[submitted=true]:text-accent-foreground" />}><ThumbsDownIcon /></ActionBarPrimitive.FeedbackNegative>
       </AuiIf>
+      <PinNoteButton />
       <ActionBarPrimitive.Reload render={<TooltipIconButton tooltip="Atualizar" />}><RefreshCwIcon /></ActionBarPrimitive.Reload>
       <ActionBarMorePrimitive.Root>
         <ActionBarMorePrimitive.Trigger render={<TooltipIconButton tooltip="Mais" className="data-[state=open]:bg-accent" />}><MoreHorizontalIcon /></ActionBarMorePrimitive.Trigger>
@@ -728,8 +748,11 @@ const UserMessage: FC = () => {
 
       <div className="aui-user-message-content-wrapper relative col-start-2 min-w-0">
         <div className="aui-user-message-content peer bg-muted text-foreground rounded-(--composer-radius) px-4 py-2 wrap-break-word empty:hidden">
+          <MessagePrimitive.Quote>
+            {(quote) => <QuoteBlock {...quote} />}
+          </MessagePrimitive.Quote>
           <MessagePrimitive.Parts
-            components={{ File: UserFilePart, Image: UserImagePart }}
+            components={{ Text: DirectiveText, File: UserFilePart, Image: UserImagePart }}
           />
         </div>
         <div className="aui-user-action-bar-wrapper absolute start-0 top-1/2 -translate-x-full -translate-y-1/2 pe-2 peer-empty:hidden rtl:translate-x-full">

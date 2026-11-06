@@ -22,6 +22,48 @@
       "when": 1793244359905,
       "tag": "0002_datasets",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793566687831,
+      "tag": "0003_expiracao_link",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793571900580,
+      "tag": "0004_papeis_e_publicacao",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793576943993,
+      "tag": "0005_desativacao_compartilhamento_auditoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793578711752,
+      "tag": "0006_notas_do_projeto",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793722641680,
+      "tag": "0007_dashboards_por_projeto",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793899766410,
+      "tag": "0008_chats_por_projeto",
+      "breakpoints": true
     }
   ]
 }

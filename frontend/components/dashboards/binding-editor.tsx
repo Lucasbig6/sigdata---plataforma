@@ -17,7 +17,7 @@ import {
   type FilterBinding,
   type PeriodUnit,
 } from "@/lib/dashboards/types";
-import { useDatasetsStore } from "@/lib/datasets/store";
+import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import type { ResultColumn, SourceTable } from "@/lib/domain/sources";
 
 export const inputCls =
@@ -89,7 +89,7 @@ type RecentResult = {
 };
 
 const useReadySources = () =>
-  useDatasetsStore((state) => state.datasets).filter((s) => s.status === "pronta" && s.tables.length > 0);
+  useDatasetsStore((state) => state.datasets).filter((s) => isAnalysisDataset(s) && s.tables.length > 0);
 
 /** Status da consulta do elemento + botão de atualizar. */
 const BindingStatus = ({ elementId, binding }: { elementId: string; binding: DataBinding }) => {
@@ -140,7 +140,7 @@ const BuilderFields = ({
   const columns = table?.columns ?? [];
   const numeric = columns.filter((c) => c.kind === "numero");
   const isKpi = type === "kpi" || type === "percent" || type === "comparison";
-  const isTable = type === "table";
+  const isTable = type === "table" || type === "html";
   const grouped = Boolean(binding.dimension);
   const aggs: Aggregation[] = binding.measure ? ["sum", "avg", "min", "max", "count"] : ["count"];
 
@@ -363,6 +363,43 @@ const BuilderFields = ({
                 </option>
               ))}
           </Select>
+        </Field>
+      ) : null}
+      {type === "chart" && binding.dimension ? (
+        <Field label="Detalhar ao clicar (drill-down)" hint="Na visualização, clicar numa categoria abre o próximo nível, na ordem abaixo.">
+          <div className="flex flex-col gap-1.5">
+            {(binding.drill ?? []).length > 0 ? (
+              <ol className="flex flex-wrap items-center gap-1 text-[11px]">
+                <li className="rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground">{binding.dimension}</li>
+                {(binding.drill ?? []).map((column) => (
+                  <li key={column} className="flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-primary">
+                    → {column}
+                    <button
+                      type="button"
+                      aria-label={`Remover nível ${column}`}
+                      onClick={() => onChange({ drill: (binding.drill ?? []).filter((entry) => entry !== column) })}
+                      className="rounded px-0.5 hover:bg-primary/20"
+                    >
+                      ×
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            ) : null}
+            <Select
+              value=""
+              onChange={(value) => value && onChange({ drill: [...(binding.drill ?? []), value] })}
+            >
+              <option value="">{(binding.drill ?? []).length > 0 ? "Adicionar outro nível…" : "Adicionar nível de detalhe…"}</option>
+              {columns
+                .filter((c) => c.name !== binding.dimension && !(binding.drill ?? []).includes(c.name))
+                .map((c) => (
+                  <option key={c.name} value={c.name}>
+                    {c.name} ({c.kind})
+                  </option>
+                ))}
+            </Select>
+          </div>
         </Field>
       ) : null}
       {measureFields}

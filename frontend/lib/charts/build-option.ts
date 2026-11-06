@@ -5,6 +5,7 @@
 import type { EChartsCoreOption } from "echarts/core";
 import type { ChartData, ChartStyle, ChartType } from "@shared/charts/types";
 import { formatNumber } from "@/lib/dashboards/format";
+import type { GeoBundle } from "./geo";
 import type { ChartTheme } from "./theme";
 
 type AnyRecord = Record<string, unknown>;
@@ -42,6 +43,8 @@ export type BuildInput = {
   palette: string[];
   /** Categoria em destaque (filtro cruzado): as outras ficam esmaecidas. */
   selected?: string | null;
+  /** Malha dos mapas (obrigatória para os tipos de mapa). */
+  geo?: GeoBundle | null;
 };
 
 const CARTESIAN: ChartType[] = ["bar", "hbar", "line", "area", "combo", "scatter"];
@@ -56,7 +59,199 @@ const niceMax = (value: number) => {
 
 const DIM = 0.28;
 
-export const buildChartOption = ({ type, style, data, theme, palette, selected }: BuildInput): EChartsCoreOption => {
+/** Séries de latitude, longitude e valor: pelo nome da coluna (lat/lng/lon/valor) ou, sem pistas, pela ordem. */
+const pickCoordinates = (data: ChartData) => {
+  const named = (pattern: RegExp) => data.series.find((s) => pattern.test(s.name.trim().toLowerCase()));
+  const lat = named(/^(lat|latitude|y)$|latitude/) ?? data.series[0];
+  const lng = named(/^(lng|lon|long|longitude|x)$|longitude/) ?? data.series.find((s) => s !== lat);
+  const value = data.series.find((s) => s !== lat && s !== lng);
+  return { lat, lng, value };
+};
+
+/** Mapa de pontos: cada linha é um ponto em [longitude, latitude]; o tamanho acompanha o valor, se houver. */
+const buildPointsOption = (
+  { style, data, theme, palette, selected, geo }: BuildInput,
+  base: AnyRecord,
+  format: (value: unknown) => string,
+): AnyRecord => {
+  if (!geo) return { ...base, series: [] };
+  const { lat, lng, value } = pickCoordinates(data);
+  const points: { name: string; coord: [number, number]; value: number | null }[] = [];
+  let invalid = 0;
+  data.categories.forEach((name, index) => {
+    const y = lat?.values[index];
+    const x = lng?.values[index];
+    if (y == null || x == null || Math.abs(y) > 90 || Math.abs(x) > 180) {
+      invalid += 1;
+      return;
+    }
+    points.push({ name, coord: [x, y], value: value?.values[index] ?? null });
+  });
+  const sized = points.filter((p) => p.value !== null).map((p) => Math.abs(p.value as number));
+  const reach = Math.max(1, ...sized);
+  const size = (p: { value: number | null }) =>
+    p.value === null ? 7 : Math.max(4, Math.sqrt(Math.abs(p.value) / reach) * 28);
+  return {
+    ...base,
+    tooltip: {
+      ...(base.tooltip as AnyRecord),
+      trigger: "item",
+      formatter: (p: { name: string; value: number[] }) =>
+        `${p.name}<br/>${p.value[1].toFixed(4)}, ${p.value[0].toFixed(4)}${p.value[2] == null ? "" : `<br/>${format(p.value[2])}`}`,
+    },
+    title: invalid
+      ? { text: `${invalid} linha(s) sem coordenadas válidas`, left: 8, bottom: 2, textStyle: { color: theme.muted, fontSize: 10, fontWeight: "normal" } }
+      : { show: false },
+    geo: {
+      map: geo.mapName,
+      roam: true,
+      scaleLimit: { min: 1, max: 20 },
+      selectedMode: false,
+      top: 8,
+      bottom: 8,
+      label: { show: false },
+      silent: true,
+      itemStyle: { areaColor: theme.dark ? "#1f2a2e" : "#eef2f2", borderColor: theme.stroke, borderWidth: 0.8 },
+    },
+    series: [
+      {
+        type: "scatter",
+        coordinateSystem: "geo",
+        symbolSize: (v: number[]) => size({ value: v[2] ?? null }),
+        itemStyle: { color: palette[0], opacity: 0.65, borderColor: theme.stroke, borderWidth: 0.6 },
+        label: { show: false },
+        data: points.map((p) => ({
+          name: p.name,
+          value: [...p.coord, p.value],
+          ...(selected && p.name !== selected ? { itemStyle: { opacity: DIM / 2 } } : {}),
+        })),
+      },
+    ],
+  };
+};
+
+/** Mapa coroplético (cor por região) ou de bolhas (círculo no centro da região); a malha vem pronta em `geo`. */
+const buildMapOption = (
+  { type, style, data, theme, palette, selected, geo }: BuildInput,
+  base: AnyRecord,
+  format: (value: unknown) => string,
+): AnyRecord => {
+  if (!geo) return { ...base, series: [] };
+  if (type === "mappoints") return buildPointsOption({ type, style, data, theme, palette, selected, geo }, base, format);
+  const first = data.series[0];
+  const rows: { key: string; category: string; value: number }[] = [];
+  const total = new Map<string, number>();
+  let unmatched = 0;
+  data.categories.forEach((category, index) => {
+    const value = first?.values[index];
+    if (value === null || value === undefined) return;
+    const key = geo.resolve(category);
+    if (!key) {
+      unmatched += 1;
+      return;
+    }
+    // várias linhas na mesma região somam
+    total.set(key, (total.get(key) ?? 0) + value);
+    if (!rows.some((row) => row.key === key)) rows.push({ key, category, value });
+  });
+  for (const row of rows) row.value = total.get(row.key) ?? row.value;
+
+  const values = rows.map((row) => row.value);
+  const min = values.length ? Math.min(...values) : 0;
+  const max = values.length ? Math.max(...values) : 1;
+  const municipal = geo.scope === "municipio";
+  const baseFill = theme.dark ? "#1f2a2e" : "#eef2f2";
+  const hit = (key: string) => !selected || rows.find((row) => row.key === key)?.category === selected;
+  const tooltip = {
+    ...(base.tooltip as AnyRecord),
+    trigger: "item",
+    formatter: (p: { name: string; value: unknown }) => {
+      const raw = Array.isArray(p.value) ? p.value[2] : p.value;
+      return `${geo.label(p.name)}<br/>${raw == null || Number.isNaN(raw) ? "sem dados" : format(raw)}`;
+    },
+  };
+  const notice = unmatched
+    ? {
+        text: `${unmatched} valor(es) sem região correspondente`,
+        left: 8,
+        bottom: 2,
+        textStyle: { color: theme.muted, fontSize: 10, fontWeight: "normal" },
+      }
+    : { show: false };
+  const label = { show: style.showLabels ?? !municipal, color: theme.text, fontSize: 10 };
+  const regions = {
+    map: geo.mapName,
+    roam: municipal,
+    scaleLimit: { min: 1, max: 14 },
+    selectedMode: false,
+    itemStyle: { areaColor: baseFill, borderColor: theme.stroke, borderWidth: municipal ? 0.3 : 0.8 },
+    emphasis: { label, itemStyle: { areaColor: palette[1] ?? palette[0] } },
+  };
+
+  const range = {
+    min,
+    max: max === min ? min + 1 : max,
+    calculable: false,
+    orient: "horizontal",
+    left: "center",
+    bottom: 0,
+    itemWidth: 12,
+    itemHeight: 120,
+    textStyle: { color: theme.muted, fontSize: 10 },
+    formatter: (v: number) => formatNumber(v, "compacto", 0),
+  };
+
+  if (type === "map") {
+    return {
+      ...base,
+      tooltip,
+      title: notice,
+      visualMap: { ...range, inRange: { color: [theme.dark ? "#24413f" : "#d9eeeb", palette[0]] } },
+      series: [
+        {
+          type: "map",
+          ...regions,
+          showLegendSymbol: false,
+          nameProperty: "name",
+          top: 8,
+          bottom: 40,
+          label: { ...label, formatter: (p: { name: string }) => p.name },
+          data: rows.map((row) => ({ name: row.key, value: row.value, ...(hit(row.key) ? {} : { itemStyle: { opacity: DIM } }) })),
+        },
+      ],
+    };
+  }
+
+  const reach = Math.max(Math.abs(max), Math.abs(min), 1);
+  const biggest = municipal ? 22 : 44;
+  return {
+    ...base,
+    tooltip,
+    title: notice,
+    geo: { ...regions, top: 8, bottom: 8, label: { show: false } },
+    series: [
+      {
+        type: "scatter",
+        coordinateSystem: "geo",
+        symbolSize: (value: number[]) => Math.max(4, Math.sqrt(Math.abs(value[2]) / reach) * biggest),
+        itemStyle: { color: palette[0], opacity: 0.7, borderColor: theme.stroke, borderWidth: 1 },
+        label: {
+          show: Boolean(style.showLabels),
+          position: "inside",
+          color: "#fff",
+          fontSize: 10,
+          formatter: (p: { value: number[] }) => formatNumber(p.value[2], "compacto", 0),
+        },
+        data: rows.flatMap((row) => {
+          const center = geo.center(row.key);
+          return center ? [{ name: row.key, value: [...center, row.value], ...(hit(row.key) ? {} : { itemStyle: { opacity: DIM / 2 } }) }] : [];
+        }),
+      },
+    ],
+  };
+};
+
+export const buildChartOption = ({ type, style, data, theme, palette, selected, geo }: BuildInput): EChartsCoreOption => {
   /** Valor de um ponto, esmaecido quando não é a categoria selecionada. */
   const dim = (value: unknown, category: string) =>
     selected && category !== selected ? { value, itemStyle: { opacity: DIM } } : value;
@@ -86,7 +281,7 @@ export const buildChartOption = ({ type, style, data, theme, palette, selected }
       : legendMode === "auto"
         ? ["pie", "donut", "funnel", "treemap"].includes(type)
           ? type !== "treemap"
-          : series.length > 1 && type !== "gauge" && type !== "heatmap"
+          : series.length > 1 && !["gauge", "heatmap", "map", "mapbubbles", "mappoints"].includes(type)
         : true;
   const legendPos = legendMode === "auto" || legendMode === "none" ? "top" : legendMode;
   const vertical = legendPos === "left" || legendPos === "right";
@@ -422,6 +617,8 @@ export const buildChartOption = ({ type, style, data, theme, palette, selected }
         },
       ],
     };
+  } else if (type === "map" || type === "mapbubbles" || type === "mappoints") {
+    option = buildMapOption({ type, style, data, theme, palette, selected, geo }, base, format);
   } else {
     // heatmap: categorias no eixo X, séries no eixo Y
     const cells: [number, number, number | null][] = [];

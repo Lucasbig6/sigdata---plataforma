@@ -20,15 +20,17 @@ export const SaveDatasetDialog = ({
   onOpenChange,
   sql,
   rowCount,
+  initialName = "",
   onSave,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sql: string;
   rowCount: number;
+  initialName?: string;
   onSave: (input: { name: string; description: string }) => Promise<void>;
 }) => {
-  const [name, setName] = useState("");
+  const [name, setName] = useState(initialName);
   const [description, setDescription] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);

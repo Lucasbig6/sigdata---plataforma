@@ -1,7 +1,6 @@
 "use client";
 
 import { BookmarkPlus, Check, ChevronDown, Database, Loader2 } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { JSONSchema7 } from "ai";
 import {
@@ -18,6 +17,7 @@ import { WIDGET_CHART_TYPE, WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { WIDGET_ICON } from "./widget-icons";
 import { WidgetView } from "./widget-view";
 import { checkResultFor, fetchResult, widgetDataFromResult } from "@/lib/results/client";
+import { useNotebookId, currentNotebookId } from "@/lib/use-notebook-id";
 
 export type CreateVisualizationArgs = {
   kind: WidgetKind;
@@ -45,7 +45,7 @@ export const createVisualizationParameters: JSONSchema7 = {
       type: "string",
       enum: WIDGET_KINDS,
       description:
-        "Tipo: linha, barras, barras_h (horizontais), area, combo (barras+linhas), pizza, rosca, dispersao, radar, funil, medidor (um valor), treemap, calor (mapa de calor: x × séries), kpi (indicador) ou tabela.",
+        "Tipo: linha, barras, barras_h (horizontais), area, combo (barras+linhas), pizza, rosca, dispersao, radar, funil, medidor (um valor), treemap, calor (mapa de calor: x × séries), mapa (coroplético: x = sigla/nome da UF ou código/nome do município, y = valor), mapa_bolhas (igual, com bolhas), mapa_pontos (x = rótulo, y = latitude, ys = [longitude, valor opcional]), kpi (indicador) ou tabela.",
     },
     titulo: {
       type: "string",
@@ -153,7 +153,7 @@ const executeCreateVisualization = async (
   }
   if (!args.salvar) return { ok: true, kind: args.kind, titulo };
 
-  const notebookId = new URLSearchParams(window.location.search).get("notebook");
+  const notebookId = currentNotebookId();
   if (!notebookId) return { ok: false, error: "Nenhum projeto aberto para salvar a visualização." };
   const panel = usePanelStore.getState();
   await panel.load(notebookId);
@@ -176,7 +176,7 @@ const CreateVisualizationUI = (
   props: ToolCallMessagePartProps<CreateVisualizationArgs, CreateVisualizationResult>,
 ) => {
   const { args, result, status, addResult } = props;
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const addWidget = usePanelStore((state) => state.addWidget);
   const widgetsByNotebook = usePanelStore((state) => state.widgetsByNotebook);
   const saved = notebookId ? (widgetsByNotebook[notebookId] ?? []) : [];
@@ -187,7 +187,9 @@ const CreateVisualizationUI = (
   const [showQuery, setShowQuery] = useState(false);
   const [queryInfo, setQueryInfo] = useState<{ sql: string; rows: number; ms: number } | null>(null);
 
-  const kind: WidgetKind = isWidgetKind(args?.kind) ? args.kind : "linha";
+  // a pessoa pode trocar o tipo ali mesmo, antes de salvar (os dados vêm da mesma consulta)
+  const [kindOverride, setKindOverride] = useState<WidgetKind | null>(null);
+  const kind: WidgetKind = kindOverride ?? (isWidgetKind(args?.kind) ? args.kind : "linha");
   const Icon = WIDGET_ICON[kind];
   const titulo = (args?.titulo ?? "").trim() || WIDGET_KIND_LABELS[kind];
   const running = status?.type === "running" || status?.type === "requires-action";
@@ -259,9 +261,24 @@ const CreateVisualizationUI = (
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <p className="truncate text-sm font-medium text-foreground">{titulo}</p>
-            <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {WIDGET_KIND_LABELS[kind]}
-            </span>
+            {args?.resultId && ready && !isSaved ? (
+              <select
+                aria-label="Tipo de visualização"
+                value={kind}
+                onChange={(event) => setKindOverride(event.target.value as WidgetKind)}
+                className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+              >
+                {WIDGET_KINDS.map((option) => (
+                  <option key={option} value={option}>
+                    {WIDGET_KIND_LABELS[option]}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <span className="shrink-0 rounded-full border border-border bg-muted/40 px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {WIDGET_KIND_LABELS[kind]}
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">{args ? kindSummary(args) : "Aguardando dados…"}</p>
           {error ? <p className="text-xs text-destructive">{error}</p> : null}

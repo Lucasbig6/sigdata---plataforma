@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { ELEMENT_MIME, findLibraryItem } from "@/lib/dashboards/presets";
+import { columnWidth, isGrid } from "@/lib/dashboards/grid";
 import { toMobileLayout } from "@/lib/dashboards/mobile-layout";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { ELEMENT_SIZES } from "@/lib/dashboards/types";
@@ -128,7 +129,7 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
 
     const visualKey = event.dataTransfer.getData(VISUAL_MIME);
     if (visualKey) {
-      addVisual(visualKey, { x: Math.round(px / grid) * grid, y: Math.round(py / grid) * grid });
+      addVisual(visualKey, { x: Math.round(px / grid) * grid, y: Math.round(py / grid) * grid, exact: true });
       return;
     }
 
@@ -140,6 +141,7 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
     addItem(item, {
       x: Math.round((px - size.w / 2) / grid) * grid,
       y: Math.round((py - size.h / 2) / grid) * grid,
+      exact: true,
     });
   };
 
@@ -188,6 +190,7 @@ export const DashboardCanvas = ({ zoom, preview, fill = false, mobile = false }:
                 multi={multi}
                 preview={preview}
                 snap={snapToGrid}
+                gridColumn={isGrid(view.canvas) ? columnWidth(view.canvas) : undefined}
               />
             );
           })}

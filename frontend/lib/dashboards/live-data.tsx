@@ -34,12 +34,23 @@ import type {
   NumberFormat,
 } from "@shared/dashboards/types";
 
-type Mode = { kind: "private" } | { kind: "public"; token: string };
+/**
+ * `public`: só leitura, a partir da versão salva. `token` identifica o link público; para quem está
+ * logado e recebeu o dashboard, `basePath` aponta para a rota autenticada (`/api/dashboards/:id/view`).
+ */
+type Mode = { kind: "private" } | { kind: "public"; token: string; basePath?: string };
+
+const viewerBase = (mode: { token: string; basePath?: string }) =>
+  mode.basePath ?? `/api/public/dashboards/${encodeURIComponent(mode.token)}`;
 
 type FilterElement = DashboardElement & { type: "filter" };
 
 /** Gráfico que filtra os demais ao clicar numa categoria (filtro cruzado, como no Power BI). */
 type Selector = { id: string; binding: FilterBinding };
+
+/** Visual personalizado (HTML) que filtra os demais: o código escolhe coluna e valor. */
+type HtmlSelector = { id: string; sourceId: string; table: string; columns: string[] };
+type HtmlPick = { column: string; value: string };
 
 type Ctx = {
   mode: Mode;
@@ -52,6 +63,11 @@ type Ctx = {
   selectors: Selector[];
   /** Clicar de novo na mesma categoria remove o filtro. */
   toggleSelection: (elementId: string, value: string) => void;
+  /** Seleções feitas por visuais personalizados (um por elemento). */
+  picks: Record<string, HtmlPick>;
+  htmlSelectors: HtmlSelector[];
+  /** Escolhe coluna e valor num visual personalizado; `null` limpa. Repetir a mesma escolha remove. */
+  pick: (elementId: string, column: string, value: string | null) => void;
   hasActiveFilters: boolean;
   clearAll: () => void;
   /** Incrementa para forçar nova busca de todos os elementos. */
@@ -91,6 +107,39 @@ export const DashboardDataProvider = ({
     [elements],
   );
 
+  const htmlSelectors = useMemo<HtmlSelector[]>(
+    () =>
+      elements.flatMap((el) => {
+        if (el.type !== "html" || el.hidden) return [];
+        const binding = el.props.binding;
+        if (binding?.mode !== "builder" || !binding.table) return [];
+        return [{ id: el.id, sourceId: binding.sourceId, table: binding.table, columns: (binding.columns ?? []).filter(Boolean) }];
+      }),
+    [elements],
+  );
+  const [picks, setPicks] = useState<Record<string, HtmlPick>>({});
+
+  const pick = useCallback(
+    (elementId: string, column: string, value: string | null) =>
+      setPicks((current) => {
+        const selector = htmlSelectors.find((entry) => entry.id === elementId);
+        if (!selector || value === null || value === "") {
+          if (!(elementId in current)) return current;
+          const { [elementId]: _removed, ...rest } = current;
+          return rest;
+        }
+        // só colunas que o próprio visual recebe (ligação com colunas escolhidas = só elas)
+        if (selector.columns.length > 0 && !selector.columns.includes(column)) return current;
+        const same = current[elementId]?.column === column && current[elementId]?.value === value;
+        if (same) {
+          const { [elementId]: _removed, ...rest } = current;
+          return rest;
+        }
+        return { ...current, [elementId]: { column, value } };
+      }),
+    [htmlSelectors],
+  );
+
   const toggleSelection = useCallback(
     (elementId: string, value: string) =>
       setValues((current) => ({ ...current, [elementId]: current[elementId] === value ? "" : value })),
@@ -100,6 +149,7 @@ export const DashboardDataProvider = ({
   // ao sair da pré-visualização as seleções de gráficos deixam de valer
   useEffect(() => {
     if (interactive) return;
+    setPicks((current) => (Object.keys(current).length === 0 ? current : {}));
     setValues((current) => {
       const ids = new Set(selectors.map((selector) => selector.id));
       const kept = Object.fromEntries(Object.entries(current).filter(([id]) => !ids.has(id)));
@@ -109,12 +159,12 @@ export const DashboardDataProvider = ({
 
   const hasActiveFilters =
     filterElements.some((el) => (values[el.id] ?? el.props.value ?? "") !== "") ||
-    (interactive && selectors.some((selector) => Boolean(values[selector.id])));
+    (interactive && (selectors.some((selector) => Boolean(values[selector.id])) || Object.keys(picks).length > 0));
 
-  const clearAll = useCallback(
-    () => setValues(Object.fromEntries(filterElements.map((el) => [el.id, ""]))),
-    [filterElements],
-  );
+  const clearAll = useCallback(() => {
+    setValues(Object.fromEntries(filterElements.map((el) => [el.id, ""])));
+    setPicks({});
+  }, [filterElements]);
 
   const setValue = useCallback(
     (elementId: string, value: string) => setValues((current) => ({ ...current, [elementId]: value })),
@@ -135,12 +185,15 @@ export const DashboardDataProvider = ({
       interactive,
       selectors,
       toggleSelection,
+      picks,
+      htmlSelectors,
+      pick,
       hasActiveFilters,
       clearAll,
       refreshKey,
       refresh,
     }),
-    [mode, values, setValue, filterElements, interactive, selectors, toggleSelection, hasActiveFilters, clearAll, refreshKey, refresh],
+    [mode, values, setValue, filterElements, interactive, selectors, toggleSelection, picks, htmlSelectors, pick, hasActiveFilters, clearAll, refreshKey, refresh],
   );
 
   return <DashboardDataContext.Provider value={value}>{children}</DashboardDataContext.Provider>;
@@ -210,13 +263,17 @@ export const isBindingReady = (binding: DataBinding | undefined): binding is Dat
   return Boolean(binding.table);
 };
 
+/** Drill-down: nível exibido e os valores já escolhidos nos níveis anteriores (coluna + valor). */
+export type DrillState = { dimension?: string; path: { column: string; value: string }[] };
+
 export const useBindingData = (
   elementId: string,
   binding: DataBinding | undefined,
-  options: { ignoreFilters?: boolean } = {},
+  options: { ignoreFilters?: boolean; drill?: DrillState } = {},
 ) => {
   const ctx = useCtx();
   const ready = isBindingReady(binding);
+  const drill = options.drill && options.drill.path.length > 0 ? options.drill : null;
 
   // filtros dos elementos de filtro + seleções de outros gráficos (mesma fonte e tabela)
   const filters = useMemo(() => {
@@ -246,8 +303,34 @@ export const useBindingData = (
             : [],
         )
       : [];
-    return [...fromFilters, ...fromCharts].filter((entry) => entry.value !== "");
-  }, [ctx, binding, ready, elementId, options.ignoreFilters]);
+    // visuais personalizados que filtram (o próprio visual enxerga todos os dados e só destaca a escolha)
+    const fromHtml = ctx.interactive
+      ? ctx.htmlSelectors.flatMap((selector) => {
+          const chosen = ctx.picks[selector.id];
+          return chosen && selector.id !== elementId && selector.sourceId === binding.sourceId && selector.table === binding.table
+            ? [{ id: selector.id, binding: { sourceId: selector.sourceId, table: selector.table, column: chosen.column }, value: chosen.value, byName: false, range: false, column: chosen.column }]
+            : [];
+        })
+      : [];
+    // níveis já atravessados no drill-down deste gráfico
+    const fromDrill = binding.mode === "builder" && binding.table
+      ? (drill?.path ?? []).map((step) => ({
+          id: elementId,
+          binding: { sourceId: binding.sourceId, table: binding.table as string, column: step.column },
+          value: step.value,
+          byName: false,
+          range: false,
+          column: step.column,
+        }))
+      : [];
+    return [...fromFilters, ...fromCharts, ...fromHtml, ...fromDrill].filter((entry) => entry.value !== "");
+  }, [ctx, binding, ready, elementId, options.ignoreFilters, drill]);
+
+  // no nível de detalhe a dimensão do gráfico troca; o resto da ligação é o mesmo
+  const levelBinding = useMemo(
+    () => (binding && drill?.dimension && binding.mode === "builder" ? { ...binding, dimension: drill.dimension } : binding),
+    [binding, drill?.dimension],
+  );
 
   let key: string | null = null;
   let load: () => Promise<BindingData> = () => Promise.reject(new Error("sem ligação"));
@@ -255,12 +338,17 @@ export const useBindingData = (
   if (ready) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
-      const publicFilters: PublicFilter[] = filters.map((entry) => ({ elementId: entry.id, value: entry.value }));
-      key = JSON.stringify(["pub", token, elementId, publicFilters, ctx.refreshKey]);
+      const base = viewerBase(ctx.mode);
+      const publicFilters: PublicFilter[] = filters.map((entry) => ({
+        elementId: entry.id,
+        value: entry.value,
+        ...("column" in entry && typeof entry.column === "string" && { column: entry.column }),
+      }));
+      key = JSON.stringify(["pub", token, elementId, publicFilters, drill?.dimension ?? null, ctx.refreshKey]);
       load = () =>
-        api<BindingData>(`/api/public/dashboards/${token}/data`, {
+        api<BindingData>(`${base}/data`, {
           method: "POST",
-          json: { elementId, filters: publicFilters },
+          json: { elementId, filters: publicFilters, ...(drill?.dimension && { dimension: drill.dimension }) },
         });
     } else {
       const active: ActiveFilter[] = filters.map((entry) => ({
@@ -269,11 +357,11 @@ export const useBindingData = (
         ...(entry.byName && { byName: true }),
         ...(entry.range && { range: true }),
       }));
-      key = JSON.stringify(["priv", binding, active, ctx.refreshKey]);
+      key = JSON.stringify(["priv", levelBinding, active, ctx.refreshKey]);
       // depois de "Atualizar", o servidor também ignora o cache dele
       const fresh = ctx.refreshKey > 0;
       load = () =>
-        api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding, filters: active, fresh } });
+        api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding: levelBinding, filters: active, fresh } });
     }
   }
 
@@ -288,9 +376,10 @@ export const useFilterOptions = (element: FilterElement) => {
   if (binding?.sourceId && binding.table && binding.column && (element.props.mode !== "range" || element.props.rangeDisplay === "deslizante")) {
     if (ctx.mode.kind === "public") {
       const token = ctx.mode.token;
+      const base = viewerBase(ctx.mode);
       key = JSON.stringify(["pub-opt", token, element.id, ctx.refreshKey]);
       load = () =>
-        api<FilterOptions>(`/api/public/dashboards/${token}/filter-options`, {
+        api<FilterOptions>(`${base}/filter-options`, {
           method: "POST",
           json: { elementId: element.id },
         });

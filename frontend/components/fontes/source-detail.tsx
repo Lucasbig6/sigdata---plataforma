@@ -14,6 +14,7 @@ import type {
   SourceTable,
   TablePreview,
 } from "@/lib/domain/sources";
+import { SOURCE_KIND_LABELS, isLiveSqlKind, isRemoteImportKind, sampleSql } from "@/lib/domain/sources";
 import { cn } from "@/lib/utils";
 
 const KIND_LABEL: Record<ColumnKind, string> = {
@@ -93,7 +94,7 @@ export const SourceDetail = ({ source, onClose }: { source: DataSource; onClose:
   useEffect(() => {
     setTableName(firstTable);
     setResult(null);
-    setSql(firstTable ? `SELECT *\nFROM ${firstTable}\nLIMIT 100` : "");
+    setSql(firstTable ? sampleSql(source.kind, firstTable) : "");
   }, [source.id, firstTable]);
 
   useEffect(() => {
@@ -145,14 +146,14 @@ export const SourceDetail = ({ source, onClose }: { source: DataSource; onClose:
             {source.connectionLabel ?? source.fileName ?? source.description ?? ""}
           </p>
         </div>
-        {source.kind === "postgresql" ? (
+        {isLiveSqlKind(source.kind) || isRemoteImportKind(source.kind) ? (
           <Button
             size="sm"
             variant="outline"
             onClick={() => void refreshSchema(source.id).catch((err: Error) => setError(err.message))}
           >
             <RefreshCw aria-hidden />
-            Reler schema
+            {isRemoteImportKind(source.kind) ? "Atualizar dados" : "Reler schema"}
           </Button>
         ) : null}
         <Button size="icon-sm" variant="ghost" onClick={onClose} aria-label="Fechar inspeção">
@@ -229,7 +230,7 @@ export const SourceDetail = ({ source, onClose }: { source: DataSource; onClose:
 
       <div className="mt-5 space-y-2 border-t border-border/60 pt-4">
         <label htmlFor="sql-console" className="text-xs font-medium text-muted-foreground">
-          Consulta SQL (somente leitura · {source.kind === "postgresql" ? "PostgreSQL" : "DuckDB"})
+          Consulta SQL (somente leitura · {isLiveSqlKind(source.kind) ? SOURCE_KIND_LABELS[source.kind] : "DuckDB"})
         </label>
         <Textarea
           id="sql-console"

@@ -1,8 +1,7 @@
-import { tool, type UIMessage } from "ai";
-import { eq } from "drizzle-orm";
+import { tool } from "ai";
 import { z } from "zod";
 import type { SourceTable } from "@shared/domain/sources";
-import { db, schema } from "./db";
+import type { schema } from "./db";
 import { HttpError } from "./http";
 import { getSourceRow, runQuery } from "./sources/service";
 
@@ -38,10 +37,12 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
     "3. Para mostrar um gráfico, tabela ou indicador, depois de consultar chame create_visualization",
     "   passando resultId e os nomes das colunas: x = categoria/rótulo, y = valor numérico.",
     "   Para kind=kpi use uma consulta que retorne uma única linha; para kind=tabela x e y são opcionais.",
-    "   Tipos de gráfico: linha, barras, barras_h, area, combo, pizza, rosca, dispersao, radar, funil, medidor, treemap, calor.",
+    "   Tipos de gráfico: linha, barras, barras_h, area, combo, pizza, rosca, dispersao, radar, funil, medidor, treemap, calor, mapa (coroplético por UF ou município), mapa_bolhas, mapa_pontos.",
     "   Escolha o mais adequado (evolução → linha/area; ranking → barras_h; composição → pizza/rosca; etapas → funil;",
     "   um valor contra meta → medidor; relação entre medidas → dispersao). Para várias séries use ys (colunas numéricas",
     "   extras) ou splitBy (coluna que vira uma série cada), e calor usa x × splitBy.",
+    "   Mapas (mapa, mapa_bolhas): x deve trazer a sigla (SP) ou o nome da UF, ou o código/nome do município; y o valor.",
+    "   mapa_pontos (latitude/longitude): x = rótulo do ponto, y = coluna de latitude, ys = [coluna de longitude, valor opcional que define o tamanho].",
     "   A visualização aparece desenhada no próprio chat com o botão 'Salvar visualização' (o usuário decide salvar).",
     "   Só passe salvar=true se o usuário pedir para salvar/fixar. Não repita a visualização em texto nem em tabela markdown.",
     "3b. As visualizações salvas ficam no painel lateral. Para ajustar uma já salva (título, tipo, colunas, dados)",
@@ -58,7 +59,14 @@ export const buildSystemPrompt = (source: SourceRow | null) => {
       "peça para escolher uma fonte em 'Conjuntos de dados' na barra lateral (ou criar uma em Fontes de dados).",
     ].join("\n");
   }
-  const dialect = source.kind === "postgresql" ? "PostgreSQL" : "DuckDB (sintaxe próxima do PostgreSQL)";
+  const dialect =
+    source.kind === "postgresql"
+      ? "PostgreSQL"
+      : source.kind === "mysql"
+        ? 'MySQL/MariaDB (identificadores entre aspas duplas, LIMIT para limitar linhas)'
+        : source.kind === "sqlserver"
+          ? "SQL Server / T-SQL (sem LIMIT: use TOP; sem subconsulta com ORDER BY)"
+          : "DuckDB (sintaxe próxima do PostgreSQL)";
   return [
     ...base,
     "",
@@ -115,37 +123,3 @@ export const serverTools = (ctx: { userId: string; projectId: string; source: So
     },
   }),
 });
-
-/**
- * Arquivos anexados chegam como data URL (podem ter vários MB). No banco guardamos
- * só a referência; o conteúdo já foi usado na resposta.
- */
-const stripInlineFiles = (message: UIMessage): UIMessage => ({
-  ...message,
-  parts: message.parts.map((part) =>
-    part.type === "file" && part.url.startsWith("data:") ? { ...part, url: "" } : part,
-  ),
-});
-
-/** Substitui o histórico do projeto pela versão final da conversa. */
-export const persistConversation = async (projectId: string, messages: UIMessage[]) => {
-  await db.transaction(async (tx) => {
-    await tx.delete(schema.messages).where(eq(schema.messages.projectId, projectId));
-    if (messages.length > 0) {
-      await tx.insert(schema.messages).values(
-        messages.map((message, position) => {
-          const clean = stripInlineFiles(message);
-          return {
-            projectId,
-            id: clean.id || `m-${position}`,
-            position,
-            role: clean.role,
-            parts: clean.parts,
-            metadata: clean.metadata ?? null,
-          };
-        }),
-      );
-    }
-    await tx.update(schema.projects).set({ updatedAt: new Date() }).where(eq(schema.projects.id, projectId));
-  });
-};

@@ -1,39 +1,22 @@
-import "./env";
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
-import { logger } from "hono/logger";
-import { auth } from "./auth";
-import { errorResponse } from "./http";
-import { chatRoutes } from "./routes/chat";
-import { analysesRoutes, dashboardsRoutes, publicRoutes } from "./routes/dashboards";
-import { projectsRoutes } from "./routes/projects";
-import { resultsRoutes, sourcesRoutes } from "./routes/sources";
+import { assertEnv } from "./env";
 
-/**
- * API do SIGDATA. O navegador chega aqui pelo frontend (rewrite de /api/* no
- * Next.js), então tudo roda na mesma origem e os cookies de sessão funcionam.
- */
-const app = new Hono().basePath("/api");
+assertEnv();
 
-app.use(logger());
-
-app.on(["GET", "POST"], "/auth/*", (c) => auth.handler(c.req.raw));
-
-app.route("/projects", projectsRoutes);
-app.route("/sources", sourcesRoutes);
-app.route("/results", resultsRoutes);
-app.route("/analyses", analysesRoutes);
-app.route("/dashboards", dashboardsRoutes);
-app.route("/public", publicRoutes);
-app.route("/chat", chatRoutes);
-
-app.get("/health", (c) => c.json({ ok: true }));
-
-app.notFound((c) => c.json({ error: "Rota não encontrada." }, 404));
-app.onError((error) => errorResponse(error));
+// importa depois da validação: os módulos leem process.env ao carregar
+const { app } = await import("./app");
 
 const port = Number(process.env.PORT) || 4000;
 
-serve({ fetch: app.fetch, port }, (info) => {
+const server = serve({ fetch: app.fetch, port }, (info) => {
   console.log(`[sigdata] backend em http://localhost:${info.port}/api`);
 });
+
+// encerramento gracioso: termina as requisições em andamento antes de sair
+const shutdown = (signal: string) => {
+  console.log(`[sigdata] ${signal} recebido, encerrando…`);
+  server.close(() => process.exit(0));
+  setTimeout(() => process.exit(1), 10_000).unref();
+};
+process.on("SIGTERM", () => shutdown("SIGTERM"));
+process.on("SIGINT", () => shutdown("SIGINT"));

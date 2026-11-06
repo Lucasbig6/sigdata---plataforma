@@ -1,13 +1,15 @@
-import { asc, desc, eq } from "drizzle-orm";
+import { and, asc, count, desc, eq } from "drizzle-orm";
 import { Hono } from "hono";
 import { z } from "zod";
 import type { UIMessage } from "ai";
-import { DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
+import { DEFAULT_CHAT_TITLE, DEFAULT_NOTEBOOK_TITLE } from "@shared/notebook";
 import { WIDGET_KINDS, type PanelWidget } from "@shared/panel";
 import { db, schema } from "../db";
-import { handle, HttpError, parseBody } from "../http";
+import { handle, HttpError, notFound, parseBody } from "../http";
+import { ensureChat, getChat, listChats, toChat } from "../chats";
 import { getProject, toNotebook } from "../projects";
-import { getSourceRow } from "../sources/service";
+import { audit } from "../audit";
+import { createDataset, createFromUpload, getSourceRow } from "../sources/service";
 
 export const projectsRoutes = new Hono();
 
@@ -78,6 +80,46 @@ projectsRoutes.patch(
   }),
 );
 
+/**
+ * Dados enviados direto no projeto (qualquer perfil): o arquivo vira uma fonte da própria pessoa e a
+ * tabela principal vira um dataset particular (não publicado) usado pelo projeto. Nada é alterado
+ * nos bancos originais e outras pessoas não enxergam o arquivo.
+ */
+projectsRoutes.post(
+  "/:id/dados",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const file = (await req.formData()).get("file");
+    if (!(file instanceof File)) throw new HttpError(400, 'Envie um arquivo no campo "file".');
+
+    const baseName = file.name.replace(/\.[^.]+$/, "").trim() || "Dados enviados";
+    const upload = await createFromUpload(user.id, {
+      file,
+      name: baseName,
+      description: `Enviado pelo projeto “${project.title}”.`,
+    });
+    if (upload.status !== "pronta") throw new HttpError(422, upload.error ?? "Não foi possível ler o arquivo.");
+
+    // vários blocos (abas do Excel): a maior tabela é a que o assistente analisa
+    const [main] = [...upload.tables].sort((a, b) => (b.rowCount ?? 0) - (a.rowCount ?? 0));
+    if (!main) throw new HttpError(422, "O arquivo não tem nenhuma tabela com dados.");
+    const dataset = await createDataset(user.id, {
+      sourceId: upload.id,
+      sql: `SELECT * FROM "${main.name.replaceAll('"', '""')}"`,
+      name: baseName,
+      description: upload.description,
+    });
+
+    const [row] = await db
+      .update(schema.projects)
+      .set({ sourceId: dataset.id, updatedAt: new Date() })
+      .where(eq(schema.projects.id, project.id))
+      .returning();
+    await audit(user, "fonte.importada", baseName, `pelo projeto ${project.title}`);
+    return { dataset, notebook: toNotebook(row) };
+  }),
+);
+
 projectsRoutes.delete(
   "/:id",
   handle<{ id: string }>(async ({ user, params }) => {
@@ -87,16 +129,67 @@ projectsRoutes.delete(
   }),
 );
 
-/* -------------------------------------------------------------- mensagens */
+/* ---------------------------------------------------------------- conversas */
+
+const MAX_CHATS_PER_PROJECT = 200;
 
 projectsRoutes.get(
-  "/:id/messages",
+  "/:id/chats",
   handle<{ id: string }>(async ({ user, params }) => {
     const project = await getProject(user.id, params.id);
+    return (await listChats(project.id)).map(toChat);
+  }),
+);
+
+projectsRoutes.post(
+  "/:id/chats",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    // id gerado no cliente (a conversa abre na hora); repetir o id devolve a mesma conversa
+    const body = await parseBody(req, z.object({ id: z.uuid().optional(), title: z.string().max(200).optional() }));
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.chats)
+      .where(eq(schema.chats.projectId, project.id));
+    if ((total ?? 0) >= MAX_CHATS_PER_PROJECT) throw new HttpError(409, "Limite de conversas do projeto atingido.");
+    return toChat(await ensureChat(project.id, body.id ?? crypto.randomUUID(), body.title?.trim() || undefined));
+  }),
+);
+
+projectsRoutes.patch(
+  "/:id/chats/:chatId",
+  handle<{ id: string; chatId: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
+    const body = await parseBody(req, z.object({ title: z.string().max(200) }));
+    const [row] = await db
+      .update(schema.chats)
+      .set({ title: body.title.trim() || DEFAULT_CHAT_TITLE })
+      .where(eq(schema.chats.id, chat.id))
+      .returning();
+    return toChat(row);
+  }),
+);
+
+projectsRoutes.delete(
+  "/:id/chats/:chatId",
+  handle<{ id: string; chatId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
+    await db.delete(schema.chats).where(eq(schema.chats.id, chat.id));
+    return { ok: true };
+  }),
+);
+
+projectsRoutes.get(
+  "/:id/chats/:chatId/messages",
+  handle<{ id: string; chatId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const chat = await getChat(project.id, params.chatId);
     const rows = await db
       .select()
       .from(schema.messages)
-      .where(eq(schema.messages.projectId, project.id))
+      .where(eq(schema.messages.chatId, chat.id))
       .orderBy(asc(schema.messages.position));
     return rows.map(
       (row) =>
@@ -156,6 +249,98 @@ projectsRoutes.put(
         target: schema.projectPanels.projectId,
         set: { widgets: value, updatedAt: new Date() },
       });
+    return { ok: true };
+  }),
+);
+
+/* ------------------------------------------------------------------ notas */
+
+const MAX_NOTES_PER_PROJECT = 100;
+
+const noteFields = {
+  title: z.string().trim().max(160).default(""),
+  body: z.string().trim().min(1, "A nota está vazia.").max(20_000),
+  resultId: z.string().max(64).nullable().optional(),
+};
+
+const toNote = (row: typeof schema.projectNotes.$inferSelect) => ({
+  id: row.id,
+  title: row.title,
+  body: row.body,
+  resultId: row.resultId,
+  createdAt: row.createdAt.getTime(),
+  updatedAt: row.updatedAt.getTime(),
+});
+
+const getNote = async (projectId: string, id: string) => {
+  const [row] = await db
+    .select()
+    .from(schema.projectNotes)
+    .where(and(eq(schema.projectNotes.id, id), eq(schema.projectNotes.projectId, projectId)));
+  if (!row) throw notFound("Nota", "a");
+  return row;
+};
+
+projectsRoutes.get(
+  "/:id/notes",
+  handle<{ id: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const rows = await db
+      .select()
+      .from(schema.projectNotes)
+      .where(eq(schema.projectNotes.projectId, project.id))
+      .orderBy(desc(schema.projectNotes.createdAt));
+    return rows.map(toNote);
+  }),
+);
+
+projectsRoutes.post(
+  "/:id/notes",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const body = await parseBody(req, z.object(noteFields).extend({ id: z.string().max(64).optional() }));
+    const [{ total }] = await db
+      .select({ total: count() })
+      .from(schema.projectNotes)
+      .where(eq(schema.projectNotes.projectId, project.id));
+    if ((total ?? 0) >= MAX_NOTES_PER_PROJECT) throw new HttpError(409, "Limite de notas do projeto atingido.");
+    const [row] = await db
+      .insert(schema.projectNotes)
+      .values({
+        id: body.id ?? crypto.randomUUID(),
+        projectId: project.id,
+        title: body.title,
+        body: body.body,
+        resultId: body.resultId ?? null,
+      })
+      .onConflictDoNothing()
+      .returning();
+    if (!row) throw new HttpError(409, "Já existe uma nota com este id.");
+    return toNote(row);
+  }),
+);
+
+projectsRoutes.patch(
+  "/:id/notes/:noteId",
+  handle<{ id: string; noteId: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const note = await getNote(project.id, params.noteId);
+    const patch = await parseBody(req, z.object({ title: noteFields.title.optional(), body: noteFields.body.optional() }));
+    const [row] = await db
+      .update(schema.projectNotes)
+      .set({ ...(patch.title !== undefined && { title: patch.title }), ...(patch.body !== undefined && { body: patch.body }) })
+      .where(eq(schema.projectNotes.id, note.id))
+      .returning();
+    return toNote(row);
+  }),
+);
+
+projectsRoutes.delete(
+  "/:id/notes/:noteId",
+  handle<{ id: string; noteId: string }>(async ({ user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const note = await getNote(project.id, params.noteId);
+    await db.delete(schema.projectNotes).where(eq(schema.projectNotes.id, note.id));
     return { ok: true };
   }),
 );

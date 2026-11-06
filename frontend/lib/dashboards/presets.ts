@@ -6,6 +6,7 @@ import {
   AreaChart as AreaChartIcon,
   BarChart3,
   CalendarRange,
+  Code2,
   Columns3,
   ChartNoAxesCombined,
   ChartScatter,
@@ -23,6 +24,9 @@ import {
   Minus,
   Percent,
   PieChart as PieChartIcon,
+  Map as MapIcon,
+  MapPin,
+  MapPinned,
   Radar,
   RectangleHorizontal,
   Table as TableIcon,
@@ -96,7 +100,44 @@ const chartItem = (
   }),
 });
 
+/** Ponto de partida do visual personalizado: mostra como ler `sigdata.rows` e usar as cores do tema. */
+const HTML_STARTER = {
+  html: '<div id="app"></div>',
+  css: `#app { padding: 12px; }
+.total { font-size: 28px; font-weight: 600; color: var(--sd-primary); }
+.hint { color: var(--sd-muted-foreground); font-size: 12px; }`,
+  js: `// Os dados da ligação chegam em sigdata.rows (lista de objetos) e sigdata.columns.
+// Cores do tema: var(--sd-foreground), var(--sd-primary), var(--sd-chart-1) ... var(--sd-chart-5).
+sigdata.onData(function (data) {
+  var app = document.getElementById("app");
+  if (data.status === "error") { app.textContent = data.error; return; }
+  app.innerHTML = "";
+  var total = document.createElement("div");
+  total.className = "total";
+  total.textContent = data.rows.length + " linha(s)";
+  var hint = document.createElement("div");
+  hint.className = "hint";
+  hint.textContent = "Colunas: " + data.columns.join(", ");
+  app.appendChild(total);
+  app.appendChild(hint);
+});`,
+};
+
 export const ELEMENT_LIBRARY: LibraryGroup[] = [
+  {
+    id: "avancado",
+    label: "Avançado",
+    items: [
+      {
+        key: "html",
+        label: "HTML personalizado",
+        description: "Visual próprio com HTML, CSS e JavaScript, alimentado pelos dados. Só analistas.",
+        icon: Code2,
+        type: "html",
+        defaultProps: () => ({ title: "Visual personalizado", showTitle: false, ...HTML_STARTER }),
+      },
+    ],
+  },
   {
     id: "visualizacoes",
     label: "Visualizações",
@@ -115,6 +156,9 @@ export const ELEMENT_LIBRARY: LibraryGroup[] = [
       chartItem("gauge", "Medidor", "gauge", "Um valor contra uma meta.", Gauge),
       chartItem("treemap", "Treemap", "treemap", "Proporção por área.", LayoutGrid),
       chartItem("heatmap", "Mapa de calor", "heatmap", "Intensidade entre duas categorias.", Grid3x3),
+      chartItem("map", "Mapa coroplético", "map", "Valores por estado ou município, em cores.", MapIcon),
+      chartItem("mapbubbles", "Mapa de bolhas", "mapbubbles", "Tamanho da bolha por região.", MapPinned),
+      chartItem("mappoints", "Mapa de pontos", "mappoints", "Pontos por latitude e longitude.", MapPin),
       {
         key: "table",
         label: "Tabela",

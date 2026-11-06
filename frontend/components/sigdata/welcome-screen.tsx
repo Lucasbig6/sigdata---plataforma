@@ -1,43 +1,41 @@
 "use client";
 
 import { useAISDKChat } from "@assistant-ui/ai-sdk";
-import { ArrowUpRight, Database, Upload } from "lucide-react";
+import { Database, FileSpreadsheet, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-import { useEffect, useMemo } from "react";
-import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
+import { useMemo } from "react";
+import { useRole, useSession } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
+import { DATASET_KIND_LABELS, isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
 import { sourceSummary, suggestQuestions } from "@/lib/workspace/suggestions";
+import { useActiveSource } from "@/lib/workspace/use-active-source";
 import { cn } from "@/lib/utils";
-import { Logo } from "./logo";
+import { useNotebookId } from "@/lib/use-notebook-id";
+import { ACCEPTED_DATA_FILES, useProjectDataUpload } from "@/lib/workspace/upload-data";
 
 const SuggestedPrompts = ({ prompts }: { prompts: string[] }) => {
   const chat = useAISDKChat();
 
   return (
-    <div className="grid w-full gap-2.5 sm:grid-cols-2">
+    <ul className="flex w-full flex-col items-start gap-2" aria-label="Sugestões de perguntas">
       {prompts.map((prompt) => (
-        <button
-          key={prompt}
-          type="button"
-          disabled={!chat}
-          onClick={() => void chat?.sendMessage({ text: prompt })}
-          className={cn(
-            "group flex items-start justify-between gap-3 rounded-xl border border-border bg-card/60 px-3.5 py-3 text-start",
-            "text-sm leading-snug text-muted-foreground transition-colors",
-            "hover:border-primary/40 hover:bg-card hover:text-foreground",
-            "focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
-            "disabled:opacity-60 disabled:pointer-events-none",
-          )}
-        >
-          <span>{prompt}</span>
-          <ArrowUpRight
-            className="mt-0.5 size-4 shrink-0 text-muted-foreground/60 transition-colors group-hover:text-primary"
-            aria-hidden
-          />
-        </button>
+        <li key={prompt} className="max-w-full">
+          <button
+            type="button"
+            disabled={!chat}
+            onClick={() => void chat?.sendMessage({ text: prompt })}
+            className={cn(
+              "rounded-2xl bg-muted/70 px-4 py-2.5 text-start text-sm leading-snug text-foreground transition-colors",
+              "hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
+              "disabled:opacity-60 disabled:pointer-events-none",
+            )}
+          >
+            {prompt}
+          </button>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 };
 
@@ -46,15 +44,46 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
   const datasets = useDatasetsStore((state) => state.datasets);
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const setNotebookSource = useNotebooksStore((state) => state.setNotebookSource);
-  const ready = datasets.filter((dataset) => dataset.status === "pronta");
+  const ready = datasets.filter(isAnalysisDataset);
+  const canManage = canManageData(useRole() ?? "usuario");
+  const { upload, busy } = useProjectDataUpload();
 
   return (
     <div className="flex w-full flex-col gap-3 rounded-2xl border border-dashed border-border bg-card/40 p-4 text-start">
       <p className="text-sm font-medium text-foreground">Escolha os dados para começar</p>
       <p className="text-xs leading-relaxed text-muted-foreground">
-        O assistente só responde com números das suas fontes. Selecione uma para este projeto
-        ou envie um arquivo novo.
+        Envie uma planilha sua (ela fica só neste projeto) ou use um dataset preparado pelos analistas.
       </p>
+      <label
+        htmlFor="project-data-file"
+        className="flex cursor-pointer items-center gap-3 rounded-xl border border-border bg-background px-3 py-3 transition-colors hover:border-primary/50 hover:bg-muted/40"
+      >
+        <span className="grid size-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+          {busy ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <FileSpreadsheet className="size-4" aria-hidden />}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block text-sm font-medium text-foreground">{busy ? "Lendo a planilha…" : "Enviar planilha (CSV ou Excel)"}</span>
+          <span className="block text-[11px] text-muted-foreground">Ou arraste o arquivo para qualquer lugar do chat. Até 50 MB.</span>
+        </span>
+        <input
+          id="project-data-file"
+          type="file"
+          accept={ACCEPTED_DATA_FILES}
+          className="sr-only"
+          disabled={busy || !notebookId}
+          onChange={(event) => {
+            void upload(event.target.files?.[0]);
+            event.target.value = "";
+          }}
+        />
+      </label>
+      {hydrated && ready.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          {canManage
+            ? "Ainda não há datasets publicados. Crie um no editor SQL a partir de uma fonte."
+            : "Ainda não há datasets publicados. Peça a um analista para publicar um."}
+        </p>
+      ) : null}
       {hydrated && ready.length > 0 && notebookId ? (
         <ul className="flex flex-col gap-1.5">
           {ready.map((dataset) => (
@@ -74,65 +103,49 @@ const PickSource = ({ notebookId }: { notebookId: string | null }) => {
           ))}
         </ul>
       ) : null}
-      <Link
-        href="/fontes-de-dados"
-        className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
-      >
-        <Upload className="size-3.5" aria-hidden />
-        Enviar CSV/XLSX ou conectar um banco
-      </Link>
+      {canManage ? (
+        <Link
+          href="/fontes-de-dados"
+          className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-primary hover:underline"
+        >
+          <Upload className="size-3.5" aria-hidden />
+          Gerenciar fontes e datasets
+        </Link>
+      ) : null}
     </div>
   );
 };
 
 export const WelcomeScreen = () => {
-  const notebookId = useSearchParams().get("notebook");
-  const sourceId = useNotebooksStore(
-    (state) => state.notebooks.find((notebook) => notebook.id === notebookId)?.sourceId ?? null,
-  );
-  const hydrateDatasets = useDatasetsStore((state) => state.hydrate);
-  const datasets = useDatasetsStore((state) => state.datasets);
-  const source = datasets.find((dataset) => dataset.id === sourceId && dataset.status === "pronta") ?? null;
-
-  useEffect(() => {
-    hydrateDatasets();
-  }, [hydrateDatasets]);
+  const notebookId = useNotebookId();
+  const source = useActiveSource();
 
   const prompts = useMemo(() => (source ? suggestQuestions(source.tables) : []), [source]);
 
+  const firstName = useSession().data?.user.name.trim().split(/\s+/)[0] ?? "";
+
   return (
-    <div className="flex w-full flex-col items-center gap-6 px-2 py-10 text-center sm:py-16">
-      <Logo className="h-14 w-auto sm:h-16" />
-
-      <div className="flex max-w-2xl flex-col gap-3">
-        <h1 className="text-3xl font-medium tracking-tight text-balance text-foreground sm:text-4xl">
-          Inteligência de dados, em uma conversa.
-        </h1>
-        <p className="text-pretty text-sm leading-relaxed text-muted-foreground sm:text-base">
-          {source
-            ? "Pergunte sobre os seus dados ou comece por uma das sugestões abaixo."
-            : "Explore seus dados, encontre padrões e transforme perguntas em análises."}
-        </p>
-      </div>
-
+    <div className="mx-auto flex w-full max-w-2xl flex-col items-start gap-5 px-4 py-10 text-start sm:py-14">
+      <h1 className="text-3xl font-light tracking-tight text-balance text-foreground sm:text-4xl">
+        {firstName ? `Olá, ${firstName}.` : "Olá."}{" "}
+        <span className="text-muted-foreground">
+          {source ? "O que você quer saber?" : "Escolha um dataset para começar."}
+        </span>
+      </h1>
       {source ? (
-        <div className="flex w-full flex-col items-center gap-1.5">
-          <span className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-primary">
-            <Database className="size-3 shrink-0" aria-hidden />
-            <span className="truncate">{source.name}</span>
-          </span>
-          <p className="max-w-xl text-xs leading-relaxed text-muted-foreground">
-            {sourceSummary(source.tables)}
-          </p>
-        </div>
+        <p className="max-w-xl text-sm leading-relaxed text-muted-foreground">
+          <Database className="mr-1.5 inline size-3.5 align-[-2px] text-primary" aria-hidden />
+          Analisando <span className="font-medium text-foreground">{source.name}</span> · {sourceSummary(source.tables)}
+        </p>
       ) : null}
 
-      {source && prompts.length > 0 ? <SuggestedPrompts prompts={prompts} /> : null}
+      {source && prompts.length > 0 ? (
+        <div className="flex w-full flex-col gap-2.5">
+          <p className="text-sm font-medium text-foreground">Por onde começar?</p>
+          <SuggestedPrompts prompts={prompts} />
+        </div>
+      ) : null}
       {!source ? <PickSource notebookId={notebookId} /> : null}
-
-      <p className="text-xs text-muted-foreground/70">
-        As visualizações que você salvar das respostas ficam no painel lateral.
-      </p>
     </div>
   );
 };

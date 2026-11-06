@@ -6,15 +6,17 @@ import { useState } from "react";
 import { autoProps, defaultSource } from "@/lib/dashboards/auto-binding";
 import { ELEMENT_LIBRARY, ELEMENT_MIME, type LibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { useDatasetsStore } from "@/lib/datasets/store";
+import { isAnalysisDataset, useDatasetsStore } from "@/lib/datasets/store";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { WorkspaceLibrary } from "./workspace-library";
 
 /** Adiciona um item já ligado a uma fonte real, quando houver. */
 export const useAddLibraryItem = () => {
   const addElement = useDashboardsStore((state) => state.addElement);
-  const datasets = useDatasetsStore((state) => state.datasets);
+  const datasets = useDatasetsStore((state) => state.datasets).filter(isAnalysisDataset);
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
-  return (item: LibraryItem, placement?: { x?: number; y?: number }) =>
+  return (item: LibraryItem, placement?: { x?: number; y?: number; exact?: boolean }) =>
     addElement(
       item,
       placement,
@@ -41,12 +43,14 @@ export const ElementLibrary = () => {
   const [tab, setTab] = useState<Tab>("visualizacoes");
   const preferredSourceId = useDashboardsStore((state) => state.preferredSourceId);
   const setPreferredSourceId = useDashboardsStore((state) => state.setPreferredSourceId);
-  const readySources = datasets.filter((s) => s.status === "pronta" && s.tables.length > 0);
-  const source = defaultSource(datasets, preferredSourceId);
+  const readySources = datasets.filter((s) => isAnalysisDataset(s) && s.tables.length > 0);
+  const source = defaultSource(datasets.filter(isAnalysisDataset), preferredSourceId);
   const normalized = query.trim().toLowerCase();
+  const role = useRole();
+  const canCustomize = role !== null && canManageData(role);
 
   // gráficos, tabelas e indicadores vêm só das visualizações salvas (aba Visualizações)
-  const groups = ELEMENT_LIBRARY.filter((group) => !group.fromAnalysis).map((group) => ({
+  const groups = ELEMENT_LIBRARY.filter((group) => !group.fromAnalysis && (group.id !== "avancado" || canCustomize)).map((group) => ({
     ...group,
     items: group.items.filter(
       (item) =>

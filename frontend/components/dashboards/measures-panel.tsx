@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import type { DashboardMeasure } from "@/lib/dashboards/types";
 import { MeasureDialog } from "./measure-dialog";
+import { confirmAction } from "@/lib/feedback";
 
 /** Medidas calculadas do painel: criar, editar e excluir. */
 export const MeasuresPanel = () => {
@@ -43,9 +44,12 @@ export const MeasuresPanel = () => {
                 type="button"
                 aria-label={`Excluir ${measure.name}`}
                 onClick={() => {
-                  if (window.confirm(`Excluir a medida "${measure.name}"? Elementos que já a usam continuam funcionando.`)) {
-                    removeMeasure(measure.id);
-                  }
+                  void confirmAction({
+                    title: `Excluir a medida "${measure.name}"?`,
+                    description: "Elementos que já a usam continuam funcionando.",
+                    confirmLabel: "Excluir",
+                    destructive: true,
+                  }).then((ok) => ok && removeMeasure(measure.id));
                 }}
                 className="grid size-6 place-items-center rounded text-destructive hover:bg-destructive/10"
               >

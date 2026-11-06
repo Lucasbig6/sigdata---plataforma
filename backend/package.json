@@ -10,10 +10,15 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:studio": "drizzle-kit studio",
-    "test": "node --import tsx --test \"test/*.test.ts\""
+    "test": "node --import tsx --test \"test/*.test.ts\"",
+    "build": "esbuild src/server.ts src/migrate.ts --bundle --platform=node --format=esm --packages=external --target=node24 --outdir=dist",
+    "start:prod": "node dist/server.js",
+    "migrate:prod": "node dist/migrate.js"
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "^4.0.94",
     "@ai-sdk/groq": "^4.0.70",
+    "@ai-sdk/openai-compatible": "^3.0.84",
     "@duckdb/node-api": "1.5.6-r.2",
     "@hono/node-server": "^2.1.5",
     "ai": "^7.0.153",
@@ -22,14 +27,18 @@
     "exceljs": "^4.4.0",
     "hono": "^4.13.14",
     "mammoth": "^1.13.0",
+    "mssql": "^12.7.14",
+    "mysql2": "^3.24.6",
     "pg": "^8.23.1",
     "unpdf": "^1.9.1",
     "zod": "^4.6.7"
   },
   "devDependencies": {
+    "@types/mssql": "^12.3.0",
     "@types/node": "^26.6.5",
     "@types/pg": "^8.23.1",
     "drizzle-kit": "^0.31.11",
+    "esbuild": "^0.28.2",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

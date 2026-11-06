@@ -1,4 +1,4 @@
-import { kindFromDbType, type ResultColumn } from "@shared/domain/sources";
+import { kindFromDbType, toTableName, type ResultColumn } from "@shared/domain/sources";
 import { HttpError } from "../http";
 
 /** Máximo de linhas guardadas por resultado (o que passa disso é marcado como truncado). */
@@ -32,23 +32,7 @@ export const quoteIdent = (name: string) => `"${name.replaceAll('"', '""')}"`;
 /** Cita um nome possivelmente qualificado (`schema.tabela`). */
 export const quoteQualified = (name: string) => name.split(".").map(quoteIdent).join(".");
 
-/** Nome de tabela seguro a partir de um nome de arquivo/aba. */
-export const toTableName = (raw: string, taken: Set<string>): string => {
-  const base =
-    raw
-      .normalize("NFD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .toLowerCase()
-      .replace(/\.[a-z0-9]+$/, "")
-      .replace(/[^a-z0-9]+/g, "_")
-      .replace(/^_+|_+$/g, "")
-      .slice(0, 48) || "tabela";
-  let name = /^[0-9]/.test(base) ? `t_${base}` : base;
-  let n = 2;
-  while (taken.has(name)) name = `${base}_${n++}`;
-  taken.add(name);
-  return name;
-};
+export { toTableName };
 
 /** Nomes de colunas únicos (consultas podem repetir nomes, ex.: dois `count`). */
 export const uniqueColumnNames = (names: string[]) => {

@@ -1,25 +1,26 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import {
   BarChart3,
   BookmarkPlus,
   Check,
+  ChevronDown,
   ChevronRight,
+  Code2,
   Database,
   Loader2,
-  Minus,
   Pencil,
-  Plus,
   Trash2,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { draftFromWidget, liveFromResult } from "@/lib/dashboards/from-workspace";
+import { findLibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import type { ResultColumn } from "@/lib/domain/sources";
+import type { AnalyticResult, ResultColumn } from "@/lib/domain/sources";
 import { editWidget } from "@/lib/panel/edit";
 import {
   usePanelStore,
@@ -28,12 +29,19 @@ import {
   type WidgetKind,
 } from "@/lib/panel/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { fetchResult } from "@/lib/results/client";
+import { fetchResult, widgetDataFromResult } from "@/lib/results/client";
 import { useSigdata } from "@/lib/sigdata-store";
 import { WIDGET_KINDS, isChartKind } from "@shared/panel";
 import { cn } from "@/lib/utils";
-import { SourceCard } from "./source-card";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
+import { NotesPanel } from "./notes-panel";
+import { ProjectDashboardsPanel, useProjectDashboardIds } from "./project-dashboards-panel";
+import { StudioTools } from "./studio-tools";
 import { WidgetView } from "./widget-view";
+import { useNotesStore } from "@/lib/notes/store";
+import { toast } from "@/lib/feedback";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
 type TabId = "todos" | "grafico" | "tabela" | "indicadores";
 
@@ -190,9 +198,39 @@ const WidgetEditor = ({
   );
 };
 
+type StudioTab = "visualizacoes" | "dashboards" | "notas";
+const STUDIO_TABS: { id: StudioTab; label: string }[] = [
+  { id: "visualizacoes", label: "Visualizações" },
+  { id: "dashboards", label: "Dashboards" },
+  { id: "notas", label: "Notas" },
+];
+
 const WidgetCard = ({ notebookId, widget }: { notebookId: string; widget: PanelWidget }) => {
   const removeWidget = usePanelStore((state) => state.removeWidget);
+  const updateWidget = usePanelStore((state) => state.updateWidget);
   const [editing, setEditing] = useState(false);
+
+  // visualizações salvas antes da correção ficaram sem os dados do gráfico (apareciam como a série de
+  // demonstração): refaz a partir da consulta de origem e grava.
+  useEffect(() => {
+    if (!isChartKind(widget.kind) || widget.chart || widget.series || !widget.resultId) return;
+    let cancelled = false;
+    fetchResult(widget.resultId)
+      .then((result) => {
+        if (cancelled) return;
+        const rebuilt = widgetDataFromResult(result, widget.kind, {
+          x: widget.xCol,
+          y: widget.yCol,
+          ys: widget.ysCols,
+          splitBy: widget.splitBy,
+        });
+        updateWidget(notebookId, widget.id, { chart: rebuilt.chart, ysCols: rebuilt.ysCols, splitBy: rebuilt.splitBy });
+      })
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [notebookId, updateWidget, widget.chart, widget.series, widget.id, widget.kind, widget.resultId, widget.xCol, widget.yCol, widget.ysCols, widget.splitBy]);
 
   return (
     <article className="flex w-full flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
@@ -230,7 +268,77 @@ const WidgetCard = ({ notebookId, widget }: { notebookId: string; widget: PanelW
       <div className="max-h-72 overflow-auto p-2">
         <WidgetView kind={widget.kind} data={widget} />
       </div>
+      {widget.resultId ? <QueryInfo resultId={widget.resultId} /> : null}
     </article>
+  );
+};
+
+/** Consulta e fonte por trás da visualização: dá para conferir de onde vêm os números. */
+const QueryInfo = ({ resultId }: { resultId: string }) => {
+  const [open, setOpen] = useState(false);
+  const [result, setResult] = useState<AnalyticResult | null>(null);
+  const [failed, setFailed] = useState(false);
+  const datasets = useDatasetsStore((state) => state.datasets);
+  const role = useRole();
+
+  useEffect(() => {
+    if (!open || result) return;
+    let cancelled = false;
+    fetchResult(resultId)
+      .then((value) => !cancelled && setResult(value))
+      .catch(() => !cancelled && setFailed(true));
+    return () => {
+      cancelled = true;
+    };
+  }, [open, result, resultId]);
+
+  const sourceName = datasets.find((entry) => entry.id === result?.sourceId)?.name;
+
+  return (
+    <div className="border-t border-border/70">
+      <button
+        type="button"
+        aria-expanded={open}
+        onClick={() => setOpen((value) => !value)}
+        className="flex w-full items-center gap-1.5 px-3 py-1.5 text-[11px] text-muted-foreground outline-none transition-colors hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring/50"
+      >
+        <Code2 className="size-3" aria-hidden />
+        Ver consulta
+        <ChevronDown className={cn("ml-auto size-3 transition-transform", open && "rotate-180")} aria-hidden />
+      </button>
+      {open ? (
+        <div className="space-y-2 px-3 pb-3">
+          {failed ? <p className="text-[11px] text-destructive">Não foi possível carregar a consulta.</p> : null}
+          {!result && !failed ? <Loader2 className="size-3.5 animate-spin text-muted-foreground" aria-hidden /> : null}
+          {result ? (
+            <>
+              <pre className="max-h-40 overflow-auto rounded-md border border-border/70 bg-muted/30 p-2 font-mono text-[11px] leading-relaxed whitespace-pre-wrap text-foreground">
+                {result.sql}
+              </pre>
+              <p className="flex flex-wrap items-center gap-x-2 text-[10px] text-muted-foreground tabular-nums">
+                <span>{sourceName ?? "Fonte do projeto"}</span>
+                <span>·</span>
+                <span>
+                  {result.rowCount.toLocaleString("pt-BR")} linhas{result.truncated ? " (parcial)" : ""}
+                </span>
+                <span>·</span>
+                <span>{result.durationMs.toLocaleString("pt-BR")} ms</span>
+                <span>·</span>
+                <span>{new Date(result.createdAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}</span>
+                {result.sourceId && role !== null && canManageData(role) ? (
+                  <Link
+                    href={`/fontes-de-dados/editor?${new URLSearchParams({ source: result.sourceId, sql: result.sql })}`}
+                    className="ml-auto font-medium text-primary hover:underline"
+                  >
+                    Abrir no editor SQL
+                  </Link>
+                ) : null}
+              </p>
+            </>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
   );
 };
 
@@ -251,13 +359,12 @@ const EmptyState = () => (
 
 /** Biblioteca de visualizações salvas do projeto (geradas no chat). */
 export const WorkPanel = ({ className }: { className?: string }) => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const {
     panelView,
     panelCollapsed,
     panelMobileOpen,
     setPanelView,
-    togglePanelCollapsed,
     setPanelMobileOpen,
     savePreferences,
   } = useSigdata();
@@ -280,6 +387,14 @@ export const WorkPanel = ({ className }: { className?: string }) => {
   const saveDashboard = useDashboardsStore((state) => state.save);
 
   const [note, setNote] = useState<string | null>(null);
+  const [studioTab, setStudioTab] = useState<StudioTab>("visualizacoes");
+  const dashboardCount = useProjectDashboardIds(notebookId).length;
+  const hydrateDashboards = useDashboardsStore((state) => state.hydrate);
+  useEffect(() => hydrateDashboards(), [hydrateDashboards]);
+  const noteCount = useNotesStore((state) => (notebookId ? state.notesByNotebook[notebookId]?.length ?? 0 : 0));
+  useEffect(() => {
+    if (notebookId) void useNotesStore.getState().load(notebookId);
+  }, [notebookId]);
   const panelVisible = !panelCollapsed || panelMobileOpen;
 
   useEffect(() => {
@@ -318,22 +433,27 @@ export const WorkPanel = ({ className }: { className?: string }) => {
       }),
     );
 
-    const id = createDashboard();
+    const id = createDashboard(notebookId);
     openDashboard(id);
     beginTransaction("panel-import");
     renameDashboard(title);
-    for (const { widget, draft } of drafts) {
-      if (draft) addElement(draft.item, { x: widget.x, y: widget.y }, draft.props);
+    // título no topo e visualizações em fluxo; a arrumação agrupa indicadores, gráficos e tabelas
+    const heading = findLibraryItem("title");
+    if (heading) addElement(heading, undefined, { content: title });
+    for (const { draft } of drafts) {
+      if (draft) addElement(draft.item, undefined, draft.props);
     }
+    useDashboardsStore.getState().arrange();
     endTransaction();
     savePreferences();
     await saveDashboard();
     const { saveError } = useDashboardsStore.getState();
-    setNote(
-      saveError
-        ? `Não foi possível salvar o dashboard: ${saveError}`
-        : `Dashboard "${title}" salvo — abra em Dashboards.`,
-    );
+    const message = saveError
+      ? `Não foi possível salvar o dashboard: ${saveError}`
+      : `Dashboard "${title}" salvo.`;
+    setNote(message);
+    if (saveError) toast.error(message);
+    else toast.success(message, { label: "Abrir dashboard", href: `/dashboards/${id}` });
   };
 
   return (
@@ -344,32 +464,19 @@ export const WorkPanel = ({ className }: { className?: string }) => {
         "border-s border-border",
         className,
       )}
-      aria-label="Visualizações salvas"
+      aria-label="Estúdio"
     >
       <header className="flex flex-col gap-2 border-b border-border px-4 py-4">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1">
-            <p className="truncate pb-1 text-base font-medium text-foreground">Visualizações salvas</p>
+            <p className="truncate pb-1 text-base font-medium text-foreground">Estúdio</p>
             <div className="mt-1 flex items-center gap-2">
               <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-primary">
                 <BarChart3 className="size-3" aria-hidden />
                 {activeSource ? activeSource.name : "Sem fonte selecionada"}
               </span>
-              {widgets.length > 0 ? (
-                <span className="text-[11px] text-muted-foreground">{widgets.length} salva(s)</span>
-              ) : null}
             </div>
           </div>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
-            onClick={togglePanelCollapsed}
-            aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
-            title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
-          >
-            {panelCollapsed ? <Plus className="size-4" aria-hidden /> : <Minus className="size-4" aria-hidden />}
-          </Button>
 
           <Button
             variant="ghost"
@@ -383,78 +490,107 @@ export const WorkPanel = ({ className }: { className?: string }) => {
           </Button>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Button size="xs" variant="outline" onClick={handleSaveAsDashboard} disabled={widgets.length === 0}>
-            <BookmarkPlus className="size-3.5" aria-hidden />
-            Criar dashboard com estas
-          </Button>
-          {note ? <span className="text-[11px] text-muted-foreground">{note}</span> : null}
-          {panelSaveError ? (
-            <span className="text-[11px] text-destructive">Não salvo: {panelSaveError}</span>
-          ) : null}
-        </div>
-
-        <div
-          role="tablist"
-          aria-label="Filtrar visualizações salvas"
-          className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
-        >
-          {TABS.map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={panelView === tab.id}
-              onClick={() => {
-                setPanelView(tab.id);
-                savePreferences();
-              }}
-              className={cn(
-                "flex-1 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none",
-                "focus-visible:ring-2 focus-visible:ring-ring/50",
-                panelView === tab.id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
       </header>
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {panelVisible ? (
-          <div className="shrink-0 p-3 pb-0">
-            <SourceCard source={activeSource} />
-          </div>
-        ) : null}
-        <div className="flex min-h-48 flex-1 flex-col">
-        {!panelVisible ? null : panelLoadError && notebookId ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="text-sm font-medium text-foreground">Não foi possível carregar as visualizações</p>
-            <p className="text-xs text-muted-foreground">{panelLoadError}</p>
-            <Button size="xs" variant="outline" onClick={() => void loadPanel(notebookId)}>
-              Tentar novamente
-            </Button>
-          </div>
-        ) : widgets.length === 0 || !notebookId ? (
-          <EmptyState />
-        ) : filtered.length === 0 ? (
-          <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
-            <p className="text-sm text-muted-foreground">Nenhuma visualização nesta categoria.</p>
-            <Button size="xs" variant="outline" onClick={() => setPanelView("todos")}>
-              Ver todas
-            </Button>
-          </div>
-        ) : (
-          <div className="flex flex-col gap-3 p-3">
-            {filtered.map((widget) => (
-              <WidgetCard key={widget.id} notebookId={notebookId} widget={widget} />
+          <div className="flex shrink-0 flex-col gap-6 px-3 pt-3">
+          <StudioTools source={activeSource} widgetCount={widgets.length} onCreateDashboard={handleSaveAsDashboard} />
+
+          <div
+            role="tablist"
+            aria-label="Conteúdo do estúdio"
+            className="flex gap-2 rounded-lg border border-border bg-muted/40 p-2"
+          >
+            {STUDIO_TABS.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                role="tab"
+                aria-selected={studioTab === tab.id}
+                onClick={() => setStudioTab(tab.id)}
+                className={cn(
+                  "flex-1 whitespace-nowrap rounded-md px-1.5 py-1.5 text-xs font-medium transition-colors outline-none",
+                  "focus-visible:ring-2 focus-visible:ring-ring/50",
+                  studioTab === tab.id
+                    ? "bg-background text-foreground shadow-sm"
+                    : "text-muted-foreground hover:text-foreground",
+                )}
+              >
+                {tab.label}
+                {tab.id === "visualizacoes" && widgets.length > 0 ? ` (${widgets.length})` : null}
+                {tab.id === "dashboards" && dashboardCount > 0 ? ` (${dashboardCount})` : null}
+                {tab.id === "notas" && noteCount > 0 ? ` (${noteCount})` : null}
+              </button>
             ))}
           </div>
+          </div>
+        ) : null}
+        {!panelVisible ? null : studioTab === "dashboards" ? (
+          notebookId ? (
+            <ProjectDashboardsPanel
+              notebookId={notebookId}
+              visualizationCount={widgets.length}
+              onCreateFromVisualizations={handleSaveAsDashboard}
+            />
+          ) : null
+        ) : studioTab === "notas" ? (
+          notebookId ? <NotesPanel notebookId={notebookId} /> : null
+        ) : (
+          <div className="flex min-h-48 flex-1 flex-col">
+            {panelLoadError && notebookId ? (
+              <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center">
+                <p className="text-sm font-medium text-foreground">Não foi possível carregar as visualizações</p>
+                <p className="text-xs text-muted-foreground">{panelLoadError}</p>
+                <Button size="xs" variant="outline" onClick={() => void loadPanel(notebookId)}>
+                  Tentar novamente
+                </Button>
+              </div>
+            ) : widgets.length === 0 || !notebookId ? (
+              <EmptyState />
+            ) : (
+              <>
+                <div className="flex flex-wrap items-center gap-1 px-3 pt-3">
+                  {widgets.length >= 4 ? (
+                    <select
+                      aria-label="Filtrar visualizações"
+                      value={panelView}
+                      onChange={(event) => {
+                        setPanelView(event.target.value as typeof panelView);
+                        savePreferences();
+                      }}
+                      className="h-6 rounded-md border border-border bg-background px-1.5 text-[11px] text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring/50"
+                    >
+                      {TABS.map((tab) => (
+                        <option key={tab.id} value={tab.id}>
+                          {tab.label}
+                        </option>
+                      ))}
+                    </select>
+                  ) : null}
+                  {note ? <span className="text-[11px] text-muted-foreground">{note}</span> : null}
+                  {panelSaveError ? (
+                    <span className="text-[11px] text-destructive">Não salvo: {panelSaveError}</span>
+                  ) : null}
+                </div>
+                {filtered.length === 0 ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-2 px-6 py-8 text-center">
+                    <p className="text-sm text-muted-foreground">Nenhuma visualização nesta categoria.</p>
+                    <Button size="xs" variant="outline" onClick={() => setPanelView("todos")}>
+                      Ver todas
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex flex-col gap-3 p-3">
+                    {filtered.map((widget) => (
+                      <WidgetCard key={widget.id} notebookId={notebookId} widget={widget} />
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
-        </div>
       </div>
 
       <p className="border-t border-border/60 px-4 py-2 text-[10px] text-muted-foreground/80">

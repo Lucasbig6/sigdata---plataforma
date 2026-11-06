@@ -32,6 +32,7 @@ import {
   syncActive,
   toPersisted,
 } from "./pages";
+import { autoGridLayout, findGridSlot, gridSize, isGrid, normalizeGrid } from "./grid";
 import { createElement, type LibraryItem } from "./presets";
 import {
   CANVAS_LIMITS,
@@ -53,7 +54,7 @@ type HistoryKey = string | null;
 
 const clone = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
-type ServerDashboard = Dashboard & { shareToken: string | null };
+type ServerDashboard = Dashboard & { shareToken: string | null; projectId: string | null };
 
 /** POSTs de criação em andamento: o primeiro PUT/DELETE espera por eles. */
 const pendingCreates = new Map<string, Promise<unknown>>();
@@ -87,6 +88,8 @@ type SigdataDashboardsStore = {
   order: string[];
   dashboards: Record<string, Dashboard>;
   shareTokens: Record<string, string | null>;
+  /** Projeto de origem de cada dashboard (null = avulso). */
+  projectIds: Record<string, string | null>;
   saving: boolean;
   saveError: string | null;
   /** Última versão salva do documento aberto (para "Descartar"). */
@@ -133,27 +136,35 @@ type SigdataDashboardsStore = {
   select: (id: string | null) => void;
   setPreview: (preview: boolean) => void;
   openDashboard: (id: string | null) => void;
-  createDashboard: () => string;
+  createDashboard: (projectId?: string) => string;
   deleteDashboard: (id: string) => void;
   rename: (name: string) => void;
 
   beginTransaction: (key: string) => void;
   endTransaction: () => void;
+  /**
+   * Agrupa várias alterações num único passo de "desfazer". Chamadas seguintes com a mesma `key`
+   * (sem edição do usuário no meio) entram no mesmo passo, mesmo passado o intervalo normal.
+   */
+  runAsOneStep: <T>(key: string, change: () => T) => T;
   undo: () => void;
   redo: () => void;
   save: () => Promise<void>;
-  share: (id: string) => Promise<string>;
+  share: (id: string, expiresInDays?: number | null) => Promise<string>;
   unshare: (id: string) => Promise<void>;
   /** Abre um dashboard recebido por link público (somente leitura). */
   loadPublic: (dashboard: Dashboard, analyses: SavedAnalysis[]) => void;
 
   addElement: (
     item: LibraryItem,
-    placement?: { x?: number; y?: number },
+    /** `exact`: foi solto num ponto da página (em grade, ocupa o lugar e empurra os outros). */
+    placement?: { x?: number; y?: number; exact?: boolean },
     props?: Record<string, unknown>,
   ) => string | null;
   /** Muda o tamanho da página; elementos são reposicionados para caber. */
   setCanvasSize: (size: { width: number; height: number }) => void;
+  /** Alterna a página entre grade (12 colunas, sem sobreposição) e canvas livre. */
+  setLayoutMode: (mode: "grid" | "free") => void;
   /** Cor de fundo da página (`null` volta ao padrão do tema). */
   setCanvasBackground: (background: string | null) => void;
   /** Fonte usada por elementos novos (preferência do editor; "" = automática). */
@@ -266,15 +277,31 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     if (!currentId) return;
     const doc = dashboards[currentId];
     if (!doc) return;
-    const next = transform(doc);
-    if (!next) return;
+    const transformed = transform(doc);
+    if (!transformed) return;
+    const next = isGrid(transformed.canvas) ? settleGrid(transformed) : transformed;
     set({
       dashboards: { ...dashboards, [currentId]: next },
       dirty: dirty || get().dirty,
     });
   };
 
+  /** Elementos que a pessoa está arrastando/redimensionando: a grade se acomoda em volta deles. */
+  let gridPin: string[] = [];
+
+  /** Página em grade: encaixa nas células, empurra/compacta e ajusta a altura da página. */
+  const settleGrid = (doc: Dashboard): Dashboard => {
+    const pin = gridPin;
+    gridPin = [];
+    const { elements, height } = normalizeGrid(doc.elements, doc.canvas, pin);
+    return { ...doc, canvas: { ...doc.canvas, height }, elements };
+  };
+
+  /** Dentro de `runAsOneStep`: as alterações não abrem passos de "desfazer" próprios. */
+  let grouping = false;
+
   const pushSnapshot = (key: string) => {
+    if (grouping) return;
     const { past, historyKey, historyAt } = get();
     const doc = get().current();
     if (!doc) return;
@@ -298,6 +325,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     order: [],
     dashboards: {},
     shareTokens: {},
+    projectIds: {},
     saving: false,
     saveError: null,
     baseline: null,
@@ -345,9 +373,10 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
             loadError: null,
             order: list.map((dashboard) => dashboard.id),
             dashboards: Object.fromEntries(
-              list.map(({ shareToken: _token, ...dashboard }) => [dashboard.id, dashboard]),
+              list.map(({ shareToken: _token, projectId: _project, ...dashboard }) => [dashboard.id, dashboard]),
             ),
             shareTokens: Object.fromEntries(list.map((d) => [d.id, d.shareToken])),
+            projectIds: Object.fromEntries(list.map((d) => [d.id, d.projectId ?? null])),
           });
         })
         .catch((error: Error) => set({ hydrated: true, loadError: error.message }))
@@ -379,7 +408,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     setPreview: (preview) =>
       set(preview ? { preview: true, selectedId: null } : { preview: false }),
 
-    openDashboard: (id) =>
+    openDashboard: (id) => {
       set({
         baseline: id && get().dashboards[id] ? clone(get().dashboards[id]) : null,
         activePageId: id ? firstPageId(get().dashboards[id]) : null,
@@ -391,9 +420,13 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         past: [],
         future: [],
         historyKey: null,
-      }),
+      });
+      // páginas que ainda estão em grade passam para o modo livre (posições e tamanhos são mantidos)
+      const opened = id ? get().dashboards[id] : null;
+      if (opened && isGrid(opened.canvas)) get().setLayoutMode("free");
+    },
 
-    createDashboard: () => {
+    createDashboard: (projectId) => {
       const { order, dashboards } = get();
       const now = Date.now();
       const dashboard: Dashboard = {
@@ -414,6 +447,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       set({
         order: next.order,
         dashboards: next.dashboards,
+        projectIds: { ...get().projectIds, [dashboard.id]: projectId ?? null },
         activePageId: null,
         currentId: dashboard.id,
         baseline: clone(dashboard),
@@ -424,7 +458,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         future: [],
         historyKey: null,
       });
-      const request = api("/api/dashboards", { method: "POST", json: toPayload(dashboard) }).finally(
+      const request = api("/api/dashboards", { method: "POST", json: { ...toPayload(dashboard), projectId } }).finally(
         () => pendingCreates.delete(dashboard.id),
       );
       pendingCreates.set(dashboard.id, request);
@@ -453,8 +487,28 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       mutateCurrent((doc) => ({ ...doc, name, updatedAt: Date.now() }));
     },
 
+    runAsOneStep: (key, change) => {
+      // mesmo pedido do assistente e nenhuma edição do usuário desde então: continua o passo anterior
+      if (get().historyKey !== key) {
+        pushSnapshot(key);
+        set({ historyKey: key });
+      }
+      grouping = true;
+      try {
+        return change();
+      } finally {
+        grouping = false;
+        // addElement e outros zeram a chave; mantê-la liga o próximo trecho do mesmo pedido a este passo
+        set({ historyKey: key, historyAt: Date.now() });
+      }
+    },
+
     beginTransaction: (key) => pushSnapshot(key),
-    endTransaction: () => set({ historyKey: null, guides: NO_GUIDES }),
+    endTransaction: () => {
+      set({ historyKey: null, guides: NO_GUIDES });
+      // ao soltar, o arrastado também se acomoda (sobe até encostar)
+      if (isGrid(get().current()?.canvas)) mutateCurrent((doc) => ({ ...doc }), false);
+    },
 
     undo: () => {
       const { past, future, currentId } = get();
@@ -515,9 +569,12 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       }
     },
 
-    share: async (id) => {
+    share: async (id, expiresInDays) => {
       const { token } = await afterCreate(id, () =>
-        api<{ token: string }>(`/api/dashboards/${id}/share`, { method: "POST" }),
+        api<{ token: string }>(`/api/dashboards/${id}/share`, {
+          method: "POST",
+          json: { expiresInDays: expiresInDays ?? null },
+        }),
       ).then((out) => out as { token: string });
       set({ shareTokens: { ...get().shareTokens, [id]: token } });
       return token;
@@ -547,6 +604,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       const doc = get().current();
       if (!doc) return null;
       pushSnapshot(`add:${item.key}`);
+      const grid = isGrid(doc.canvas);
       const element = createElement(item, {
         x: placement?.x,
         y: placement?.y,
@@ -554,7 +612,14 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         existing: doc.elements,
         canvas: doc.canvas,
         props,
+        ...(grid && { size: gridSize(item.type, doc.canvas) }),
       });
+      if (grid) {
+        // solto em cima da página: ocupa o lugar e empurra os outros; pelo botão: primeira vaga livre
+        if (!placement?.exact || placement.x === undefined || placement.y === undefined) {
+          Object.assign(element, findGridSlot({ w: element.w, h: element.h }, doc.elements, doc.canvas));
+        } else gridPin = [element.id];
+      }
       mutateCurrent((current) => ({
         ...current,
         elements: [...current.elements, element],
@@ -572,6 +637,18 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       if (width === doc.canvas.width && height === doc.canvas.height) return;
       pushSnapshot("canvas-size");
       const canvas = { ...doc.canvas, width, height };
+      if (isGrid(doc.canvas)) {
+        // em grade as colunas acompanham a largura: x e w mudam na mesma proporção
+        const ratio = width / doc.canvas.width;
+        mutateCurrent((current) => ({
+          ...current,
+          canvas,
+          elements: current.elements.map((el) => ({ ...el, x: el.x * ratio, w: el.w * ratio }) as DashboardElement),
+          updatedAt: Date.now(),
+        }));
+        set({ historyKey: null });
+        return;
+      }
       mutateCurrent((current) => ({
         ...current,
         canvas,
@@ -583,6 +660,20 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         }),
         updatedAt: Date.now(),
       }));
+      set({ historyKey: null });
+    },
+
+    setLayoutMode: (mode) => {
+      const doc = get().current();
+      if (!doc || isGrid(doc.canvas) === (mode === "grid")) return;
+      pushSnapshot("layout-mode");
+      mutateCurrent((current) => {
+        const { layout: _layout, ...canvas } = current.canvas;
+        if (mode === "free") return { ...current, canvas, updatedAt: Date.now() };
+        // para a grade a página é remontada na ordem de leitura (títulos, filtros, indicadores, gráficos)
+        const gridCanvas = { ...canvas, layout: "grid" as const };
+        return { ...current, canvas: gridCanvas, elements: autoGridLayout(current.elements, gridCanvas).elements, updatedAt: Date.now() };
+      });
       set({ historyKey: null });
     },
 
@@ -658,8 +749,10 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         const x = clamp(size.x ?? target.x, 0, doc.canvas.width);
         const y = clamp(size.y ?? target.y, 0, doc.canvas.height);
         const w = clamp(size.w, min.w, Math.max(min.w, doc.canvas.width - x));
-        const h = clamp(size.h, min.h, Math.max(min.h, doc.canvas.height - y));
-        const position = clampPosition({ x, y, w, h }, doc.canvas);
+        const grid = isGrid(doc.canvas);
+        const h = grid ? Math.max(min.h, size.h) : clamp(size.h, min.h, Math.max(min.h, doc.canvas.height - y));
+        const position = grid ? { x, y: size.y ?? target.y } : clampPosition({ x, y, w, h }, doc.canvas);
+        if (grid) gridPin = [id];
 
         return {
           ...doc,
@@ -673,6 +766,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
 
     nudge: (id, dx, dy) => {
       pushSnapshot(`move:${id}`);
+      gridPin = [id];
       mutateCurrent((doc) => ({
         ...doc,
         elements: doc.elements.map((el) => {
@@ -692,11 +786,16 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       const source = doc.elements.find((el) => el.id === id);
       if (!source) return;
       pushSnapshot(`dup:${id}`);
+      const spot = isGrid(doc.canvas)
+        ? findGridSlot({ w: source.w, h: source.h }, doc.elements, doc.canvas)
+        : {
+            x: clamp(source.x + 24, 0, Math.max(0, doc.canvas.width - source.w)),
+            y: clamp(source.y + 24, 0, Math.max(0, doc.canvas.height - source.h)),
+          };
       const copy = {
         ...clone(source),
         id: uid(source.type),
-        x: clamp(source.x + 24, 0, Math.max(0, doc.canvas.width - source.w)),
-        y: clamp(source.y + 24, 0, Math.max(0, doc.canvas.height - source.h)),
+        ...spot,
         z: topLevelZ(doc.elements),
         hidden: false,
       } as DashboardElement;
@@ -811,17 +910,22 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       // deslocamento pedido pelo mouse, limitado à página
       let dx = x - primary.x;
       let dy = y - primary.y;
+      const grid = isGrid(doc.canvas);
       dx = clamp(box.x + dx, 0, Math.max(0, doc.canvas.width - box.w)) - box.x;
-      dy = clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h)) - box.y;
+      // em grade a página cresce com o conteúdo: dá para arrastar para baixo do fim
+      dy = (grid ? Math.max(0, box.y + dy) : clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h))) - box.y;
 
-      // guias de alinhamento com os outros elementos e com a página
+      // guias de alinhamento com os outros elementos e com a página (a grade já alinha tudo)
       const others = doc.elements.filter((el) => !ids.includes(el.id) && !el.hidden);
-      const snap = snapMove({ ...box, x: box.x + dx, y: box.y + dy }, others, doc.canvas, threshold);
+      const snap = grid
+        ? { dx: 0, dy: 0, guides: NO_GUIDES }
+        : snapMove({ ...box, x: box.x + dx, y: box.y + dy }, others, doc.canvas, threshold);
       dx += snap.dx;
       dy += snap.dy;
       dx = clamp(box.x + dx, 0, Math.max(0, doc.canvas.width - box.w)) - box.x;
-      dy = clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h)) - box.y;
+      if (!grid) dy = clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h)) - box.y;
 
+      gridPin = ids;
       mutateCurrent((current) => ({
         ...current,
         elements: current.elements.map((el) =>
@@ -839,7 +943,8 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       pushSnapshot(`move:${ids.join(",")}`);
       const box = boundsOf(doc.elements.filter((el) => ids.includes(el.id)));
       const mx = clamp(box.x + dx, 0, Math.max(0, doc.canvas.width - box.w)) - box.x;
-      const my = clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h)) - box.y;
+      const my = (isGrid(doc.canvas) ? Math.max(0, box.y + dy) : clamp(box.y + dy, 0, Math.max(0, doc.canvas.height - box.h))) - box.y;
+      gridPin = ids;
       mutateCurrent((current) => ({
         ...current,
         elements: current.elements.map((el) =>
@@ -971,6 +1076,13 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       const doc = get().current();
       if (!doc || doc.elements.length === 0) return;
       pushSnapshot("arrange");
+      if (isGrid(doc.canvas)) {
+        mutateCurrent((current) => {
+          const out = autoGridLayout(current.elements, current.canvas);
+          return { ...current, elements: out.elements, updatedAt: Date.now() };
+        });
+        return;
+      }
       mutateCurrent((current) => {
         const out = autoArrange(current.elements, current.canvas);
         return {
@@ -1034,7 +1146,20 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
       if (!doc || incoming.length === 0) return;
       pushSnapshot("add-many");
       let z = topLevelZ(doc.elements);
-      const placed = incoming.map((el) => ({ ...el, z: z++ }) as DashboardElement);
+      let placed = incoming.map((el) => ({ ...el, z: z++ }) as DashboardElement);
+      if (isGrid(doc.canvas)) {
+        // em grade: tamanho padrão do tipo; página vazia é montada inteira, senão entra depois do que já existe
+        placed = placed.map((el) => ({ ...el, ...gridSize(el.type, doc.canvas) }) as DashboardElement);
+        if (doc.elements.length === 0) placed = autoGridLayout(placed, doc.canvas).elements;
+        else {
+          const taken = [...doc.elements];
+          placed = placed.map((el) => {
+            const next = { ...el, ...findGridSlot({ w: el.w, h: el.h }, taken, doc.canvas) } as DashboardElement;
+            taken.push(next);
+            return next;
+          });
+        }
+      }
       mutateCurrent((current) => ({
         ...current,
         elements: [...current.elements, ...placed],
@@ -1114,7 +1239,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
 
     renamePage: (id, name) => {
       const doc = get().current();
-      if (!doc?.pages) return;
+      if (!doc) return;
       pushSnapshot(`page-name:${id}`);
       mutateCurrent((current) => ({ ...renamePage(current, id, name), updatedAt: Date.now() }));
     },

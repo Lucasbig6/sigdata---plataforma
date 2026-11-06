@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowUpRight, BookOpen, MoreVertical, Pencil, Trash2 } from "lucide-react";
+import { ArrowUpRight, BookOpen, MoreVertical, Pencil, Plus, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,8 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import type { Notebook } from "@/lib/notebooks/store";
 import { CoverArt } from "./cover-art";
+import { confirmAction } from "@/lib/feedback";
+import { projectHref } from "@/lib/routes";
 
 const COVER_GRADIENTS = [
   "linear-gradient(145deg, #1e3a5f 0%, #0f766e 100%)",
@@ -30,14 +32,31 @@ const COVER_GRADIENTS = [
 export const coverGradient = (index: number): string =>
   COVER_GRADIENTS[Math.abs(index) % COVER_GRADIENTS.length]!;
 
-const formatDate = (timestamp: number): string =>
-  new Date(timestamp).toLocaleDateString("pt-BR", {
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
+const DAY_MS = 24 * 60 * 60 * 1000;
 
-const formatSources = (count: number): string => (count === 1 ? "1 fonte" : `${count} fontes`);
+/** "Atualizado hoje", "ontem", "há 3 dias"; passado de um mês vira data. */
+const formatUpdated = (timestamp: number): string => {
+  const startOfDay = (value: number) => new Date(value).setHours(0, 0, 0, 0);
+  const days = Math.round((startOfDay(Date.now()) - startOfDay(timestamp)) / DAY_MS);
+  if (days <= 0) return "Atualizado hoje";
+  if (days === 1) return "Atualizado ontem";
+  if (days < 30) return `Atualizado há ${days} dias`;
+  return `Atualizado em ${new Date(timestamp).toLocaleDateString("pt-BR", { day: "numeric", month: "short", year: "numeric" })}`;
+};
+
+/** Primeiro item da grade: criar projeto sem procurar o botão. */
+export const NewProjectTile = ({ onClick }: { onClick: () => void }) => (
+  <button
+    type="button"
+    onClick={onClick}
+    className="flex aspect-[3/2] flex-col items-center justify-center gap-2 rounded-2xl border border-dashed border-border bg-transparent p-4 text-sm text-muted-foreground transition-colors outline-none hover:border-primary/50 hover:bg-card hover:text-foreground focus-visible:ring-3 focus-visible:ring-ring/40"
+  >
+    <span className="grid size-10 place-items-center rounded-xl bg-muted text-foreground">
+      <Plus className="size-4" aria-hidden />
+    </span>
+    Novo projeto
+  </button>
+);
 
 type NotebookCardProps = {
   notebook: Notebook;
@@ -83,9 +102,12 @@ export const NotebookCard = ({
 
   const handleDelete = () => {
     setMenuOpen(false);
-    if (window.confirm(`Excluir o projeto "${notebook.title}"? Esta ação não pode ser desfeita.`)) {
-      onDelete(notebook.id);
-    }
+    void confirmAction({
+      title: `Excluir o projeto "${notebook.title}"?`,
+      description: "Esta ação não pode ser desfeita.",
+      confirmLabel: "Excluir",
+      destructive: true,
+    }).then((ok) => ok && onDelete(notebook.id));
   };
 
   const submitRename = () => {
@@ -185,7 +207,7 @@ export const NotebookCard = ({
           style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
         >
           <Link
-            href={`/workspace?notebook=${notebook.id}`}
+            href={projectHref(notebook.id)}
             className={cn(
               "flex items-stretch gap-3.5 overflow-hidden rounded-xl border border-border/70 bg-card/60 p-2.5 pr-11 transition-colors",
               "hover:border-primary/40 hover:bg-card focus-visible:border-primary/60 focus-visible:ring-3 focus-visible:ring-ring/40 outline-none",
@@ -204,11 +226,7 @@ export const NotebookCard = ({
               <h2 className="truncate text-sm font-medium tracking-tight text-foreground">
                 {notebook.title}
               </h2>
-              <p className="flex items-center gap-1.5 truncate text-xs text-muted-foreground">
-                <span>{formatDate(notebook.updatedAt)}</span>
-                <span className="size-0.5 shrink-0 rounded-full bg-muted-foreground/50" />
-                <span>{formatSources(notebook.sourceCount)}</span>
-              </p>
+              <p className="truncate text-xs text-muted-foreground">{formatUpdated(notebook.updatedAt)}</p>
             </div>
           </Link>
           {menu}
@@ -225,7 +243,7 @@ export const NotebookCard = ({
         style={{ animationDelay: `${Math.min(index, 12) * 50}ms` }}
       >
         <Link
-          href={`/workspace?notebook=${notebook.id}`}
+          href={projectHref(notebook.id)}
           className={cn(
             "relative block aspect-[3/2] overflow-hidden rounded-2xl outline-none",
             "ring-1 ring-inset ring-white/10",
@@ -251,11 +269,7 @@ export const NotebookCard = ({
             <h2 className="line-clamp-2 text-2xl leading-snug font-medium tracking-tight text-white drop-shadow-sm">
               {notebook.title}
             </h2>
-            <p className="flex items-center gap-1.5 text-[12px] text-white/75">
-              <span>{formatDate(notebook.updatedAt)}</span>
-              <span className="size-0.5 rounded-full bg-white/50" />
-              <span>{formatSources(notebook.sourceCount)}</span>
-            </p>
+            <p className="text-[12px] text-white/75">{formatUpdated(notebook.updatedAt)}</p>
           </div>
           <span
             aria-hidden

@@ -1,18 +1,14 @@
 "use client";
 
-import { Database } from "lucide-react";
-import { useSearchParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { useDatasetsStore } from "@/lib/datasets/store";
 import { useNotebooksStore } from "@/lib/notebooks/store";
+import { useNotebookId } from "@/lib/use-notebook-id";
 
-/** Cabeçalho do workspace: nome do projeto (editável ali mesmo) e a fonte ativa. */
+/** Cabeçalho do workspace: nome do projeto (editável ali mesmo); a fonte ativa fica no seletor "Dados". */
 export const WorkspaceTitle = ({ fallback }: { fallback: string }) => {
-  const notebookId = useSearchParams().get("notebook");
+  const notebookId = useNotebookId();
   const notebook = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === notebookId));
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
-  const datasets = useDatasetsStore((state) => state.datasets);
-  const source = datasets.find((dataset) => dataset.id === notebook?.sourceId) ?? null;
 
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
@@ -72,13 +68,6 @@ export const WorkspaceTitle = ({ fallback }: { fallback: string }) => {
           </button>
         </h1>
       )}
-      <span
-        className="hidden shrink-0 items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-[11px] font-medium text-muted-foreground sm:inline-flex"
-        title={source ? `Fonte ativa: ${source.name}` : "Escolha um conjunto de dados na barra lateral"}
-      >
-        <Database className="size-3 shrink-0" aria-hidden />
-        <span className="max-w-40 truncate">{source ? source.name : "Sem fonte"}</span>
-      </span>
     </>
   );
 };

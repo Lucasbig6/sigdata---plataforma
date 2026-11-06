@@ -8,14 +8,23 @@ import { api } from "@/lib/api/client";
 import {
   SOURCE_KIND_LABELS,
   type DataSource,
-  type PostgresConnectionInput,
+  type ConnectionRequest,
   type SourceKind,
   type SourceTable,
 } from "@/lib/domain/sources";
+import type { Workspace } from "@/lib/domain/transform";
 
 export type Dataset = DataSource;
 export type DatasetKind = SourceKind;
 export const DATASET_KIND_LABELS = SOURCE_KIND_LABELS;
+
+/**
+ * Fontes oferecidas para análise (chat, dashboards, medidas): só datasets prontos, criados pelos
+ * analistas. Arquivos e bancos brutos ficam em Fontes de dados, para quem os gerencia.
+ */
+export const isAnalysisDataset = (source: Dataset) => source.kind === "dataset" && source.status === "pronta";
+
+export type SourceUsage = { dashboards: number; projects: number; people: number };
 
 type DatasetsStore = {
   hydrated: boolean;
@@ -25,21 +34,28 @@ type DatasetsStore = {
   hydrate: () => void;
   reload: () => Promise<void>;
   uploadFile: (input: { file: File; name: string; description: string }) => Promise<DataSource>;
-  testPostgres: (connection: PostgresConnectionInput) => Promise<{ tables: number }>;
-  connectPostgres: (input: {
-    name: string;
-    description: string;
-    connection: PostgresConnectionInput;
-  }) => Promise<DataSource>;
+  /** Entra na lista um dataset criado fora das telas de fontes (ex.: dados enviados pelo projeto). */
+  addDataset: (source: DataSource) => void;
+  testConnection: (request: ConnectionRequest) => Promise<{ tables: number; rows: number | null }>;
+  /** Banco externo, API REST ou planilha Google. */
+  connectSource: (input: ConnectionRequest & { name: string; description: string }) => Promise<DataSource>;
+  /** Com `sourceId` + `sql` (editor SQL) ou `workspace` (preparação de dados em etapas). */
   createDataset: (input: {
-    sourceId: string;
-    sql: string;
+    sourceId?: string;
+    /** Editor SQL cruzando fontes: a principal primeiro; o SQL cita `apelido.tabela`. */
+    sourceIds?: string[];
+    sql?: string;
+    workspace?: Workspace;
     name: string;
     description: string;
   }) => Promise<DataSource>;
   refreshSchema: (id: string) => Promise<DataSource>;
   profileTable: (id: string, table: string) => Promise<SourceTable>;
-  removeDataset: (id: string) => Promise<void>;
+  /** `force` confirma mesmo com o dataset em uso por dashboards/projetos. */
+  removeDataset: (id: string, force?: boolean) => Promise<void>;
+  setPublished: (id: string, published: boolean, force?: boolean) => Promise<void>;
+  /** Onde a fonte está em uso (dashboards, projetos e pessoas além do dono). */
+  usageOf: (id: string) => Promise<SourceUsage>;
 };
 
 let hydrating: Promise<void> | null = null;
@@ -78,6 +94,8 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
       }
     },
 
+    addDataset: (source) => void upsert(source),
+
     uploadFile: async ({ file, name, description }) => {
       const form = new FormData();
       form.set("file", file);
@@ -86,16 +104,11 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
       return upsert(await api<DataSource>("/api/sources", { method: "POST", body: form }));
     },
 
-    testPostgres: (connection) =>
-      api<{ tables: number }>("/api/sources/test", { method: "POST", json: connection }),
+    testConnection: (request) =>
+      api<{ tables: number; rows: number | null }>("/api/sources/test", { method: "POST", json: request }),
 
-    connectPostgres: async (input) =>
-      upsert(
-        await api<DataSource>("/api/sources", {
-          method: "POST",
-          json: { kind: "postgresql", ...input },
-        }),
-      ),
+    connectSource: async (input) =>
+      upsert(await api<DataSource>("/api/sources", { method: "POST", json: input })),
 
     createDataset: async (input) =>
       upsert(await api<DataSource>("/api/sources/dataset", { method: "POST", json: input })),
@@ -117,8 +130,14 @@ export const useDatasetsStore = create<DatasetsStore>((set, get) => {
       return profiled;
     },
 
-    removeDataset: async (id) => {
-      await api(`/api/sources/${id}`, { method: "DELETE" });
+    setPublished: async (id, published, force = false) => {
+      upsert(await api<DataSource>(`/api/sources/${id}/publish`, { method: "POST", json: { published, force } }));
+    },
+
+    usageOf: (id) => api<SourceUsage>(`/api/sources/${id}/usage`),
+
+    removeDataset: async (id, force = false) => {
+      await api(`/api/sources/${id}${force ? "?force=true" : ""}`, { method: "DELETE" });
       set({ datasets: get().datasets.filter((entry) => entry.id !== id) });
     },
   };

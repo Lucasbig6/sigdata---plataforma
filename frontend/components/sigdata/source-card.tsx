@@ -4,6 +4,8 @@ import { ChevronDown, Database, Loader2, Upload } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { api } from "@/lib/api/client";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { DATASET_KIND_LABELS } from "@/lib/datasets/store";
 import type { DataSource, SourceColumn, TablePreview } from "@/lib/domain/sources";
 import { sourceSummary } from "@/lib/workspace/suggestions";
@@ -123,22 +125,25 @@ const TableBlock = ({ source, tableName }: { source: DataSource; tableName: stri
 
 /** Fonte ativa do projeto: o que existe nela, para o usuário saber o que perguntar. */
 export const SourceCard = ({ source }: { source: DataSource | null }) => {
-  const [open, setOpen] = useState(true);
+  const [open, setOpen] = useState(false);
+  const canManage = canManageData(useRole() ?? "usuario");
 
   if (!source) {
     return (
       <div className="flex items-center gap-2.5 rounded-xl border border-dashed border-border bg-card/40 px-3 py-2.5">
         <Database className="size-4 shrink-0 text-muted-foreground" aria-hidden />
         <p className="min-w-0 flex-1 text-xs leading-snug text-muted-foreground">
-          Nenhuma fonte neste projeto. Escolha um conjunto de dados na barra lateral.
+          Nenhum dataset neste projeto. Escolha um conjunto de dados na barra lateral.
         </p>
-        <Link
-          href="/fontes-de-dados"
-          className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
-        >
-          <Upload className="size-3" aria-hidden />
-          Enviar dados
-        </Link>
+        {canManage ? (
+          <Link
+            href="/fontes-de-dados"
+            className="inline-flex shrink-0 items-center gap-1 text-[11px] font-medium text-primary hover:underline"
+          >
+            <Upload className="size-3" aria-hidden />
+            Gerenciar datasets
+          </Link>
+        ) : null}
       </div>
     );
   }

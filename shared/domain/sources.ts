@@ -3,7 +3,27 @@
  * Compartilhados entre cliente e servidor (sem dependências de React ou Node).
  */
 
-export type SourceKind = "demo" | "csv" | "xlsx" | "postgresql" | "dataset";
+import type { Workspace } from "./transform";
+
+export type SourceKind =
+  | "demo"
+  | "csv"
+  | "xlsx"
+  | "postgresql"
+  | "mysql"
+  | "sqlserver"
+  | "api"
+  | "gsheets"
+  | "dataset";
+
+/** Bancos consultados ao vivo na origem (somente leitura); o resto é copiado para o DuckDB. */
+export const LIVE_SQL_KINDS = ["postgresql", "mysql", "sqlserver"] as const;
+export type LiveSqlKind = (typeof LIVE_SQL_KINDS)[number];
+export const isLiveSqlKind = (kind: SourceKind): kind is LiveSqlKind =>
+  (LIVE_SQL_KINDS as readonly string[]).includes(kind);
+
+/** Fontes importadas de um endereço: guardam a configuração para "Atualizar dados". */
+export const isRemoteImportKind = (kind: SourceKind) => kind === "api" || kind === "gsheets";
 
 /** Como um dataset foi criado: a consulta feita pelo analista sobre uma fonte. */
 export type DatasetDefinition = {
@@ -11,6 +31,10 @@ export type DatasetDefinition = {
   sourceName: string;
   sql: string;
   rowCount: number;
+  /** Consultas e etapas, quando o dataset foi montado na preparação de dados. */
+  workspace?: Workspace;
+  /** Fontes cruzadas no editor SQL (apelido usado no SQL → fonte), quando houve cruzamento. */
+  crossSources?: { alias: string; sourceId: string; sourceName: string }[];
 };
 
 export type SourceStatus = "processando" | "pronta" | "erro";
@@ -56,6 +80,8 @@ export type DataSource = {
   connectionLabel: string | null;
   /** Só em datasets (kind "dataset"). */
   definition: DatasetDefinition | null;
+  /** Dataset publicado: visível para todos os usuários. Só datasets são publicados. */
+  published: boolean;
   tables: SourceTable[];
   createdAt: string;
   updatedAt: string;
@@ -68,9 +94,40 @@ export type PostgresConnectionInput = {
   user: string;
   password: string;
   ssl: boolean;
+  /** Valida o certificado TLS do servidor (padrão: sim). Desligue só para certificados autoassinados. */
+  sslVerify?: boolean;
   /** Schemas a inspecionar; vazio = todos os não-sistema. */
   schemas?: string[];
 };
+
+/** Conexão com MySQL/MariaDB ou SQL Server: mesmos campos do Postgres. */
+export type SqlConnectionInput = PostgresConnectionInput;
+
+export type ApiHeader = { name: string; value: string };
+
+export type ApiConnectionInput = {
+  url: string;
+  headers: ApiHeader[];
+  /** Caminho até a lista de registros na resposta (ex.: `data.items`); vazio = a própria resposta. */
+  recordsPath: string;
+  pagination:
+    | { type: "none" }
+    | { type: "page"; param: string; start: number; sizeParam?: string; size?: number }
+    | { type: "next"; path: string };
+  maxPages: number;
+};
+
+export type GSheetsConnectionInput = { url: string };
+
+/** SELECT de amostra de uma tabela, no dialeto da fonte (o T-SQL não tem LIMIT). */
+export const sampleSql = (kind: SourceKind, table: string, rows = 100) =>
+  kind === "sqlserver" ? `SELECT TOP ${rows} *\nFROM ${table}` : `SELECT *\nFROM ${table}\nLIMIT ${rows}`;
+
+/** Pedido de conexão (testar ou criar): o tipo decide o formato da configuração. */
+export type ConnectionRequest =
+  | { kind: LiveSqlKind; connection: SqlConnectionInput }
+  | { kind: "api"; connection: ApiConnectionInput }
+  | { kind: "gsheets"; connection: GSheetsConnectionInput };
 
 export type ResultColumn = {
   name: string;
@@ -102,6 +159,10 @@ export const SOURCE_KIND_LABELS: Record<SourceKind, string> = {
   csv: "CSV",
   xlsx: "Excel",
   postgresql: "PostgreSQL",
+  mysql: "MySQL / MariaDB",
+  sqlserver: "SQL Server",
+  api: "API REST",
+  gsheets: "Google Sheets",
   dataset: "Dataset",
 };
 
@@ -114,4 +175,22 @@ export const kindFromDbType = (dbType: string): ColumnKind => {
   if (/DATE|TIME|INTERVAL/.test(t)) return "data";
   if (/CHAR|TEXT|STRING|UUID|ENUM|NAME/.test(t)) return "texto";
   return "outro";
+};
+
+/** Nome seguro (tabela ou apelido de fonte) a partir de um nome de arquivo/aba/fonte. */
+export const toTableName = (raw: string, taken: Set<string>): string => {
+  const base =
+    raw
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/\.[a-z0-9]+$/, "")
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "")
+      .slice(0, 48) || "tabela";
+  let name = /^[0-9]/.test(base) ? `t_${base}` : base;
+  let n = 2;
+  while (taken.has(name)) name = `${base}_${n++}`;
+  taken.add(name);
+  return name;
 };

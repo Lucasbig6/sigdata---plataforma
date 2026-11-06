@@ -1,45 +1,59 @@
 "use client";
 
-import { FileSpreadsheet, Loader2, PlugZap, Upload } from "lucide-react";
+import { ArrowLeft, Loader2, Upload } from "lucide-react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useDatasetsStore } from "@/lib/datasets/store";
-import type { DataSource, PostgresConnectionInput } from "@/lib/domain/sources";
+import type {
+  ApiConnectionInput,
+  ConnectionRequest,
+  DataSource,
+  GSheetsConnectionInput,
+  SqlConnectionInput,
+} from "@/lib/domain/sources";
 import { cn } from "@/lib/utils";
+import { toast } from "@/lib/feedback";
+import { ApiFields, EMPTY_API } from "./conexao/api-fields";
+import { Field } from "./conexao/field";
+import { SheetsFields, EMPTY_SHEETS } from "./conexao/sheets-fields";
+import { SqlFields, emptySqlConnection } from "./conexao/sql-fields";
+import { ConnectorPicker, connectorOf, type ConnectorMode } from "./connector-picker";
 
-type Mode = "arquivo" | "postgresql";
+type Mode = ConnectorMode;
 
-const label = "text-xs font-medium text-muted-foreground";
+const NAME_HINT: Record<Mode, string> = {
+  arquivo: "Ex.: Vendas por município",
+  postgresql: "Ex.: Banco do CRM",
+  mysql: "Ex.: Banco do site",
+  sqlserver: "Ex.: ERP financeiro",
+  api: "Ex.: Cadastro de escolas",
+  gsheets: "Ex.: Metas trimestrais",
+};
 
-const Field = ({ id, title, children }: { id: string; title: string; children: React.ReactNode }) => (
-  <div className="flex min-w-0 flex-col gap-1.5">
-    <label htmlFor={id} className={label}>
-      {title}
-    </label>
-    {children}
-  </div>
-);
-
-const EMPTY_PG: PostgresConnectionInput = {
-  host: "",
-  port: 5432,
-  database: "",
-  user: "",
-  password: "",
-  ssl: false,
+const FOOTNOTE: Partial<Record<Mode, string>> = {
+  postgresql: "A senha é guardada criptografada. Toda consulta roda em transação somente-leitura com limite de tempo.",
+  mysql: "A senha é guardada criptografada. Toda consulta roda em transação somente-leitura com limite de tempo.",
+  sqlserver:
+    "A senha é guardada criptografada. O SQL Server não tem modo somente-leitura por sessão: use um usuário com permissão apenas de leitura (db_datareader).",
+  api: "Os dados são copiados para o SIGDATA; use “Atualizar dados” na fonte para buscar de novo. Cabeçalhos são guardados criptografados.",
+  gsheets: "A planilha precisa estar compartilhada como “Qualquer pessoa com o link”. Vale a aba do link (gid); sem ele, a primeira.",
 };
 
 export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) => void }) => {
   const uploadFile = useDatasetsStore((state) => state.uploadFile);
-  const testPostgres = useDatasetsStore((state) => state.testPostgres);
-  const connectPostgres = useDatasetsStore((state) => state.connectPostgres);
+  const testConnection = useDatasetsStore((state) => state.testConnection);
+  const connectSource = useDatasetsStore((state) => state.connectSource);
 
-  const [mode, setMode] = useState<Mode>("arquivo");
+  // null = ainda escolhendo o tipo de conector (primeira etapa)
+  const [chosen, setChosen] = useState<Mode | null>(null);
+  const mode: Mode = chosen ?? "arquivo";
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
-  const [pg, setPg] = useState<PostgresConnectionInput>(EMPTY_PG);
+  const [sql, setSql] = useState<SqlConnectionInput>(emptySqlConnection("postgresql"));
+  const [api, setApi] = useState<ApiConnectionInput>(EMPTY_API);
+  const [sheets, setSheets] = useState<GSheetsConnectionInput>(EMPTY_SHEETS);
   const [busy, setBusy] = useState<"enviar" | "testar" | null>(null);
   const [message, setMessage] = useState<{ tone: "ok" | "erro"; text: string } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -48,8 +62,31 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
     setName("");
     setDescription("");
     setFile(null);
-    setPg(EMPTY_PG);
+    setSql(emptySqlConnection(mode === "mysql" || mode === "sqlserver" ? mode : "postgresql"));
+    setApi(EMPTY_API);
+    setSheets(EMPTY_SHEETS);
     if (fileRef.current) fileRef.current.value = "";
+  };
+
+  const changeMode = (next: Mode) => {
+    // ao trocar de banco, a porta padrão acompanha (se ainda não foi preenchido nada)
+    if (next === "postgresql" || next === "mysql" || next === "sqlserver") {
+      if (!sql.host && !sql.database) setSql(emptySqlConnection(next));
+    }
+    setChosen(next);
+    setMessage(null);
+  };
+
+  const backToPicker = () => {
+    setChosen(null);
+    setMessage(null);
+  };
+
+  const request = (): ConnectionRequest | null => {
+    if (mode === "arquivo") return null;
+    if (mode === "api") return { kind: "api", connection: api };
+    if (mode === "gsheets") return { kind: "gsheets", connection: sheets };
+    return { kind: mode, connection: sql };
   };
 
   const run = async (kind: "enviar" | "testar", fn: () => Promise<string | null>) => {
@@ -68,64 +105,49 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
     void run("enviar", async () => {
-      const source =
-        mode === "arquivo"
-          ? await uploadFile({ file: file as File, name, description })
-          : await connectPostgres({ name, description, connection: pg });
+      const connection = request();
+      const source = connection
+        ? await connectSource({ ...connection, name, description })
+        : await uploadFile({ file: file as File, name, description });
       if (source.status === "erro") throw new Error(source.error ?? "Falha ao processar a fonte.");
       reset();
+      toast.success(`Fonte "${source.name}" adicionada.`);
       onCreated(source);
       return `"${source.name}" pronta — ${source.tables.length} tabela(s).`;
     });
   };
 
   const canSubmit =
-    mode === "arquivo" ? file !== null : Boolean(pg.host && pg.database && pg.user);
+    mode === "arquivo"
+      ? file !== null
+      : mode === "api"
+        ? Boolean(api.url.trim())
+        : mode === "gsheets"
+          ? Boolean(sheets.url.trim())
+          : Boolean(sql.host && sql.database && sql.user);
 
-  const setPgField = <K extends keyof PostgresConnectionInput>(key: K, value: PostgresConnectionInput[K]) =>
-    setPg((current) => ({ ...current, [key]: value }));
+  const footnote = FOOTNOTE[mode];
+
+  if (chosen === null) return <ConnectorPicker onPick={changeMode} />;
+
+  const connector = connectorOf(chosen);
 
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-center gap-3">
-        <div role="tablist" className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1">
-          {(
-            [
-              { id: "arquivo", label: "Arquivo CSV/XLSX", icon: FileSpreadsheet },
-              { id: "postgresql", label: "PostgreSQL", icon: PlugZap },
-            ] as const
-          ).map((tab) => (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={mode === tab.id}
-              onClick={() => {
-                setMode(tab.id);
-                setMessage(null);
-              }}
-              className={cn(
-                "flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-xs font-medium transition-colors outline-none focus-visible:ring-2 focus-visible:ring-ring/50",
-                mode === tab.id
-                  ? "bg-background text-foreground shadow-sm"
-                  : "text-muted-foreground hover:text-foreground",
-              )}
-            >
-              <tab.icon className="size-3.5" aria-hidden />
-              {tab.label}
-            </button>
-          ))}
-        </div>
+      <div className="flex items-center gap-2">
+        <Button type="button" variant="ghost" size="sm" onClick={backToPicker} className="-ms-2 gap-1.5 text-muted-foreground">
+          <ArrowLeft className="size-4" aria-hidden />
+          Trocar tipo
+        </Button>
+        <span className="inline-flex items-center gap-1.5 rounded-full border border-border bg-muted/40 px-2.5 py-1 text-xs font-medium text-foreground">
+          <connector.Logo className="size-4" />
+          {connector.label}
+        </span>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-[1fr_2fr]">
         <Field id="source-name" title="Nome">
-          <Input
-            id="source-name"
-            value={name}
-            onChange={(event) => setName(event.target.value)}
-            placeholder={mode === "arquivo" ? "Ex.: Vendas por município" : "Ex.: Banco do CRM"}
-          />
+          <Input id="source-name" value={name} onChange={(event) => setName(event.target.value)} placeholder={NAME_HINT[mode]} />
         </Field>
         <Field id="source-description" title="Descrição (ajuda o assistente a entender os dados)">
           <Input
@@ -146,13 +168,9 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
             <Upload className="size-4" aria-hidden />
           </span>
           <span className="min-w-0 flex-1">
-            <span className="block truncate text-sm text-foreground">
-              {file ? file.name : "Escolher arquivo .csv ou .xlsx"}
-            </span>
+            <span className="block truncate text-sm text-foreground">{file ? file.name : "Escolher arquivo .csv ou .xlsx"}</span>
             <span className="block text-[11px] text-muted-foreground">
-              {file
-                ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                : "Até 50 MB. Cada aba do Excel vira uma tabela."}
+              {file ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : "Até 50 MB. Cada aba do Excel vira uma tabela."}
             </span>
           </span>
           <input
@@ -164,82 +182,34 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
             onChange={(event) => setFile(event.target.files?.[0] ?? null)}
           />
         </label>
+      ) : mode === "api" ? (
+        <ApiFields value={api} onChange={setApi} />
+      ) : mode === "gsheets" ? (
+        <SheetsFields value={sheets} onChange={setSheets} />
       ) : (
-        <div className="grid gap-3 sm:grid-cols-6">
-          <div className="sm:col-span-3">
-            <Field id="pg-host" title="Host">
-              <Input id="pg-host" value={pg.host} onChange={(e) => setPgField("host", e.target.value)} placeholder="db.exemplo.gov.br" />
-            </Field>
-          </div>
-          <div className="sm:col-span-1">
-            <Field id="pg-port" title="Porta">
-              <Input
-                id="pg-port"
-                inputMode="numeric"
-                value={String(pg.port)}
-                onChange={(e) => setPgField("port", Number(e.target.value.replace(/\D/g, "")) || 0)}
-              />
-            </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field id="pg-db" title="Banco">
-              <Input id="pg-db" value={pg.database} onChange={(e) => setPgField("database", e.target.value)} />
-            </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field id="pg-user" title="Usuário (de preferência só leitura)">
-              <Input id="pg-user" autoComplete="off" value={pg.user} onChange={(e) => setPgField("user", e.target.value)} />
-            </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field id="pg-password" title="Senha">
-              <Input
-                id="pg-password"
-                type="password"
-                autoComplete="new-password"
-                value={pg.password}
-                onChange={(e) => setPgField("password", e.target.value)}
-              />
-            </Field>
-          </div>
-          <div className="sm:col-span-2">
-            <Field id="pg-schemas" title="Schemas (opcional, separados por vírgula)">
-              <Input
-                id="pg-schemas"
-                placeholder="public"
-                onChange={(e) =>
-                  setPgField(
-                    "schemas",
-                    e.target.value
-                      .split(",")
-                      .map((value) => value.trim())
-                      .filter(Boolean),
-                  )
-                }
-              />
-            </Field>
-          </div>
-          <label className="flex items-center gap-2 text-xs text-muted-foreground sm:col-span-6">
-            <input type="checkbox" checked={pg.ssl} onChange={(e) => setPgField("ssl", e.target.checked)} />
-            Usar SSL
-          </label>
-        </div>
+        <SqlFields kind={mode} value={sql} onChange={setSql} />
       )}
 
       <div className="flex flex-wrap items-center gap-2">
         <Button type="submit" disabled={!canSubmit || busy !== null}>
           {busy === "enviar" ? <Loader2 className="animate-spin" aria-hidden /> : null}
-          {mode === "arquivo" ? "Enviar e processar" : "Conectar"}
+          {mode === "arquivo" ? "Enviar e processar" : mode === "api" || mode === "gsheets" ? "Importar" : "Conectar"}
         </Button>
-        {mode === "postgresql" ? (
+        {mode !== "arquivo" ? (
           <Button
             type="button"
             variant="outline"
             disabled={!canSubmit || busy !== null}
             onClick={() =>
               void run("testar", async () => {
-                const out = await testPostgres(pg);
-                return `Conexão ok — ${out.tables} tabela(s) visíveis.`;
+                const connection = request();
+                if (!connection) return null;
+                const out = await testConnection(connection);
+                return out.rows != null
+                  ? `Conexão ok — ${out.rows.toLocaleString("pt-BR")} registro(s) encontrados.`
+                  : mode === "gsheets"
+                    ? "Link válido."
+                    : `Conexão ok — ${out.tables} tabela(s) visíveis.`;
               })
             }
           >
@@ -248,17 +218,10 @@ export const NewSourceForm = ({ onCreated }: { onCreated: (source: DataSource) =
           </Button>
         ) : null}
         {message ? (
-          <span className={cn("text-xs", message.tone === "erro" ? "text-destructive" : "text-primary")}>
-            {message.text}
-          </span>
+          <span className={cn("text-xs", message.tone === "erro" ? "text-destructive" : "text-primary")}>{message.text}</span>
         ) : null}
       </div>
-      {mode === "postgresql" ? (
-        <p className="text-[11px] leading-relaxed text-muted-foreground">
-          A senha é guardada criptografada. Toda consulta roda em transação somente-leitura com
-          limite de tempo.
-        </p>
-      ) : null}
+      {footnote ? <p className="text-[11px] leading-relaxed text-muted-foreground">{footnote}</p> : null}
     </form>
   );
 };

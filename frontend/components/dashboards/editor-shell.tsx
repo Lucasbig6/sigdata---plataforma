@@ -1,12 +1,13 @@
 "use client";
 
-import { FileText } from "lucide-react";
+import { FileText, LayoutGrid, SlidersHorizontal, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { DashboardDataProvider } from "@/lib/dashboards/live-data";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useAnalysesStore } from "@/lib/dashboards/analyses";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { useNotebooksStore } from "@/lib/notebooks/store";
 import { CANVAS } from "@/lib/dashboards/types";
 import { useZoomFit } from "@/lib/dashboards/use-zoom-fit";
 import { DashboardCanvas } from "./canvas";
@@ -20,7 +21,9 @@ import { PageSettings } from "./page-settings";
 import { PageTabs } from "./page-tabs";
 import { PropertiesPanel } from "./properties-panel";
 import { TopBar } from "./top-bar";
+import { AgentPanel } from "./agent/agent-panel";
 import { ViewControls } from "./view-controls";
+import { confirmAction, toast } from "@/lib/feedback";
 
 const PRIVATE_MODE = { kind: "private" } as const;
 
@@ -73,7 +76,7 @@ const PageMenu = ({ width, height }: { width: number; height: number }) => {
 
 const EditorSkeleton = () => (
   <div className="flex h-dvh flex-col overflow-hidden bg-background">
-    <div className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-15 backdrop-blur sm:gap-7">
+    <div className="flex h-20 shrink-0 items-center gap-2 border-b border-border/60 bg-card/60 px-4 sm:px-8 lg:px-15 backdrop-blur sm:gap-7">
       <div className="size-10 animate-pulse rounded-md bg-muted" />
       <div className="h-7 w-48 animate-pulse rounded-md bg-muted" />
       <div className="ml-auto h-9 w-24 animate-pulse rounded-md bg-muted" />
@@ -118,6 +121,16 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
   const saving = useDashboardsStore((state) => state.saving);
   const saveError = useDashboardsStore((state) => state.saveError);
   const loadError = useDashboardsStore((state) => state.loadError);
+  const [assistantOpen, setAssistantOpen] = useState(false);
+  // telas estreitas: biblioteca e propriedades (que ficam fixas só em telas largas) abrem como folha
+  const [sheet, setSheet] = useState<"library" | "properties" | null>(null);
+  const projectId = useDashboardsStore((state) => state.projectIds[dashboardId] ?? null);
+  const projectTitle = useNotebooksStore((state) => state.notebooks.find((entry) => entry.id === projectId)?.title);
+  const hydrateNotebooks = useNotebooksStore((state) => state.hydrate);
+  useEffect(() => {
+    if (projectId) hydrateNotebooks();
+  }, [projectId, hydrateNotebooks]);
+  const project = projectId && projectTitle ? { id: projectId, title: projectTitle } : null;
   const pastLength = useDashboardsStore((state) => state.past.length);
   const futureLength = useDashboardsStore((state) => state.future.length);
   const preview = useDashboardsStore((state) => state.preview);
@@ -200,9 +213,19 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
     window.history.replaceState(null, "", `${url.pathname}${url.search}`);
   };
 
+  /** Salvamento pedido pela pessoa (botão ou Ctrl+S): avisa o resultado; o autosave fica em silêncio. */
+  const saveWithFeedback = async () => {
+    await save();
+    const { saveError } = useDashboardsStore.getState();
+    if (saveError) toast.error(`Não foi possível salvar: ${saveError}`);
+    else toast.success("Painel salvo.");
+  };
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       const target = event.target as HTMLElement | null;
+      // dentro do chat do assistente e de janelas (editor de código) os atalhos são do campo de texto (Ctrl+Z desfaz a digitação)
+      if (target?.closest?.('[aria-label="Assistente de dashboards"], [role="dialog"]')) return;
       const typing =
         target?.tagName === "INPUT" ||
         target?.tagName === "TEXTAREA" ||
@@ -223,7 +246,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
       }
       if (mod && event.key.toLowerCase() === "s") {
         event.preventDefault();
-        void save();
+        void saveWithFeedback();
         return;
       }
       if (typing) return;
@@ -298,6 +321,7 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
     <div className="flex h-dvh flex-col overflow-hidden bg-background">
       <TopBar
         dashboardId={doc.id}
+        project={project}
         name={doc.name}
         saving={saving}
         saveError={saveError}
@@ -309,11 +333,18 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
         onRename={rename}
         onUndo={undo}
         onRedo={redo}
-        onSave={() => void save()}
+        onSave={() => void saveWithFeedback()}
         onDiscard={() => {
-          if (window.confirm("Descartar as alterações e voltar à última versão salva?")) discardChanges();
+          void confirmAction({
+            title: "Descartar alterações?",
+            description: "O painel volta à última versão salva.",
+            confirmLabel: "Descartar",
+            destructive: true,
+          }).then((ok) => ok && discardChanges());
         }}
         onTogglePreview={togglePreview}
+        assistantOpen={assistantOpen}
+        onToggleAssistant={() => setAssistantOpen((open) => !open)}
       />
 
       <div className="flex min-h-0 flex-1">
@@ -332,7 +363,28 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
 
           {!preview ? <PageMenu width={doc.canvas.width} height={doc.canvas.height} /> : null}
 
-          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40">
+          {!preview ? (
+            <div className="absolute left-3 top-16 z-20 flex gap-1.5 xl:hidden">
+              <button
+                type="button"
+                onClick={() => setSheet("library")}
+                className="flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-popover/95 px-3.5 text-xs font-medium text-foreground shadow-sm backdrop-blur lg:hidden"
+              >
+                <LayoutGrid className="size-4" aria-hidden />
+                Elementos
+              </button>
+              <button
+                type="button"
+                onClick={() => setSheet("properties")}
+                className="flex h-10 items-center gap-1.5 rounded-full border border-border/70 bg-popover/95 px-3.5 text-xs font-medium text-foreground shadow-sm backdrop-blur"
+              >
+                <SlidersHorizontal className="size-4" aria-hidden />
+                Propriedades
+              </button>
+            </div>
+          ) : null}
+
+          <div className="pointer-events-none absolute inset-x-0 bottom-3 z-20 flex justify-center px-40 max-md:bottom-16 max-md:px-3">
             <PageTabs readOnly={preview} className="pointer-events-auto" />
           </div>
 
@@ -372,8 +424,33 @@ export const EditorShell = ({ dashboardId }: { dashboardId: string }) => {
           ) : null}
         </div>
 
-        {!preview ? <PropertiesPanel /> : null}
+        {assistantOpen ? <AgentPanel onClose={() => setAssistantOpen(false)} /> : !preview ? <PropertiesPanel /> : null}
       </div>
+
+      {sheet && !preview ? (
+        <div
+          className={`fixed inset-0 z-40 ${sheet === "library" ? "lg:hidden" : "xl:hidden"}`}
+          role="dialog"
+          aria-modal="true"
+          aria-label={sheet === "library" ? "Elementos" : "Propriedades"}
+        >
+          <div className="absolute inset-0 bg-black/40" onClick={() => setSheet(null)} aria-hidden />
+          <div className="absolute inset-x-0 bottom-0 flex max-h-[80dvh] flex-col overflow-hidden rounded-t-2xl border-t border-border bg-card shadow-2xl [&>aside]:flex! [&>aside]:min-h-0 [&>aside]:w-full [&>aside]:flex-1 [&>aside]:border-0">
+            <div className="flex shrink-0 items-center justify-between px-4 pt-3 pb-1">
+              <span className="text-sm font-medium text-foreground">{sheet === "library" ? "Elementos" : "Propriedades"}</span>
+              <button
+                type="button"
+                onClick={() => setSheet(null)}
+                aria-label="Fechar"
+                className="grid size-9 place-items-center rounded-md text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+              >
+                <X className="size-4" aria-hidden />
+              </button>
+            </div>
+            {sheet === "library" ? <ElementLibrary /> : <PropertiesPanel />}
+          </div>
+        </div>
+      ) : null}
     </div>
     </DashboardDataProvider>
   );

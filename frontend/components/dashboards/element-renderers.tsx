@@ -12,6 +12,7 @@ import { frameCss } from "@/lib/dashboards/frame";
 import type { ChartColor, DashboardElement, FrameStyle } from "@/lib/dashboards/types";
 import { useTheme } from "next-themes";
 import { ChartView, useChartTheme } from "./charts";
+import { HtmlElement } from "./html-element";
 import { ListSlicer, RangeSlicer } from "./slicers";
 
 /** Rótulos curtos de cada tipo (usados no editor e no painel de propriedades). */
@@ -27,6 +28,7 @@ export const ELEMENT_LABELS: Record<DashboardElement["type"], string> = {
   divider: "Divisor",
   shape: "Forma",
   filter: "Filtro",
+  html: "HTML personalizado",
 };
 
 const nf = (value: number, digits = 1): string =>
@@ -346,6 +348,15 @@ const ShapeElement = ({ element }: { element: DashboardElement & { type: "shape"
 const FilterElement = ({ element }: { element: DashboardElement & { type: "filter" } }) =>
   element.props.mode === "range" ? <RangeSlicer element={element} /> : <ListSlicer element={element} />;
 
+const CustomHtmlElement = ({ element }: { element: DashboardElement & { type: "html" } }) => (
+  <Panel className="relative" frame={element.props.frame}>
+    <ElementHeader title={element.props.title} showTitle={element.props.showTitle} />
+    <div className="min-h-0 flex-1">
+      <HtmlElement element={element} empty="Escreva o HTML, CSS e JS deste visual no painel de propriedades (aba Estilo)." />
+    </div>
+  </Panel>
+);
+
 export const ElementView = ({ element }: { element: DashboardElement }) => {
   switch (element.type) {
     case "chart":
@@ -367,6 +378,8 @@ export const ElementView = ({ element }: { element: DashboardElement }) => {
       return <ShapeElement element={element} />;
     case "filter":
       return <FilterElement element={element} />;
+    case "html":
+      return <CustomHtmlElement element={element} />;
     default:
       return null;
   }

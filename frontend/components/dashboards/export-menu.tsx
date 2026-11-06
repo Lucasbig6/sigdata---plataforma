@@ -6,7 +6,16 @@ import { exportPage, type ExportFormat } from "@/lib/dashboards/export";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 
 /** Baixar a página aberta como PNG ou PDF. Use na visualização (sem grade nem alças). */
-export const ExportMenu = ({ className = "", mobileSize }: { className?: string; mobileSize?: { width: number; height: number } }) => {
+export const ExportMenu = ({
+  className = "",
+  mobileSize,
+  menuAbove = false,
+}: {
+  className?: string;
+  mobileSize?: { width: number; height: number };
+  /** O menu abre para cima (uso em barras no rodapé). */
+  menuAbove?: boolean;
+}) => {
   const doc = useDashboardsStore((state) => (state.currentId ? (state.dashboards[state.currentId] ?? null) : null));
   const activePageId = useDashboardsStore((state) => state.activePageId);
   const [open, setOpen] = useState(false);
@@ -68,7 +77,7 @@ export const ExportMenu = ({ className = "", mobileSize }: { className?: string;
         <span className="hidden sm:inline">Exportar</span>
       </button>
       {open ? (
-        <div role="menu" className="absolute right-0 top-9 z-50 w-48 rounded-lg border border-border/80 bg-popover p-1 shadow-lg">
+        <div role="menu" className={`absolute right-0 z-50 w-48 rounded-lg border border-border/80 bg-popover p-1 shadow-lg ${menuAbove ? "bottom-9" : "top-9"}`}>
           <button type="button" role="menuitem" disabled={busy !== null} className={item} onClick={() => void run("png")}>
             <FileImage className="size-3.5" aria-hidden />
             Imagem (PNG)

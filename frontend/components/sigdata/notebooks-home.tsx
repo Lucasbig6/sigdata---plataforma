@@ -11,10 +11,13 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { useSession } from "@/lib/auth-client";
 import { useNotebooksStore } from "@/lib/notebooks/store";
-import { cn } from "@/lib/utils";
-import { NotebookCard } from "./notebook-card";
+import { GettingStarted } from "./getting-started";
+import { NewProjectTile, NotebookCard } from "./notebook-card";
+import { QuickActions } from "./quick-actions";
 import { NotebooksHeader } from "./notebooks-header";
+import { CardSkeletons, EmptyState, ErrorState } from "./list-states";
 
 export const NotebooksHome = () => {
   const hydrated = useNotebooksStore((state) => state.hydrated);
@@ -25,7 +28,9 @@ export const NotebooksHome = () => {
   const renameNotebook = useNotebooksStore((state) => state.renameNotebook);
   const deleteNotebook = useNotebooksStore((state) => state.deleteNotebook);
 
-  const [query, setQuery] = useState("");
+  const { data: session } = useSession();
+  const firstName = session?.user.name.trim().split(/\s+/)[0] ?? "";
+
   const [view, setView] = useState<"grid" | "list">("grid");
   const [createOpen, setCreateOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
@@ -35,11 +40,10 @@ export const NotebooksHome = () => {
   }, [hydrate]);
 
   const items = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return notebooks
-      .filter((notebook) => !term || notebook.title.toLowerCase().includes(term))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [notebooks, query]);
+    return [...notebooks].sort((a, b) => b.updatedAt - a.updatedAt);
+  }, [notebooks]);
+
+  const showHeaderCreate = hydrated && items.length > 0 && view === "list";
 
   const openCreate = () => {
     setDraftTitle("");
@@ -53,70 +57,52 @@ export const NotebooksHome = () => {
 
   return (
     <div className="min-h-dvh bg-background">
-      <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
+      <NotebooksHeader view={view} onViewChange={setView} />
 
-      <main className="mx-auto px-30 py-6">
-        <div className="flex items-center justify-between gap-5 pb-10">
-          <h1 className="text-2xl font-semibold tracking-tight text-foreground">
-            Projetos recentes
-          </h1>
-          <Button onClick={openCreate} className="flex items-center gap-1.5 cursor-pointer">
-            <Plus aria-hidden />
-            Novo projeto
-          </Button>
+      <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+        <div className="flex items-end justify-between gap-5 pb-8">
+          <div className="min-w-0">
+            <h1 className="truncate text-2xl font-semibold tracking-tight text-foreground">
+              {firstName ? `Olá, ${firstName}` : "Seus projetos"}
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">Continue de onde parou ou comece um novo projeto.</p>
+          </div>
+          {/* na grade, o primeiro cartão já cria projetos; no vazio, o botão está no aviso */}
+          {showHeaderCreate ? (
+            <Button onClick={openCreate} className="shrink-0">
+              <Plus aria-hidden />
+              Novo projeto
+            </Button>
+          ) : null}
         </div>
 
+        {hydrated && !loadError ? <QuickActions /> : null}
+
+        <GettingStarted />
+
         {!hydrated ? (
-          <div
-            className={cn(
-              view === "grid"
-                ? "grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
-                : "flex flex-col gap-2.5",
-            )}
-          >
-            {Array.from({ length: 4 }).map((_, index) => (
-              <div
-                key={index}
-                className={cn(
-                  "animate-pulse rounded-2xl bg-muted/50",
-                  view === "grid" ? "aspect-[5/4]" : "h-20 rounded-xl",
-                )}
-              />
-            ))}
-          </div>
+          <CardSkeletons
+            count={view === "grid" ? 5 : 4}
+            className={view === "grid" ? "lg:grid-cols-3 xl:grid-cols-4" : "grid-cols-1 sm:grid-cols-1 lg:grid-cols-1 xl:grid-cols-1 gap-2.5"}
+            itemClassName={view === "grid" ? "aspect-[3/2] h-auto rounded-2xl" : "h-16 rounded-xl"}
+          />
         ) : loadError ? (
-          <div
-            role="alert"
-            className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-destructive/40 px-6 py-20 text-center"
-          >
-            <p className="text-sm font-medium text-foreground">Não foi possível carregar seus projetos</p>
-            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">{loadError}</p>
-            <Button variant="outline" onClick={hydrate} className="mt-1 cursor-pointer">
-              Tentar novamente
-            </Button>
-          </div>
+          <ErrorState title="Não foi possível carregar seus projetos" message={loadError} onRetry={hydrate} />
         ) : items.length === 0 ? (
-          <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-            <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-              <BookOpen className="size-5" aria-hidden />
-            </span>
-            <p className="text-sm font-medium text-foreground">
-              {query.trim() ? "Nenhum projeto encontrado" : "Nenhum projeto ainda"}
-            </p>
-            <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-              {query.trim()
-                ? "Tente buscar por outro título."
-                : "Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."}
-            </p>
-            {!query.trim() && (
-              <Button onClick={openCreate} className="mt-1 cursor-pointer">
+          <EmptyState
+            icon={BookOpen}
+            title="Nenhum projeto ainda"
+            description="Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."
+            action={
+              <Button onClick={openCreate}>
                 <Plus aria-hidden />
                 Novo projeto
               </Button>
-            )}
-          </div>
+            }
+          />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <NewProjectTile onClick={openCreate} />
             {items.map((notebook, index) => (
               <NotebookCard
                 key={notebook.id}
@@ -129,7 +115,7 @@ export const NotebooksHome = () => {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col gap-2.5">
+          <div className="flex flex-col gap-2">
             {items.map((notebook, index) => (
               <NotebookCard
                 key={notebook.id}

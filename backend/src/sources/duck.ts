@@ -243,13 +243,13 @@ export const removeDuckFiles = async (id: string) => {
   await rm(sourceDir(id), { recursive: true, force: true });
 };
 
-export const queryDuck = async (
-  id: string,
+/** Roda uma consulta numa conexão DuckDB, como subconsulta paginada e com tempo limite. */
+export const runOnConnection = async (
+  conn: DuckDBConnection,
   sql: string,
   limit = RESULT_ROW_LIMIT,
   offset = 0,
 ): Promise<QueryOutput> => {
-  const conn = await (await reader(id)).connect();
   const started = Date.now();
   const timer = setTimeout(() => conn.interrupt(), QUERY_TIMEOUT_MS);
   try {
@@ -270,6 +270,19 @@ export const queryDuck = async (
     throw new HttpError(400, `Erro na consulta: ${message.split("\n")[0]}`);
   } finally {
     clearTimeout(timer);
+  }
+};
+
+export const queryDuck = async (
+  id: string,
+  sql: string,
+  limit = RESULT_ROW_LIMIT,
+  offset = 0,
+): Promise<QueryOutput> => {
+  const conn = await (await reader(id)).connect();
+  try {
+    return await runOnConnection(conn, sql, limit, offset);
+  } finally {
     conn.closeSync();
   }
 };

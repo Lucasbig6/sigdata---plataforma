@@ -23,6 +23,14 @@ export type { ChartType, NumberFormat };
 
 export const DASHBOARD_SCHEMA_VERSION = 1;
 
+/**
+ * Páginas em modo grade (`canvas.layout === "grid"`): 12 colunas de largura igual e linhas de
+ * GRID_ROW px. As posições continuam em px lógicos no mesmo modelo (x, y, w, h), sempre múltiplas
+ * da célula; o editor empurra e compacta os elementos para não haver sobreposição nem buracos.
+ */
+export const GRID_COLUMNS = 12;
+export const GRID_ROW = 20;
+
 export const CANVAS = { width: 1600, height: 1000 } as const;
 
 export const CANVAS_LIMITS = { min: { w: 480, h: 320 }, max: { w: 4000, h: 6000 } } as const;
@@ -61,6 +69,7 @@ export const ELEMENT_SIZES = {
   divider: { w: 480, h: 24 },
   shape: { w: 240, h: 160 },
   filter: { w: 260, h: 92 },
+  html: { w: 520, h: 320 },
 } as const;
 
 /** Limites mínimos de redimensionamento por tipo. */
@@ -76,6 +85,7 @@ export const ELEMENT_MIN = {
   divider: { w: 120, h: 8 },
   shape: { w: 80, h: 60 },
   filter: { w: 200, h: 76 },
+  html: { w: 240, h: 160 },
 } as const;
 
 export type ElementType =
@@ -89,7 +99,8 @@ export type ElementType =
   | "image"
   | "divider"
   | "shape"
-  | "filter";
+  | "filter"
+  | "html";
 
 export type ChartColor = 1 | 2 | 3 | 4 | 5;
 
@@ -138,6 +149,8 @@ export type DataBinding = {
   ys?: string[];
   /** Divide em uma série por valor desta coluna (builder: agrupa por dimensão + esta coluna). */
   splitBy?: string;
+  /** Gráficos: colunas dos níveis seguintes ao clicar numa categoria (drill-down), em ordem. */
+  drill?: string[];
   /** Medida calculada (expressão segura, ver expr.ts); substitui `measure` e `agg`. */
   calc?: CalcMeasure;
   /** Indicador: compara o último período dos dados com o anterior. */
@@ -307,6 +320,24 @@ export type FilterProps = FilterStyle & {
   binding?: FilterBinding;
 };
 
+/** Limite de cada trecho de código (HTML, CSS, JS) de um elemento personalizado. */
+export const HTML_CODE_MAX = 60_000;
+
+/**
+ * Visual personalizado (como o "HTML Content" do Power BI). O código roda num iframe isolado
+ * (sem acesso à sessão nem à API) e recebe as linhas da ligação por `window.sigdata`.
+ */
+export type HtmlProps = {
+  frame?: FrameStyle;
+  ignoreFilters?: boolean;
+  title: string;
+  showTitle: boolean;
+  binding?: DataBinding;
+  html: string;
+  css: string;
+  js: string;
+};
+
 type ElementBase = {
   id: string;
   /** Elementos com o mesmo groupId são selecionados e movidos juntos. */
@@ -332,12 +363,13 @@ export type DashboardElement =
   | (ElementBase & { type: "image"; props: ImageProps })
   | (ElementBase & { type: "divider"; props: DividerProps })
   | (ElementBase & { type: "shape"; props: ShapeProps })
-  | (ElementBase & { type: "filter"; props: FilterProps });
+  | (ElementBase & { type: "filter"; props: FilterProps })
+  | (ElementBase & { type: "html"; props: HtmlProps });
 
 export type DashboardPage = {
   id: string;
   name: string;
-  canvas: { width: number; height: number; background?: string; palette?: string[] };
+  canvas: { width: number; height: number; background?: string; palette?: string[]; layout?: "grid" };
   elements: DashboardElement[];
 };
 
@@ -359,7 +391,7 @@ export type Dashboard = {
   createdAt: number;
   updatedAt: number;
   /** `background` ausente = cor padrão do tema; `palette` = cores dos gráficos do painel. */
-  canvas: { width: number; height: number; background?: string; palette?: string[] };
+  canvas: { width: number; height: number; background?: string; palette?: string[]; layout?: "grid" };
   elements: DashboardElement[];
 };
 
@@ -441,6 +473,7 @@ const ELEMENT_TYPES: ElementType[] = [
   "divider",
   "shape",
   "filter",
+  "html",
 ];
 
 const sanitizeElement = (raw: unknown): DashboardElement | null => {
@@ -471,6 +504,7 @@ const sanitizeCanvas = (raw: unknown): Dashboard["canvas"] =>
         height: typeof raw.height === "number" ? raw.height : CANVAS.height,
         ...(isPageBackground(raw.background) && { background: raw.background }),
         ...(isPagePalette(raw.palette) && { palette: raw.palette }),
+        ...(raw.layout === "grid" && { layout: "grid" as const }),
       }
     : { ...CANVAS };
 

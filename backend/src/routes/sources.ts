@@ -1,13 +1,14 @@
 import { Hono } from "hono";
 import { z } from "zod";
+import { audit } from "../audit";
 import { handle, HttpError, parseBody } from "../http";
 import { getProject } from "../projects";
-import { createPostgresSchema, postgresConnectionSchema } from "../sources/schemas";
+import { createSourceSchema, testSourceSchema, workspaceSchema } from "../sources/schemas";
 import {
   createDataset,
   EDITOR_PAGE_SIZES,
   createFromUpload,
-  createPostgres,
+  createConnected,
   deleteSource,
   getResult,
   listRecentResults,
@@ -16,52 +17,83 @@ import {
   previewTable,
   profileTable,
   refreshSource,
+  setPublished,
+  sourceUsage,
+  getManagedSource,
   runEditorQuery,
   runQuery,
-  testPostgres,
+  testConnection,
   toDataSource,
   updateSourceMeta,
 } from "../sources/service";
+import { createDatasetFromWorkspace } from "../sources/workspace";
+import { createDatasetFromCross, MAX_CROSS_SOURCES, runCrossQuery } from "../sources/cross";
 
 export const sourcesRoutes = new Hono();
 
-sourcesRoutes.get("/", handle(async ({ user }) => listSources(user.id)));
+/** Importar fontes, SQL e datasets: só analistas e administradores. */
+const analystHandle = <P extends Record<string, string> = Record<string, string>>(
+  fn: Parameters<typeof handle<P>>[0],
+) => handle<P>(fn, { roles: ["analista", "admin"] });
 
-/** multipart (arquivo CSV/XLSX) ou JSON (conexão Postgres). */
+sourcesRoutes.get("/", handle(async ({ user }) => listSources(user)));
+
+/** multipart (arquivo CSV/XLSX) ou JSON (conexão com banco, API ou planilha). */
 sourcesRoutes.post(
   "/",
-  handle(async ({ req, user }) => {
+  analystHandle(async ({ req, user }) => {
     const type = req.headers.get("content-type") ?? "";
     if (type.startsWith("multipart/form-data")) {
       const form = await req.formData();
       const file = form.get("file");
       if (!(file instanceof File)) throw new HttpError(400, 'Envie um arquivo no campo "file".');
-      return createFromUpload(user.id, {
+      const created = await createFromUpload(user.id, {
         file,
         name: String(form.get("name") ?? ""),
         description: String(form.get("description") ?? ""),
       });
+      await audit(user, "fonte.importada", created.name, file.name);
+      return created;
     }
-    return createPostgres(user.id, await parseBody(req, createPostgresSchema));
+    const created = await createConnected(user.id, await parseBody(req, createSourceSchema));
+    await audit(user, "fonte.conectada", created.name, created.connectionLabel ?? "");
+    return created;
   }),
 );
 
-const datasetSchema = z.object({
-  sourceId: z.string().min(1),
-  sql: z.string().min(1).max(20_000),
-  name: z.string().trim().min(1, "Dê um nome ao dataset.").max(120),
-  description: z.string().max(500).default(""),
-});
+const datasetSchema = z
+  .object({
+    sourceId: z.string().min(1).optional(),
+    /** Editor SQL cruzando fontes: o SQL cita as tabelas como `apelido.tabela`. */
+    sourceIds: z.array(z.string().min(1)).min(2).max(MAX_CROSS_SOURCES).optional(),
+    sql: z.string().min(1).max(20_000).optional(),
+    workspace: workspaceSchema.optional(),
+    name: z.string().trim().min(1, "Dê um nome ao dataset.").max(120),
+    description: z.string().max(500).default(""),
+  })
+  .refine(
+    (body) => body.workspace || (body.sql && (body.sourceId || body.sourceIds)),
+    "Informe a consulta ou as etapas do dataset.",
+  );
 
-/** Cria um dataset a partir de uma consulta SQL sobre uma fonte existente. */
+/** Cria um dataset a partir de uma consulta SQL ou de etapas de preparação sobre uma fonte existente. */
 sourcesRoutes.post(
   "/dataset",
-  handle(async ({ req, user }) => createDataset(user.id, await parseBody(req, datasetSchema))),
+  analystHandle(async ({ req, user }) => {
+    const body = await parseBody(req, datasetSchema);
+    const created = body.workspace
+      ? await createDatasetFromWorkspace(user.id, { workspace: body.workspace, name: body.name, description: body.description })
+      : body.sourceIds
+        ? await createDatasetFromCross(user.id, { sourceIds: body.sourceIds, sql: body.sql!, name: body.name, description: body.description })
+        : await createDataset(user.id, { sourceId: body.sourceId!, sql: body.sql!, name: body.name, description: body.description });
+    await audit(user, "dataset.criado", created.name);
+    return created;
+  }),
 );
 
 sourcesRoutes.post(
   "/test",
-  handle(async ({ req }) => testPostgres(await parseBody(req, postgresConnectionSchema))),
+  analystHandle(async ({ req }) => testConnection(await parseBody(req, testSourceSchema))),
 );
 
 sourcesRoutes.get(
@@ -76,22 +108,41 @@ const patchSchema = z.object({
 
 sourcesRoutes.patch(
   "/:id",
-  handle<{ id: string }>(async ({ req, user, params }) =>
-    updateSourceMeta(user.id, params.id, await parseBody(req, patchSchema)),
+  analystHandle<{ id: string }>(async ({ req, user, params }) =>
+    updateSourceMeta(user, params.id, await parseBody(req, patchSchema)),
   ),
 );
 
 sourcesRoutes.delete(
   "/:id",
-  handle<{ id: string }>(async ({ user, params }) => {
-    await deleteSource(user.id, params.id);
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
+    const name = (await getManagedSource(user, params.id)).name;
+    await deleteSource(user, params.id, new URL(req.url).searchParams.get("force") === "true");
+    await audit(user, "fonte.excluida", name);
     return { ok: true };
+  }),
+);
+
+/** Onde a fonte/dataset está em uso: base para avisar antes de despublicar ou excluir. */
+sourcesRoutes.get(
+  "/:id/usage",
+  analystHandle<{ id: string }>(async ({ user, params }) => sourceUsage(user, params.id)),
+);
+
+/** Publica (ou retira) um dataset: usuários comuns só enxergam os publicados. */
+sourcesRoutes.post(
+  "/:id/publish",
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
+    const { published, force } = await parseBody(req, z.object({ published: z.boolean(), force: z.boolean().default(false) }));
+    const dataset = await setPublished(user, params.id, published, force);
+    await audit(user, published ? "dataset.publicado" : "dataset.despublicado", dataset.name);
+    return dataset;
   }),
 );
 
 sourcesRoutes.post(
   "/:id/refresh",
-  handle<{ id: string }>(async ({ user, params }) => refreshSource(user.id, params.id)),
+  analystHandle<{ id: string }>(async ({ user, params }) => refreshSource(user, params.id)),
 );
 
 const tableParam = (req: Request) => {
@@ -116,10 +167,32 @@ const querySchema = z.object({
   projectId: z.string().nullable().optional(),
 });
 
+/** Editor SQL cruzando fontes: prévia de uma consulta sobre cópias em memória das tabelas citadas. */
+sourcesRoutes.post(
+  "/cross/run",
+  analystHandle(async ({ req, user }) => {
+    const body = await parseBody(
+      req,
+      z.object({
+        sourceIds: z.array(z.string().min(1)).min(2).max(MAX_CROSS_SOURCES),
+        sql: z.string().min(1).max(20_000),
+        page: z.number().int().min(1).max(100_000).default(1),
+        pageSize: z
+          .number()
+          .int()
+          .refine((size) => (EDITOR_PAGE_SIZES as readonly number[]).includes(size), "Tamanho de página inválido.")
+          .default(100),
+        count: z.boolean().default(false),
+      }),
+    );
+    return runCrossQuery(user.id, body);
+  }),
+);
+
 /** Editor SQL do analista: prévia da consulta, sem gravar o resultado. */
 sourcesRoutes.post(
   "/:id/run",
-  handle<{ id: string }>(async ({ req, user, params }) => {
+  analystHandle<{ id: string }>(async ({ req, user, params }) => {
     const body = await parseBody(
       req,
       z.object({

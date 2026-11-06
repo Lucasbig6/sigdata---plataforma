@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Download } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import type { ResultColumn } from "@/lib/domain/sources";
 import { cn } from "@/lib/utils";
@@ -109,12 +109,15 @@ export const ResultsGrid = ({
   title,
   pagination,
   loading,
+  renderColumnHeader,
 }: {
   columns: ResultColumn[];
   rows: Record<string, unknown>[];
   title: string;
   pagination: Pagination;
   loading: boolean;
+  /** Troca o conteúdo do cabeçalho de cada coluna (a preparação de dados põe um menu). */
+  renderColumnHeader?: (column: ResultColumn) => ReactNode;
 }) => {
   const { page, pageSize, total, hasMore, onPage, onPageSize } = pagination;
   const offset = (page - 1) * pageSize;
@@ -136,8 +139,14 @@ export const ResultsGrid = ({
                   title={`${column.name} · ${column.dbType}`}
                   className="border-b border-r border-border bg-muted px-3 py-1.5 text-left font-semibold whitespace-nowrap text-foreground"
                 >
-                  {column.name}
-                  <span className="ms-1.5 text-[10px] font-normal text-muted-foreground">{column.dbType.toLowerCase()}</span>
+                  {renderColumnHeader ? (
+                    renderColumnHeader(column)
+                  ) : (
+                    <>
+                      {column.name}
+                      <span className="ms-1.5 text-[10px] font-normal text-muted-foreground">{column.dbType.toLowerCase()}</span>
+                    </>
+                  )}
                 </th>
               ))}
             </tr>

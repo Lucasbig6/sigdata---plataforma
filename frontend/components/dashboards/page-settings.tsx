@@ -79,6 +79,7 @@ export const PageSettings = () => {
   const preset = PAGE_PRESETS.find((p) => p.width === canvas.width && p.height === canvas.height);
   const landscape = canvas.width >= canvas.height;
 
+
   return (
     <div className="flex flex-col gap-2.5">
       <label className="flex flex-col gap-1">

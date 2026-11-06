@@ -21,8 +21,11 @@ import {
   type FilterProps,
   type FrameStyle,
 } from "@/lib/dashboards/types";
-import type { DataBinding, FilterBinding, NumberFormat } from "@/lib/dashboards/types";
+import type { DataBinding, FilterBinding, HtmlProps, NumberFormat } from "@/lib/dashboards/types";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import { ChartFields } from "./chart-fields";
+import { HtmlCodeDialog } from "./html-code-dialog";
 import { DataSummary, NoDataNote } from "./data-summary";
 import { FilterStyleFields } from "./filter-fields";
 import { FrameFields } from "./frame-fields";
@@ -90,6 +93,41 @@ const GeometryFields = ({
   );
 };
 
+/** Visual personalizado: título e o editor de código (só analistas e administradores mexem no código). */
+const HtmlFields = ({ elementId, props, set }: { elementId: string; props: HtmlProps; set: (patch: Record<string, unknown>, field: string) => void }) => {
+  const role = useRole();
+  const allowed = role !== null && canManageData(role);
+  const [open, setOpen] = useState(false);
+  return (
+    <Section title="Conteúdo">
+      <Field label="Título">
+        <input className={inputCls} value={props.title} onChange={(event) => set({ title: event.target.value }, "title")} />
+      </Field>
+      <SwitchRow label="Exibir título" checked={Boolean(props.showTitle)} onChange={(value) => set({ showTitle: value }, "showTitle")} />
+      <button
+        type="button"
+        disabled={!allowed}
+        onClick={() => setOpen(true)}
+        className="w-full rounded-md border border-border bg-background px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-muted/60 disabled:cursor-not-allowed disabled:opacity-50"
+      >
+        Editar código…
+      </button>
+      <p className="text-[10px] leading-snug text-muted-foreground">
+        {allowed
+          ? "HTML, CSS e JavaScript rodam isolados e recebem as linhas da aba Dados em sigdata.rows."
+          : "Só analistas e administradores editam o código deste visual."}
+      </p>
+      <HtmlCodeDialog
+        open={open}
+        onOpenChange={setOpen}
+        elementId={elementId}
+        code={{ html: props.html, css: props.css, js: props.js }}
+        onChange={(lang, value) => set({ [lang]: value }, `code:${lang}`)}
+      />
+    </Section>
+  );
+};
+
 const TypeFieldsBody = ({
   element,
   updateProps,
@@ -107,6 +145,9 @@ const TypeFieldsBody = ({
   switch (element.type) {
     case "chart":
       return <ChartFields props={element.props as ChartProps} set={set} />;
+
+    case "html":
+      return <HtmlFields elementId={element.id} props={element.props as HtmlProps} set={set} />;
 
     case "table":
       return (
@@ -524,7 +565,7 @@ const LayerActions = ({
 };
 
 /** Tipos de dados que têm moldura (borda, fundo, cantos, sombra). */
-const FRAMED = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison", "filter"]);
+const FRAMED = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison", "filter", "html"]);
 
 const TypeFields = ({
   element,
@@ -780,6 +821,7 @@ const PANEL_TABS: { id: PanelTab; label: string }[] = [
 const DATA_TYPES = new Set<DashboardElement["type"]>([
   "chart",
   "table",
+  "html",
   "kpi",
   "percent",
   "comparison",

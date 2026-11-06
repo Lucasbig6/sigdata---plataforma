@@ -1,13 +1,16 @@
 "use client";
 
 import { ChevronLeft, ChevronRight, Copy, Plus, Trash2 } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import { MAX_PAGES } from "@/lib/dashboards/types";
+import { confirmAction } from "@/lib/feedback";
 
 type Props = {
   /** Visualização/compartilhado: só navega entre as páginas. */
   readOnly?: boolean;
+  /** Sem moldura própria e com setas de anterior/próxima (uso em barras no rodapé). */
+  flat?: boolean;
   className?: string;
 };
 
@@ -17,11 +20,10 @@ const tabCls = (active: boolean) =>
   }`;
 
 /** Abas de páginas do dashboard (como as abas de uma planilha ou do Power BI). */
-export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
-  const pages = useDashboardsStore((state) => {
-    const doc = state.currentId ? state.dashboards[state.currentId] : undefined;
-    return doc?.pages?.map((page) => ({ id: page.id, name: page.name })) ?? null;
-  });
+export const PageTabs = ({ readOnly = false, flat = false, className = "" }: Props) => {
+  // o seletor devolve uma referência estável (um array novo a cada leitura entra em loop no React)
+  const docPages = useDashboardsStore((state) => (state.currentId ? state.dashboards[state.currentId]?.pages : undefined));
+  const pages = useMemo(() => docPages?.map((page) => ({ id: page.id, name: page.name })) ?? null, [docPages]);
   const activeId = useDashboardsStore((state) => state.activePageId);
   const switchPage = useDashboardsStore((state) => state.switchPage);
   const addPage = useDashboardsStore((state) => state.addPage);
@@ -53,8 +55,20 @@ export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
     <div
       role="tablist"
       aria-label="Páginas do painel"
-      className={`flex max-w-full items-center gap-0.5 overflow-x-auto rounded-lg border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur ${className}`}
+      className={`flex max-w-full items-center gap-0.5 overflow-x-auto ${flat ? "" : "rounded-lg border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur"} ${className}`}
     >
+      {flat && readOnly ? (
+        <button
+          type="button"
+          onClick={() => switchPage(list[Math.max(index - 1, 0)]!.id)}
+          disabled={index <= 0}
+          aria-label="Página anterior"
+          title="Página anterior"
+          className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-30"
+        >
+          <ChevronLeft className="size-3.5" aria-hidden />
+        </button>
+      ) : null}
       {list.map((page) =>
         editing === page.id ? (
           <input
@@ -80,7 +94,7 @@ export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
             title={readOnly ? page.name : `${page.name} — duplo clique para renomear`}
             onClick={() => switchPage(page.id)}
             onDoubleClick={() => {
-              if (readOnly || !pages) return;
+              if (readOnly) return;
               setDraft(page.name);
               setEditing(page.id);
             }}
@@ -90,6 +104,24 @@ export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
           </button>
         ),
       )}
+
+      {flat && readOnly ? (
+        <>
+          <button
+            type="button"
+            onClick={() => switchPage(list[Math.min(index + 1, list.length - 1)]!.id)}
+            disabled={index >= list.length - 1}
+            aria-label="Próxima página"
+            title="Próxima página"
+            className="grid size-7 shrink-0 place-items-center rounded-md text-muted-foreground transition-colors hover:bg-muted/70 hover:text-foreground disabled:opacity-30"
+          >
+            <ChevronRight className="size-3.5" aria-hidden />
+          </button>
+          <span className="ml-1 shrink-0 text-[11px] text-muted-foreground tabular-nums">
+            {index + 1} / {list.length}
+          </span>
+        </>
+      ) : null}
 
       {!readOnly ? (
         <>
@@ -140,7 +172,12 @@ export const PageTabs = ({ readOnly = false, className = "" }: Props) => {
                 type="button"
                 onClick={() => {
                   const name = list[index]?.name ?? "esta página";
-                  if (window.confirm(`Excluir a página "${name}" e todos os seus elementos?`)) deletePage(current);
+                  void confirmAction({
+                    title: `Excluir a página "${name}"?`,
+                    description: "Todos os elementos dela serão removidos.",
+                    confirmLabel: "Excluir",
+                    destructive: true,
+                  }).then((ok) => ok && deletePage(current));
                 }}
                 aria-label="Excluir página"
                 title="Excluir página"

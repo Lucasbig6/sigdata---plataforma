@@ -21,6 +21,7 @@ import {
 } from "drizzle-orm/pg-core";
 import type { UIMessage } from "ai";
 import type { AnalysisSnapshot } from "@shared/analyses";
+import type { Role } from "@shared/roles";
 import type { DashboardElement, DashboardMeasure, DashboardPage } from "@shared/dashboards/types";
 import type { PanelWidget } from "@shared/panel";
 import type {
@@ -46,6 +47,10 @@ export const user = pgTable("user", {
   email: text("email").notNull().unique(),
   emailVerified: boolean("email_verified").notNull().default(false),
   image: text("image"),
+  /** Papel de acesso (ver shared/roles.ts). */
+  role: text("role").$type<Role>().notNull().default("usuario"),
+  /** Conta desativada: não entra, mas o conteúdo é preservado. */
+  disabled: boolean("disabled").notNull().default(false),
   createdAt: createdAt(),
   updatedAt: updatedAt(),
 });
@@ -122,6 +127,8 @@ export const dataSources = pgTable(
     connection: text("connection"),
     /** Consulta de origem, quando a fonte é um dataset criado no editor SQL. */
     definition: jsonb("definition").$type<DatasetDefinition>(),
+    /** Dataset publicado fica visível e utilizável por todos os usuários. */
+    published: boolean("published").notNull().default(false),
     /** Cache do schema + perfil das colunas. */
     tables: jsonb("tables").$type<SourceTable[]>().notNull().default(sql`'[]'::jsonb`),
     createdAt: createdAt(),
@@ -147,12 +154,27 @@ export const projects = pgTable(
   (table) => [index("projects_user_idx").on(table.userId, table.updatedAt)],
 );
 
-export const messages = pgTable(
-  "messages",
+/** Conversas de um projeto. Resultados, painel, notas e fonte ativa pertencem ao projeto, não à conversa. */
+export const chats = pgTable(
+  "chats",
   {
+    id: text("id").primaryKey(),
     projectId: text("project_id")
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull(),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("chats_project_idx").on(table.projectId, table.updatedAt)],
+);
+
+export const messages = pgTable(
+  "messages",
+  {
+    chatId: text("chat_id")
+      .notNull()
+      .references(() => chats.id, { onDelete: "cascade" }),
     id: text("id").notNull(),
     position: integer("position").notNull(),
     role: text("role").$type<UIMessage["role"]>().notNull(),
@@ -161,8 +183,8 @@ export const messages = pgTable(
     createdAt: createdAt(),
   },
   (table) => [
-    primaryKey({ columns: [table.projectId, table.id] }),
-    index("messages_order_idx").on(table.projectId, table.position),
+    primaryKey({ columns: [table.chatId, table.id] }),
+    index("messages_order_idx").on(table.chatId, table.position),
   ],
 );
 
@@ -227,15 +249,22 @@ export const dashboards = pgTable(
     name: text("name").notNull(),
     description: text("description").notNull().default(""),
     origin: text("origin").$type<"demo" | "user">().notNull().default("user"),
+    /** Projeto de onde o dashboard foi criado (null = avulso). */
+    projectId: text("project_id").references(() => projects.id, { onDelete: "set null" }),
     doc: jsonb("doc").$type<DashboardDoc>().notNull(),
     /** Token do link público (null = não compartilhado). */
     shareToken: text("share_token"),
     sharedAt: timestamp("shared_at", { withTimezone: true }),
+    /** Fim da validade do link público (null = sem expiração). */
+    sharedExpiresAt: timestamp("shared_expires_at", { withTimezone: true }),
+    /** Visível, somente leitura, para todos os usuários logados. */
+    sharedWithAll: boolean("shared_with_all").notNull().default(false),
     createdAt: createdAt(),
     updatedAt: updatedAt(),
   },
   (table) => [
     index("dashboards_user_idx").on(table.userId, table.updatedAt),
+    index("dashboards_project_idx").on(table.projectId),
     uniqueIndex("dashboards_share_token_idx").on(table.shareToken),
   ],
 );
@@ -262,4 +291,52 @@ export const dashboardVersions = pgTable(
     createdAt: createdAt(),
   },
   (table) => [index("dashboard_versions_idx").on(table.dashboardId, table.createdAt)],
+);
+
+/** Dashboards compartilhados com pessoas específicas (somente leitura, exige login). */
+export const dashboardShares = pgTable(
+  "dashboard_shares",
+  {
+    dashboardId: text("dashboard_id")
+      .notNull()
+      .references(() => dashboards.id, { onDelete: "cascade" }),
+    userId: text("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (table) => [primaryKey({ columns: [table.dashboardId, table.userId] }), index("dashboard_shares_user_idx").on(table.userId)],
+);
+
+/** Registro de atividades sensíveis. O autor fica denormalizado: sobrevive à remoção da conta. */
+export const auditLog = pgTable(
+  "audit_log",
+  {
+    id: text("id").primaryKey(),
+    at: timestamp("at", { withTimezone: true }).notNull().defaultNow(),
+    actorId: text("actor_id").references(() => user.id, { onDelete: "set null" }),
+    actorName: text("actor_name").notNull(),
+    action: text("action").notNull(),
+    target: text("target").notNull().default(""),
+    detail: text("detail").notNull().default(""),
+  },
+  (table) => [index("audit_log_at_idx").on(table.at)],
+);
+
+/** Notas do projeto: respostas do chat ou textos fixados para reunir no relatório/painel. */
+export const projectNotes = pgTable(
+  "project_notes",
+  {
+    id: text("id").primaryKey(),
+    projectId: text("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    title: text("title").notNull().default(""),
+    body: text("body").notNull(),
+    /** Resultado de consulta que sustenta a nota (para citar a fonte dos números). */
+    resultId: text("result_id"),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (table) => [index("project_notes_project_idx").on(table.projectId, table.createdAt)],
 );

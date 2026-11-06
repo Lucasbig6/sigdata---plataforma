@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeft, Code2, Database, Plus, Table2 } from "lucide-react";
+import { Code2, Database, Plus, Table2, Wand2 } from "lucide-react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -14,10 +14,15 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { SourceTile } from "@/components/fontes/source-tile";
-import { LogoMark } from "@/components/sigdata/logo";
-import { ThemeToggle } from "@/components/sigdata/theme-toggle";
-import { useDatasetsStore, type Dataset } from "@/lib/datasets/store";
+import { AppHeader } from "@/components/sigdata/app-header";
+import { PageHeading } from "@/components/sigdata/page-heading";
+import { useDatasetsStore, type Dataset, type SourceUsage } from "@/lib/datasets/store";
 import { cn } from "@/lib/utils";
+import { confirmAction, toast } from "@/lib/feedback";
+import { RoleGate } from "@/components/sigdata/role-gate";
+import { DATA_ROLES } from "@shared/roles";
+import { CardSkeletons, EmptyState, ErrorState } from "@/components/sigdata/list-states";
+import { Button } from "@/components/ui/button";
 
 type TabId = "fontes" | "datasets";
 
@@ -66,12 +71,23 @@ const TileGrid = ({ children }: { children: React.ReactNode }) => (
   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">{children}</div>
 );
 
+/** Frase com o impacto real; sem dados de uso, cai no aviso genérico. */
+const usageText = (usage: SourceUsage | null, fallback: string) =>
+  usage && usage.dashboards + usage.projects > 0
+    ? `Está em uso por ${usage.dashboards} dashboard(s) e ${usage.projects} projeto(s)${
+        usage.people > 0 ? `, de ${usage.people} outra(s) pessoa(s)` : ""
+      }. Eles deixam de funcionar.`
+    : fallback;
+
 function FontesDeDadosContent() {
   const hydrated = useDatasetsStore((state) => state.hydrated);
   const loadError = useDatasetsStore((state) => state.error);
   const hydrate = useDatasetsStore((state) => state.hydrate);
+  const reload = useDatasetsStore((state) => state.reload);
   const datasets = useDatasetsStore((state) => state.datasets);
   const removeDataset = useDatasetsStore((state) => state.removeDataset);
+  const setPublished = useDatasetsStore((state) => state.setPublished);
+  const usageOf = useDatasetsStore((state) => state.usageOf);
 
   const router = useRouter();
   const tab: TabId = useSearchParams().get("aba") === "datasets" ? "datasets" : "fontes";
@@ -98,53 +114,73 @@ function FontesDeDadosContent() {
       dataset={dataset}
       selected={dataset.id === selectedId}
       onInspect={() => setSelectedId(dataset.id === selectedId ? null : dataset.id)}
+      onTogglePublish={() => {
+        const next = !dataset.published;
+        void (next ? Promise.resolve(null) : usageOf(dataset.id).catch(() => null))
+          .then((usage) =>
+            confirmAction({
+              title: next ? `Publicar "${dataset.name}"?` : `Despublicar "${dataset.name}"?`,
+              description: next
+                ? "Todos os usuários passam a ver e usar este dataset em projetos e dashboards."
+                : usageText(usage, "Dashboards e projetos de outras pessoas que o usam deixam de funcionar até ele ser publicado de novo."),
+              confirmLabel: next ? "Publicar" : "Despublicar",
+              destructive: !next,
+            }),
+          )
+          .then((ok) => {
+          if (!ok) return;
+          setPublished(dataset.id, next, true)
+            .then(() => toast.success(next ? "Dataset publicado." : "Dataset voltou a rascunho."))
+            .catch((error: Error) => toast.error(error.message));
+        });
+      }}
       onRemove={() => {
-        const message = dataset.definition
-          ? `Excluir o dataset "${dataset.name}"? Projetos que o usam ficarão sem fonte.`
-          : `Excluir a fonte "${dataset.name}"? Projetos que a usam ficarão sem fonte.`;
-        if (!window.confirm(message)) return;
-        setRemoveError(null);
-        if (selectedId === dataset.id) setSelectedId(null);
-        removeDataset(dataset.id).catch((error: Error) => setRemoveError(error.message));
+        const kind = dataset.definition ? "dataset" : "fonte";
+        void usageOf(dataset.id)
+          .catch(() => null)
+          .then((usage) =>
+            confirmAction({
+              title: `Excluir ${kind === "dataset" ? "o dataset" : "a fonte"} "${dataset.name}"?`,
+              description: usageText(usage, "Projetos que a usam ficarão sem fonte."),
+              confirmLabel: "Excluir",
+              destructive: true,
+            }),
+          )
+          .then((ok) => {
+          if (!ok) return;
+          setRemoveError(null);
+          if (selectedId === dataset.id) setSelectedId(null);
+          removeDataset(dataset.id, true)
+            .then(() => toast.success(`${kind === "dataset" ? "Dataset excluído" : "Fonte excluída"}.`))
+            .catch((error: Error) => setRemoveError(error.message));
+        });
       }}
     />
   );
 
   return (
     <div className="min-h-dvh bg-background">
-      <header className="sticky top-0 z-20 border-b border-border/60 bg-card/70 backdrop-blur">
-        <div className="flex h-20 items-center gap-2 px-15 sm:gap-7">
-          <Link
-            href="/"
-            aria-label="Voltar ao início"
-            className="grid size-10 shrink-0 place-items-center rounded-md border border-border/70 text-foreground transition-colors hover:bg-muted/60"
-          >
-            <ArrowLeft className="size-4" aria-hidden />
-          </Link>
-          <LogoMark className="h-11 w-auto shrink-0" />
-          <div className="min-w-0">
-            <h1 className="text-base font-semibold text-foreground">Fontes de dados</h1>
-            <p className="truncate text-xs text-muted-foreground">
-              Arquivos, bancos e datasets que o assistente pode consultar
-            </p>
-          </div>
-          <div className="ml-auto flex items-center gap-2">
-            <Link
-              href="/fontes-de-dados/editor"
-              className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-3.5 text-sm font-medium text-primary-foreground transition-opacity hover:opacity-90"
-            >
-              <Code2 className="size-4" aria-hidden />
-              Editor SQL
-            </Link>
-            <ThemeToggle />
-          </div>
-        </div>
-      </header>
+      <AppHeader />
 
-      <main className="mx-auto px-30 py-6">
+      <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
+        <PageHeading
+          title="Fontes de dados"
+          description="Arquivos, bancos e datasets que o assistente pode consultar."
+          actions={
+            <>
+              <Button render={<Link href="/fontes-de-dados/preparar" />} nativeButton={false}>
+                <Wand2 aria-hidden />
+                Preparar dados
+              </Button>
+              <Button variant="outline" render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
+                <Code2 aria-hidden />
+                Editor SQL
+              </Button>
+            </>
+          }
+        />
         <TabBar active={tab} counts={{ fontes: sources.length, datasets: saved.length }} onChange={changeTab} />
 
-        {loadError ? <p className="mb-4 text-sm text-destructive">{loadError}</p> : null}
         {removeError ? <p className="mb-4 text-sm text-destructive">{removeError}</p> : null}
 
         {tab === "fontes" ? (
@@ -167,22 +203,16 @@ function FontesDeDadosContent() {
             ) : null}
 
             {!hydrated ? (
-              <TileGrid>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-32 animate-pulse rounded-2xl bg-muted/50" />
-                ))}
-              </TileGrid>
+              <CardSkeletons />
+            ) : loadError ? (
+              <ErrorState title="Não foi possível carregar as fontes" message={loadError} onRetry={() => void reload()} />
             ) : sources.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-                <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-                  <Database className="size-5" aria-hidden />
-                </span>
-                <p className="text-sm font-medium text-foreground">Nenhuma fonte ainda</p>
-                <p className="max-w-sm text-xs leading-relaxed text-muted-foreground">
-                  Envie um CSV/XLSX ou conecte um banco PostgreSQL acima. Depois escolha a fonte na barra lateral do
-                  projeto para o assistente consultar.
-                </p>
-              </div>
+              <EmptyState
+                icon={Database}
+                title="Nenhuma fonte ainda"
+                description="Envie um CSV/XLSX ou conecte um banco PostgreSQL. Depois escolha a fonte na barra lateral do projeto para o assistente consultar."
+                action={<Button onClick={() => setNewOpen(true)}>Nova fonte de dados</Button>}
+              />
             ) : (
               <TileGrid>{sources.map((dataset) => renderTile(dataset))}</TileGrid>
             )}
@@ -206,22 +236,20 @@ function FontesDeDadosContent() {
             ) : null}
 
             {!hydrated ? (
-              <TileGrid>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <div key={index} className="h-32 animate-pulse rounded-2xl bg-muted/50" />
-                ))}
-              </TileGrid>
+              <CardSkeletons />
+            ) : loadError ? (
+              <ErrorState title="Não foi possível carregar os datasets" message={loadError} onRetry={() => void reload()} />
             ) : saved.length === 0 ? (
-              <div className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-border/70 px-6 py-20 text-center">
-                <span className="grid size-12 place-items-center rounded-2xl bg-muted/60 text-muted-foreground">
-                  <Table2 className="size-5" aria-hidden />
-                </span>
-                <p className="text-sm font-medium text-foreground">Nenhum dataset salvo ainda</p>
-                <p className="max-w-md text-xs leading-relaxed text-muted-foreground">
-                  No editor SQL, trate os dados com uma consulta e use &quot;Salvar como dataset&quot;. Ele aparece aqui e
-                  na barra lateral dos projetos, para as análises.
-                </p>
-              </div>
+              <EmptyState
+                icon={Table2}
+                title="Nenhum dataset salvo ainda"
+                description='No editor SQL, trate os dados com uma consulta e use "Salvar como dataset". Ele aparece aqui e na barra lateral dos projetos.'
+                action={
+                  <Button render={<Link href="/fontes-de-dados/editor" />} nativeButton={false}>
+                    Abrir editor SQL
+                  </Button>
+                }
+              />
             ) : (
               <TileGrid>{saved.map((dataset) => renderTile(dataset))}</TileGrid>
             )}
@@ -234,7 +262,7 @@ function FontesDeDadosContent() {
           <DialogHeader>
             <DialogTitle>Nova fonte de dados</DialogTitle>
             <DialogDescription>
-              Envie um arquivo CSV/XLSX ou conecte um banco PostgreSQL para consultar com o assistente e o editor SQL.
+              Escolha de onde vêm os dados: um arquivo, um banco ou um serviço na web. Depois é só consultar com o assistente e o editor SQL.
             </DialogDescription>
           </DialogHeader>
           <NewSourceForm
@@ -252,8 +280,10 @@ function FontesDeDadosContent() {
 /** Fontes de dados e datasets salvos, em abas (a aba ativa fica na URL: ?aba=datasets). */
 export default function FontesDeDadosPage() {
   return (
-    <Suspense>
-      <FontesDeDadosContent />
-    </Suspense>
+    <RoleGate roles={DATA_ROLES}>
+      <Suspense>
+        <FontesDeDadosContent />
+      </Suspense>
+    </RoleGate>
   );
 }

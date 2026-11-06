@@ -1,6 +1,6 @@
 import { randomBytes, randomUUID } from "node:crypto";
-import { and, desc, eq, inArray } from "drizzle-orm";
-import { Hono } from "hono";
+import { and, desc, eq, inArray, ne, or } from "drizzle-orm";
+import { Hono, type Context } from "hono";
 import { z } from "zod";
 import type { AnalysisSnapshot } from "@shared/analyses";
 import type { ActiveFilter } from "@shared/dashboards/data";
@@ -8,17 +8,19 @@ import { FILTER_VALUE_MAX } from "@shared/dashboards/data";
 import { allElements, type DashboardElement, type DataBinding, type FilterBinding } from "@shared/dashboards/types";
 import type { WorkspaceProject } from "@shared/dashboards/workspace";
 import { BINDING_LIMIT_MAX } from "@shared/dashboards/types";
+import { audit } from "../audit";
 import { filterOptions, runBinding } from "../dashboard-data";
 import { db, schema } from "../db";
 import {
   analysesForDashboard,
+  assertCustomCode,
   getDashboardRow,
   parseDashboard,
   toDashboard,
   toDoc,
   toSavedAnalysis,
 } from "../dashboards";
-import { errorResponse, handle, HttpError, notFound, parseBody } from "../http";
+import { errorResponse, handle, HttpError, notFound, parseBody, requireUser } from "../http";
 
 const readJson = (req: Request) => req.json().catch(() => null) as Promise<Record<string, unknown> | null>;
 
@@ -41,6 +43,7 @@ const bindingSchema = z.object({
   y: name.optional(),
   ys: z.array(name).max(12).optional(),
   splitBy: name.optional(),
+  drill: z.array(name).max(4).optional(),
   calc: z.object({ name: z.string().min(1).max(80), expr: z.string().min(1).max(300) }).optional(),
   compare: z
     .object({ dateColumn: name, unit: z.enum(["day", "week", "month", "quarter", "year"]) })
@@ -158,15 +161,29 @@ dashboardsRoutes.get(
   }),
 );
 
+/** Projeto de origem informado ao criar: precisa ser do próprio usuário; qualquer outro valor vira "avulso". */
+const ownedProjectId = async (userId: string, raw: unknown): Promise<string | null> => {
+  if (typeof raw !== "string" || raw.length === 0 || raw.length > 64) return null;
+  const [project] = await db
+    .select({ id: schema.projects.id })
+    .from(schema.projects)
+    .where(and(eq(schema.projects.id, raw), eq(schema.projects.userId, userId)));
+  return project?.id ?? null;
+};
+
 dashboardsRoutes.post(
   "/",
   handle(async ({ req, user }) => {
-    const doc = parseDashboard(await readJson(req));
+    const body = await readJson(req);
+    const doc = parseDashboard(body);
+    assertCustomCode(user, doc);
+    const projectId = await ownedProjectId(user.id, body?.projectId);
     const [row] = await db
       .insert(schema.dashboards)
       .values({
         id: doc.id,
         userId: user.id,
+        projectId,
         name: doc.name.trim() || "Novo dashboard",
         description: doc.description,
         origin: "user",
@@ -189,6 +206,7 @@ dashboardsRoutes.put(
   handle<{ id: string }>(async ({ req, user, params }) => {
     const existing = await getDashboardRow(user.id, params.id);
     const doc = parseDashboard({ ...(await readJson(req)), id: existing.id });
+    assertCustomCode(user, doc, allElements(existing.doc));
     await snapshotVersion(existing, "");
     const [row] = await db
       .update(schema.dashboards)
@@ -301,6 +319,7 @@ dashboardsRoutes.post(
       .from(schema.dashboardVersions)
       .where(and(eq(schema.dashboardVersions.id, params.versionId), eq(schema.dashboardVersions.dashboardId, row.id)));
     if (!version) throw notFound("Versão", "a");
+    assertCustomCode(user, version.doc, allElements(row.doc));
     // o estado de agora também vira uma versão: restaurar é sempre reversível
     await snapshotVersion(row, "Antes de restaurar");
     const [updated] = await db
@@ -323,18 +342,55 @@ dashboardsRoutes.delete(
   }),
 );
 
-/** Gera (ou devolve) o link público somente-leitura. */
-dashboardsRoutes.post(
+const shareOptionsSchema = z.object({ expiresInDays: z.number().int().min(1).max(365).nullable().optional() });
+
+const expiryFrom = (days: number | null | undefined) =>
+  days ? new Date(Date.now() + days * 24 * 60 * 60 * 1000) : null;
+
+/** Estado atual do link público (token e validade). */
+dashboardsRoutes.get(
   "/:id/share",
   handle<{ id: string }>(async ({ user, params }) => {
     const row = await getDashboardRow(user.id, params.id);
-    if (row.shareToken) return { token: row.shareToken };
+    return { token: row.shareToken, expiresAt: row.sharedExpiresAt?.getTime() ?? null };
+  }),
+);
+
+/** Gera (ou devolve) o link público somente-leitura; `expiresInDays` define a validade. */
+dashboardsRoutes.post(
+  "/:id/share",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    const raw = (await req.json().catch(() => ({}))) as unknown;
+    const parsed = shareOptionsSchema.safeParse(raw ?? {});
+    if (!parsed.success) throw new HttpError(400, "Validade inválida (1 a 365 dias).");
+    const { expiresInDays } = parsed.data;
+    const expired = row.sharedExpiresAt !== null && row.sharedExpiresAt.getTime() <= Date.now();
+    // link expirado ganha token novo; o antigo não volta a funcionar
+    if (row.shareToken && !expired) {
+      return { token: row.shareToken, expiresAt: row.sharedExpiresAt?.getTime() ?? null };
+    }
     const token = randomBytes(18).toString("base64url");
+    const expiresAt = expiryFrom(expiresInDays);
     await db
       .update(schema.dashboards)
-      .set({ shareToken: token, sharedAt: new Date() })
+      .set({ shareToken: token, sharedAt: new Date(), sharedExpiresAt: expiresAt })
       .where(eq(schema.dashboards.id, row.id));
-    return { token };
+    await audit(user, "dashboard.link_publico", row.name, expiresInDays ? `${expiresInDays} dia(s)` : "sem expiração");
+    return { token, expiresAt: expiresAt?.getTime() ?? null };
+  }),
+);
+
+/** Altera a validade de um link já ativo (null = sem expiração). */
+dashboardsRoutes.patch(
+  "/:id/share",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    if (!row.shareToken) throw new HttpError(400, "O painel não está compartilhado.");
+    const { expiresInDays } = await parseBody(req, shareOptionsSchema);
+    const expiresAt = expiryFrom(expiresInDays);
+    await db.update(schema.dashboards).set({ sharedExpiresAt: expiresAt }).where(eq(schema.dashboards.id, row.id));
+    return { token: row.shareToken, expiresAt: expiresAt?.getTime() ?? null };
   }),
 );
 
@@ -345,9 +401,57 @@ dashboardsRoutes.delete(
     const row = await getDashboardRow(user.id, params.id);
     await db
       .update(schema.dashboards)
-      .set({ shareToken: null, sharedAt: null })
+      .set({ shareToken: null, sharedAt: null, sharedExpiresAt: null })
       .where(eq(schema.dashboards.id, row.id));
+    await audit(user, "dashboard.link_revogado", row.name);
     return { ok: true };
+  }),
+);
+
+const accessSchema = z.object({
+  sharedWithAll: z.boolean(),
+  emails: z.array(z.string().trim().toLowerCase().pipe(z.email())).max(100),
+});
+
+/** Com quem o dashboard está compartilhado (somente leitura, exige login). */
+dashboardsRoutes.get(
+  "/:id/access",
+  handle<{ id: string }>(async ({ user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    const people = await db
+      .select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
+      .from(schema.dashboardShares)
+      .innerJoin(schema.user, eq(schema.user.id, schema.dashboardShares.userId))
+      .where(eq(schema.dashboardShares.dashboardId, row.id));
+    return { sharedWithAll: row.sharedWithAll, people };
+  }),
+);
+
+/** Define o acesso: pessoas pelo e-mail (contas ativas) e/ou todos os usuários logados. */
+dashboardsRoutes.put(
+  "/:id/access",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const row = await getDashboardRow(user.id, params.id);
+    const body = await parseBody(req, accessSchema);
+    const emails = [...new Set(body.emails)].filter((email) => email !== user.email.toLowerCase());
+    const found = emails.length
+      ? await db
+          .select({ id: schema.user.id, name: schema.user.name, email: schema.user.email })
+          .from(schema.user)
+          .where(and(inArray(schema.user.email, emails), eq(schema.user.disabled, false)))
+      : [];
+    const missing = emails.filter((email) => !found.some((person) => person.email === email));
+    if (missing.length) throw new HttpError(422, `Sem conta ativa para: ${missing.join(", ")}.`);
+
+    await db.transaction(async (tx) => {
+      await tx.delete(schema.dashboardShares).where(eq(schema.dashboardShares.dashboardId, row.id));
+      if (found.length) {
+        await tx.insert(schema.dashboardShares).values(found.map((person) => ({ dashboardId: row.id, userId: person.id })));
+      }
+      await tx.update(schema.dashboards).set({ sharedWithAll: body.sharedWithAll }).where(eq(schema.dashboards.id, row.id));
+    });
+    await audit(user, "dashboard.compartilhado", row.name, body.sharedWithAll ? "todos os usuários" : `${found.length} pessoa(s)`);
+    return { sharedWithAll: body.sharedWithAll, people: found };
   }),
 );
 
@@ -362,13 +466,16 @@ const sharedDashboard = async (token: string) => {
     .from(schema.dashboards)
     .where(eq(schema.dashboards.shareToken, token));
   if (!row) throw notFound("Link");
+  if (row.sharedExpiresAt && row.sharedExpiresAt.getTime() <= Date.now()) {
+    throw new HttpError(410, "Este link expirou. Peça um novo a quem compartilhou.");
+  }
   return row;
 };
 
 type BoundProps = { binding?: DataBinding };
 type FilterProps = { binding?: FilterBinding; global?: boolean; mode?: "list" | "range" };
 
-const DATA_ELEMENT_TYPES = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison"]);
+const DATA_ELEMENT_TYPES = new Set<DashboardElement["type"]>(["chart", "table", "kpi", "percent", "comparison", "html"]);
 
 const findElement = (elements: DashboardElement[], id: string) => {
   const element = elements.find((entry) => entry.id === id);
@@ -376,75 +483,163 @@ const findElement = (elements: DashboardElement[], id: string) => {
   return element;
 };
 
-/** Sem login: só responde a tokens de compartilhamento válidos. */
-publicRoutes.get("/dashboards/:token", async (c) => {
-  try {
-    const row = await sharedDashboard(c.req.param("token"));
-    const { shareToken: _omit, ...dashboard } = toDashboard(row);
-    return Response.json({ dashboard, analyses: await analysesForDashboard(row) });
-  } catch (error) {
-    return errorResponse(error);
-  }
-});
-
 const publicDataSchema = z.object({
   elementId: z.string().min(1).max(64),
+  /** Drill-down: nível exibido; só vale entre a dimensão e os níveis salvos no gráfico. */
+  dimension: z.string().min(1).max(256).optional(),
   filters: z
-    .array(z.object({ elementId: z.string().min(1).max(64), value: z.string().max(FILTER_VALUE_MAX) }))
+    .array(
+      z.object({
+        elementId: z.string().min(1).max(64),
+        value: z.string().max(FILTER_VALUE_MAX),
+        column: z.string().min(1).max(256).optional(),
+      }),
+    )
     .max(20)
     .optional(),
 });
 
 /**
- * Dados de um elemento do painel compartilhado. Só executa ligações que estão
- * na versão salva; o visitante escolhe apenas valores dos filtros salvos.
+ * Leitura de um dashboard por quem não é o dono: o visitante do link público e a pessoa logada
+ * com quem ele foi compartilhado. `loadRow` decide quem pode (token válido, ou login + permissão).
+ * Só executa ligações que estão na versão salva; quem vê escolhe apenas valores dos filtros salvos.
  */
-publicRoutes.post("/dashboards/:token/data", async (c) => {
-  try {
-    const row = await sharedDashboard(c.req.param("token"));
-    const body = await parseBody(c.req.raw, publicDataSchema);
-    const elements = allElements(row.doc);
-    const element = findElement(elements, body.elementId);
-    // só elementos que exibem dados; filtros têm ligação de outro formato
-    if (!DATA_ELEMENT_TYPES.has(element.type)) throw new HttpError(400, "Elemento não exibe dados.");
-    const binding = (element.props as BoundProps).binding;
-    if (!binding) throw new HttpError(400, "Elemento sem dados ligados.");
-    // a coluna nunca vem do visitante: deriva do filtro ou do gráfico salvo (filtro cruzado)
-    const filters: ActiveFilter[] = (body.filters ?? []).flatMap((filter) => {
-      const source = findElement(elements, filter.elementId);
-      if (source.type === "filter") {
-        const props = source.props as FilterProps;
-        return props.binding
-          ? [{ ...props.binding, value: filter.value, byName: props.global === true, range: props.mode === "range" }]
-          : [];
-      }
-      if (source.type === "chart") {
-        const cb = (source.props as BoundProps).binding;
-        return cb?.mode === "builder" && cb.table && cb.dimension
-          ? [{ sourceId: cb.sourceId, table: cb.table, column: cb.dimension, value: filter.value }]
-          : [];
-      }
-      return [];
-    });
-    return Response.json(await runBinding(row.userId, binding, filters));
-  } catch (error) {
-    return errorResponse(error);
-  }
-});
+const mountViewer = (
+  router: Hono,
+  base: string,
+  loadRow: (c: Context) => Promise<DashboardRow>,
+) => {
+  router.get(base, async (c) => {
+    try {
+      const row = await loadRow(c);
+      const { shareToken: _omit, ...dashboard } = toDashboard(row);
+      return Response.json({ dashboard, analyses: await analysesForDashboard(row) });
+    } catch (error) {
+      return errorResponse(error);
+    }
+  });
 
-publicRoutes.post("/dashboards/:token/filter-options", async (c) => {
-  try {
-    const row = await sharedDashboard(c.req.param("token"));
-    const body = await parseBody(c.req.raw, z.object({ elementId: z.string().min(1).max(64) }));
-    const element = findElement(allElements(row.doc), body.elementId);
-    if (element.type !== "filter") throw new HttpError(400, "Elemento não é um filtro.");
-    const binding = (element.props as FilterProps).binding;
-    if (!binding) return Response.json({ options: [] });
-    return Response.json(await filterOptions(row.userId, binding));
-  } catch (error) {
-    return errorResponse(error);
-  }
-});
+  router.post(`${base}/data`, async (c) => {
+    try {
+      const row = await loadRow(c);
+      const body = await parseBody(c.req.raw, publicDataSchema);
+      const elements = allElements(row.doc);
+      const element = findElement(elements, body.elementId);
+      // só elementos que exibem dados; filtros têm ligação de outro formato
+      if (!DATA_ELEMENT_TYPES.has(element.type)) throw new HttpError(400, "Elemento não exibe dados.");
+      const saved = (element.props as BoundProps).binding;
+      if (!saved) throw new HttpError(400, "Elemento sem dados ligados.");
+      // drill-down: o nível vem de quem vê, mas só entre as colunas que o autor deixou no gráfico
+      const levels = (b: DataBinding | undefined) => (b?.mode === "builder" && b.dimension ? [b.dimension, ...(b.drill ?? [])] : []);
+      const binding =
+        element.type === "chart" && body.dimension && levels(saved).includes(body.dimension)
+          ? { ...saved, dimension: body.dimension }
+          : saved;
+      // a coluna nunca vem de quem vê: deriva do filtro ou do gráfico salvo (filtro cruzado)
+      const filters: ActiveFilter[] = (body.filters ?? []).flatMap((filter) => {
+        const source = findElement(elements, filter.elementId);
+        if (source.type === "filter") {
+          const props = source.props as FilterProps;
+          return props.binding
+            ? [{ ...props.binding, value: filter.value, byName: props.global === true, range: props.mode === "range" }]
+            : [];
+        }
+        if (source.type === "chart") {
+          const cb = (source.props as BoundProps).binding;
+          if (cb?.mode !== "builder" || !cb.table || !cb.dimension) return [];
+          // drill-down: o gráfico filtra pelo nível que o visitante já atravessou (sempre um nível salvo)
+          const column = filter.column && levels(cb).includes(filter.column) ? filter.column : cb.dimension;
+          return [{ sourceId: cb.sourceId, table: cb.table, column, value: filter.value }];
+        }
+        if (source.type === "html") {
+          // o código do visual escolhe a coluna, mas só entre as que o próprio visual recebe
+          const sb = (source.props as BoundProps).binding;
+          const allowed = (sb?.columns ?? []).filter(Boolean);
+          return sb?.mode === "builder" && sb.table && filter.column && (allowed.length === 0 || allowed.includes(filter.column))
+            ? [{ sourceId: sb.sourceId, table: sb.table, column: filter.column, value: filter.value }]
+            : [];
+        }
+        return [];
+      });
+      return Response.json(await runBinding(row.userId, binding, filters));
+    } catch (error) {
+      return errorResponse(error);
+    }
+  });
+
+  router.post(`${base}/filter-options`, async (c) => {
+    try {
+      const row = await loadRow(c);
+      const body = await parseBody(c.req.raw, z.object({ elementId: z.string().min(1).max(64) }));
+      const element = findElement(allElements(row.doc), body.elementId);
+      if (element.type !== "filter") throw new HttpError(400, "Elemento não é um filtro.");
+      const binding = (element.props as FilterProps).binding;
+      if (!binding) return Response.json({ options: [] });
+      return Response.json(await filterOptions(row.userId, binding));
+    } catch (error) {
+      return errorResponse(error);
+    }
+  });
+};
+
+/** Sem login: só responde a tokens de compartilhamento válidos. */
+mountViewer(publicRoutes, "/dashboards/:token", (c) => sharedDashboard(c.req.param("token") ?? ""));
+
+/**
+ * Com login: dashboards de outras pessoas compartilhados com você (ou com todos).
+ * Registrada aqui, mas montada antes das rotas "/:id" do editor (ver `app.ts`).
+ */
+export const viewerRoutes = new Hono();
+
+/** Lista o que foi compartilhado com a pessoa logada (sem os dela). */
+viewerRoutes.get(
+  "/shared",
+  handle(async ({ user }) => {
+    const rows = await db
+      .select({
+        id: schema.dashboards.id,
+        name: schema.dashboards.name,
+        description: schema.dashboards.description,
+        updatedAt: schema.dashboards.updatedAt,
+        ownerName: schema.user.name,
+      })
+      .from(schema.dashboards)
+      .innerJoin(schema.user, eq(schema.user.id, schema.dashboards.userId))
+      .where(
+        and(
+          ne(schema.dashboards.userId, user.id),
+          or(
+            eq(schema.dashboards.sharedWithAll, true),
+            inArray(
+              schema.dashboards.id,
+              db
+                .select({ id: schema.dashboardShares.dashboardId })
+                .from(schema.dashboardShares)
+                .where(eq(schema.dashboardShares.userId, user.id)),
+            ),
+          ),
+        ),
+      )
+      .orderBy(desc(schema.dashboards.updatedAt));
+    return rows.map((row) => ({ ...row, updatedAt: row.updatedAt.getTime() }));
+  }),
+);
+
+/** Linha do dashboard se a pessoa logada pode ver (dona, ou compartilhado com ela/todos). */
+const viewableRow = async (c: Context) => {
+  const user = await requireUser(c.req.raw.headers);
+  const [row] = await db.select().from(schema.dashboards).where(eq(schema.dashboards.id, c.req.param("id") ?? ""));
+  if (!row) throw notFound("Dashboard");
+  if (row.userId === user.id || row.sharedWithAll) return row;
+  const [share] = await db
+    .select({ id: schema.dashboardShares.userId })
+    .from(schema.dashboardShares)
+    .where(and(eq(schema.dashboardShares.dashboardId, row.id), eq(schema.dashboardShares.userId, user.id)));
+  if (!share) throw notFound("Dashboard");
+  return row;
+};
+
+mountViewer(viewerRoutes, "/:id/view", viewableRow);
 
 /* ---------------------------------------------------------------- análises */
 

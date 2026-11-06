@@ -35,7 +35,7 @@ export const builderFor = (
   const agg: Aggregation = measure ? "sum" : "count";
   const base = { sourceId, mode: "builder" as const, table: table.name };
 
-  if (type === "table") return { ...base, columns: [], limit: 100 };
+  if (type === "table" || type === "html") return { ...base, columns: [], limit: 100 };
   if (type === "kpi" || type === "percent" || type === "comparison") return { ...base, measure, agg };
   return {
     ...base,
@@ -88,11 +88,12 @@ export const autoProps = (
     };
   }
 
-  if (type !== "chart" && type !== "table" && type !== "kpi" && type !== "percent" && type !== "comparison") {
+  if (type !== "chart" && type !== "table" && type !== "html" && type !== "kpi" && type !== "percent" && type !== "comparison") {
     return undefined;
   }
 
   const binding = builderFor(type, source.id, table);
+  if (type === "html") return { binding };
   if (type === "table") return { binding, title: table.name };
   return { binding, title: describeBinding(binding), ...(type !== "chart" && { description: source.name }) };
 };

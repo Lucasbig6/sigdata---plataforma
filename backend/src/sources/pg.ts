@@ -6,6 +6,7 @@ import {
   type SourceTable,
 } from "@shared/domain/sources";
 import { HttpError } from "../http";
+import { resolveSafeHost } from "../net-guard";
 import {
   QUERY_TIMEOUT_MS,
   RESULT_ROW_LIMIT,
@@ -33,13 +34,15 @@ const typeParsers = {
 };
 
 const connect = async (cfg: PostgresConnectionInput) => {
+  // conecta no IP já validado (sem nova resolução de DNS); o nome original segue para o TLS
+  const address = await resolveSafeHost(cfg.host);
   const client = new Client({
-    host: cfg.host,
+    host: address,
     port: cfg.port,
     database: cfg.database,
     user: cfg.user,
     password: cfg.password,
-    ssl: cfg.ssl ? { rejectUnauthorized: false } : undefined,
+    ssl: cfg.ssl ? { rejectUnauthorized: cfg.sslVerify !== false, servername: cfg.host } : undefined,
     connectionTimeoutMillis: 8000,
     statement_timeout: QUERY_TIMEOUT_MS,
     application_name: "sigdata",

@@ -16,6 +16,9 @@ export type WidgetKind =
   | "medidor"
   | "treemap"
   | "calor"
+  | "mapa"
+  | "mapa_bolhas"
+  | "mapa_pontos"
   | "kpi"
   | "tabela";
 
@@ -33,6 +36,9 @@ export const WIDGET_KINDS: WidgetKind[] = [
   "medidor",
   "treemap",
   "calor",
+  "mapa",
+  "mapa_bolhas",
+  "mapa_pontos",
   "kpi",
   "tabela",
 ];
@@ -52,6 +58,9 @@ export const WIDGET_CHART_TYPE: Partial<Record<WidgetKind, ChartType>> = {
   medidor: "gauge",
   treemap: "treemap",
   calor: "heatmap",
+  mapa: "map",
+  mapa_bolhas: "mapbubbles",
+  mapa_pontos: "mappoints",
 };
 
 export const isChartKind = (kind: WidgetKind): boolean => kind in WIDGET_CHART_TYPE;
