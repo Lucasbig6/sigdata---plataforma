@@ -43,6 +43,7 @@ const bindingSchema = z.object({
   y: name.optional(),
   ys: z.array(name).max(12).optional(),
   splitBy: name.optional(),
+  drill: z.array(name).max(4).optional(),
   calc: z.object({ name: z.string().min(1).max(80), expr: z.string().min(1).max(300) }).optional(),
   compare: z
     .object({ dateColumn: name, unit: z.enum(["day", "week", "month", "quarter", "year"]) })
@@ -484,6 +485,8 @@ const findElement = (elements: DashboardElement[], id: string) => {
 
 const publicDataSchema = z.object({
   elementId: z.string().min(1).max(64),
+  /** Drill-down: nível exibido; só vale entre a dimensão e os níveis salvos no gráfico. */
+  dimension: z.string().min(1).max(256).optional(),
   filters: z
     .array(
       z.object({
@@ -524,8 +527,14 @@ const mountViewer = (
       const element = findElement(elements, body.elementId);
       // só elementos que exibem dados; filtros têm ligação de outro formato
       if (!DATA_ELEMENT_TYPES.has(element.type)) throw new HttpError(400, "Elemento não exibe dados.");
-      const binding = (element.props as BoundProps).binding;
-      if (!binding) throw new HttpError(400, "Elemento sem dados ligados.");
+      const saved = (element.props as BoundProps).binding;
+      if (!saved) throw new HttpError(400, "Elemento sem dados ligados.");
+      // drill-down: o nível vem de quem vê, mas só entre as colunas que o autor deixou no gráfico
+      const levels = (b: DataBinding | undefined) => (b?.mode === "builder" && b.dimension ? [b.dimension, ...(b.drill ?? [])] : []);
+      const binding =
+        element.type === "chart" && body.dimension && levels(saved).includes(body.dimension)
+          ? { ...saved, dimension: body.dimension }
+          : saved;
       // a coluna nunca vem de quem vê: deriva do filtro ou do gráfico salvo (filtro cruzado)
       const filters: ActiveFilter[] = (body.filters ?? []).flatMap((filter) => {
         const source = findElement(elements, filter.elementId);
@@ -537,9 +546,10 @@ const mountViewer = (
         }
         if (source.type === "chart") {
           const cb = (source.props as BoundProps).binding;
-          return cb?.mode === "builder" && cb.table && cb.dimension
-            ? [{ sourceId: cb.sourceId, table: cb.table, column: cb.dimension, value: filter.value }]
-            : [];
+          if (cb?.mode !== "builder" || !cb.table || !cb.dimension) return [];
+          // drill-down: o gráfico filtra pelo nível que o visitante já atravessou (sempre um nível salvo)
+          const column = filter.column && levels(cb).includes(filter.column) ? filter.column : cb.dimension;
+          return [{ sourceId: cb.sourceId, table: cb.table, column, value: filter.value }];
         }
         if (source.type === "html") {
           // o código do visual escolhe a coluna, mas só entre as que o próprio visual recebe

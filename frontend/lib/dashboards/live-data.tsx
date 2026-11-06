@@ -263,13 +263,17 @@ export const isBindingReady = (binding: DataBinding | undefined): binding is Dat
   return Boolean(binding.table);
 };
 
+/** Drill-down: nível exibido e os valores já escolhidos nos níveis anteriores (coluna + valor). */
+export type DrillState = { dimension?: string; path: { column: string; value: string }[] };
+
 export const useBindingData = (
   elementId: string,
   binding: DataBinding | undefined,
-  options: { ignoreFilters?: boolean } = {},
+  options: { ignoreFilters?: boolean; drill?: DrillState } = {},
 ) => {
   const ctx = useCtx();
   const ready = isBindingReady(binding);
+  const drill = options.drill && options.drill.path.length > 0 ? options.drill : null;
 
   // filtros dos elementos de filtro + seleções de outros gráficos (mesma fonte e tabela)
   const filters = useMemo(() => {
@@ -308,8 +312,25 @@ export const useBindingData = (
             : [];
         })
       : [];
-    return [...fromFilters, ...fromCharts, ...fromHtml].filter((entry) => entry.value !== "");
-  }, [ctx, binding, ready, elementId, options.ignoreFilters]);
+    // níveis já atravessados no drill-down deste gráfico
+    const fromDrill = binding.mode === "builder" && binding.table
+      ? (drill?.path ?? []).map((step) => ({
+          id: elementId,
+          binding: { sourceId: binding.sourceId, table: binding.table as string, column: step.column },
+          value: step.value,
+          byName: false,
+          range: false,
+          column: step.column,
+        }))
+      : [];
+    return [...fromFilters, ...fromCharts, ...fromHtml, ...fromDrill].filter((entry) => entry.value !== "");
+  }, [ctx, binding, ready, elementId, options.ignoreFilters, drill]);
+
+  // no nível de detalhe a dimensão do gráfico troca; o resto da ligação é o mesmo
+  const levelBinding = useMemo(
+    () => (binding && drill?.dimension && binding.mode === "builder" ? { ...binding, dimension: drill.dimension } : binding),
+    [binding, drill?.dimension],
+  );
 
   let key: string | null = null;
   let load: () => Promise<BindingData> = () => Promise.reject(new Error("sem ligação"));
@@ -323,11 +344,11 @@ export const useBindingData = (
         value: entry.value,
         ...("column" in entry && typeof entry.column === "string" && { column: entry.column }),
       }));
-      key = JSON.stringify(["pub", token, elementId, publicFilters, ctx.refreshKey]);
+      key = JSON.stringify(["pub", token, elementId, publicFilters, drill?.dimension ?? null, ctx.refreshKey]);
       load = () =>
         api<BindingData>(`${base}/data`, {
           method: "POST",
-          json: { elementId, filters: publicFilters },
+          json: { elementId, filters: publicFilters, ...(drill?.dimension && { dimension: drill.dimension }) },
         });
     } else {
       const active: ActiveFilter[] = filters.map((entry) => ({
@@ -336,11 +357,11 @@ export const useBindingData = (
         ...(entry.byName && { byName: true }),
         ...(entry.range && { range: true }),
       }));
-      key = JSON.stringify(["priv", binding, active, ctx.refreshKey]);
+      key = JSON.stringify(["priv", levelBinding, active, ctx.refreshKey]);
       // depois de "Atualizar", o servidor também ignora o cache dele
       const fresh = ctx.refreshKey > 0;
       load = () =>
-        api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding, filters: active, fresh } });
+        api<BindingData>("/api/dashboards/data", { method: "POST", json: { binding: levelBinding, filters: active, fresh } });
     }
   }
 

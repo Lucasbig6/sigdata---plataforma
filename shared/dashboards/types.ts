@@ -149,6 +149,8 @@ export type DataBinding = {
   ys?: string[];
   /** Divide em uma série por valor desta coluna (builder: agrupa por dimensão + esta coluna). */
   splitBy?: string;
+  /** Gráficos: colunas dos níveis seguintes ao clicar numa categoria (drill-down), em ordem. */
+  drill?: string[];
   /** Medida calculada (expressão segura, ver expr.ts); substitui `measure` e `agg`. */
   calc?: CalcMeasure;
   /** Indicador: compara o último período dos dados com o anterior. */
