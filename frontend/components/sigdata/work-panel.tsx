@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { DATASET_KIND_LABELS, useDatasetsStore } from "@/lib/datasets/store";
 import { draftFromWidget, liveFromResult } from "@/lib/dashboards/from-workspace";
+import { findLibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import type { AnalyticResult, ResultColumn } from "@/lib/domain/sources";
 import { editWidget } from "@/lib/panel/edit";
@@ -439,9 +440,13 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     openDashboard(id);
     beginTransaction("panel-import");
     renameDashboard(title);
-    for (const { widget, draft } of drafts) {
-      if (draft) addElement(draft.item, { x: widget.x, y: widget.y }, draft.props);
+    // título no topo e visualizações em fluxo; a arrumação agrupa indicadores, gráficos e tabelas
+    const heading = findLibraryItem("title");
+    if (heading) addElement(heading, undefined, { content: title });
+    for (const { draft } of drafts) {
+      if (draft) addElement(draft.item, undefined, draft.props);
     }
+    useDashboardsStore.getState().arrange();
     endTransaction();
     savePreferences();
     await saveDashboard();

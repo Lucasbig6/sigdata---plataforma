@@ -9,7 +9,7 @@ import { Thread } from "@/components/assistant-ui/elements/thread.aui";
 import { Button } from "@/components/ui/button";
 import { useDatasetsStore } from "@/lib/datasets/store";
 import { useDashboardsStore } from "@/lib/dashboards/store";
-import { DashboardTools, setAgentTurn } from "./dashboard-tools";
+import { DashboardTools, finishAgentTurn, setAgentTurn } from "./dashboard-tools";
 
 const SUGGESTIONS = [
   "Monte um painel completo com os principais indicadores e gráficos destes dados.",
@@ -22,6 +22,11 @@ const TurnTracker = () => {
   const chat = useAISDKChat();
   const userMessages = chat?.messages.filter((message) => message.role === "user").length ?? 0;
   useEffect(() => setAgentTurn(userMessages), [userMessages]);
+  // resposta concluída (inclusive entre uma rodada de ferramentas e a seguinte): arruma a página
+  const status = chat?.status;
+  useEffect(() => {
+    if (status === "ready") finishAgentTurn();
+  }, [status]);
   return null;
 };
 

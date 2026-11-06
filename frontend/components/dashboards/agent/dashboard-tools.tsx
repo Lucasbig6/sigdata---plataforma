@@ -3,6 +3,7 @@
 import { Check, Eye, LayoutGrid, Loader2, Pencil, Plus, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useAssistantTool, type AssistantToolProps, type ToolCallMessagePartProps } from "@assistant-ui/react";
 import { arrangeElements } from "@/lib/dashboards/auto-layout";
+import { isGrid } from "@/lib/dashboards/grid";
 import { findLibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import {
@@ -27,6 +28,22 @@ import { CHART_TYPES, SCHEMAS } from "./tool-schemas";
 
 /** Chave do passo de desfazer do pedido atual; o painel do assistente a atualiza a cada mensagem. */
 let turnKey = "agente:0";
+/** O assistente acrescentou elementos neste pedido e a página ainda não foi arrumada. */
+let addedInTurn = false;
+
+/**
+ * Fim do pedido: em página de grade, arruma tudo no código (títulos, filtros, indicadores,
+ * gráficos), sem depender de o modelo chamar `organizar_layout`. Entra no mesmo passo de desfazer.
+ */
+export const finishAgentTurn = () => {
+  if (!addedInTurn) return;
+  addedInTurn = false;
+  const state = useDashboardsStore.getState();
+  const doc = state.current();
+  if (!doc || state.preview || !isGrid(doc.canvas)) return;
+  state.runAsOneStep(turnKey, () => state.arrange());
+};
+
 export const setAgentTurn = (userMessages: number) => {
   turnKey = `agente:${userMessages}`;
 };
@@ -326,6 +343,7 @@ const addTool = {
     return state.runAsOneStep(turnKey, () => {
       const id = state.addElement(item, undefined, props);
       if (!id) return { ok: false, error: "Não foi possível adicionar o elemento." } as Failure;
+      addedInTurn = true;
       const title = (props.title as string | undefined) ?? (props.label as string | undefined) ?? (props.content as string | undefined) ?? "";
       return { ok: true, id, resumo: `Adicionado: ${args.tipo === "grafico" ? "gráfico" : args.tipo} ${title}`.trim() };
     });

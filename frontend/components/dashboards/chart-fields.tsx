@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { parseAdvanced } from "@/lib/charts/build-option";
 import { themePalette, useChartTheme } from "@/lib/charts/theme";
+import { useRole } from "@/lib/auth-client";
+import { canManageData } from "@shared/roles";
 import type { ChartStyle, ChartType, LegendPosition, NumberFormat } from "@shared/charts/types";
 import { CHART_TYPES, CHART_TYPE_LABELS } from "@shared/charts/types";
 import type { ChartColor, ChartProps } from "@/lib/dashboards/types";
@@ -108,6 +110,9 @@ const AdvancedField = ({ value, onChange }: { value: string; onChange: (value: s
 
 export const ChartFields = ({ props, set }: { props: ChartProps; set: Set }) => {
   const theme = useChartTheme();
+  const role = useRole();
+  // o JSON do ECharts é recurso de analista; quem já tem um salvo continua vendo
+  const canAdvanced = (role !== null && canManageData(role)) || Boolean(props.advanced);
   const type = props.chartType;
   const cartesian = CARTESIAN.includes(type);
   const stackable = type === "bar" || type === "hbar" || type === "area" || type === "line";
@@ -337,9 +342,11 @@ export const ChartFields = ({ props, set }: { props: ChartProps; set: Set }) => 
         </Grid2>
       </Section>
 
-      <Section title="Avançado (ECharts)">
-        <AdvancedField value={props.advanced ?? ""} onChange={(value) => set({ advanced: value || undefined }, "advanced")} />
-      </Section>
+      {canAdvanced ? (
+        <Section title="Avançado (ECharts)">
+          <AdvancedField value={props.advanced ?? ""} onChange={(value) => set({ advanced: value || undefined }, "advanced")} />
+        </Section>
+      ) : null}
     </>
   );
 };
