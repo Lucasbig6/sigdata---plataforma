@@ -514,5 +514,44 @@ describe("API com banco real", { skip: available ? false : "Postgres de teste in
       const rest = (await (await request(dona, "GET", `/api/projects/${project.id}/chats`)).json()) as unknown[];
       assert.equal(rest.length, 1);
     });
+
+    test("dados enviados no projeto: usuário comum, dataset particular e isolado", async () => {
+      const dona = await signUp("dados1@teste.dev");
+      const outra = await signUp("dados2@teste.dev");
+      const project = (await (await request(dona, "POST", "/api/projects", { title: "Meus dados" })).json()) as { id: string };
+
+      const send = (cookie: string, projectId: string, file: File) => {
+        const form = new FormData();
+        form.set("file", file);
+        return app.request(`/api/projects/${projectId}/dados`, {
+          method: "POST",
+          headers: { cookie, origin: "http://localhost:3000" },
+          body: form,
+        });
+      };
+
+      const csv = new File(["cidade,valor\nSão Paulo,10\nRecife,20\nBelém,30\n"], "vendas.csv", { type: "text/csv" });
+      const ok = await send(dona, project.id, csv);
+      assert.equal(ok.status, 200, await ok.clone().text());
+      const out = (await ok.json()) as { dataset: { id: string; kind: string; published: boolean; status: string; tables: { name: string }[] }; notebook: { sourceId: string } };
+      assert.equal(out.dataset.kind, "dataset");
+      assert.equal(out.dataset.published, false, "particular: não é publicado");
+      assert.equal(out.dataset.status, "pronta");
+      assert.equal(out.notebook.sourceId, out.dataset.id, "o projeto passa a usar o dataset");
+
+      // outra pessoa não enxerga nem o dataset nem envia para o projeto alheio
+      const visible = (await (await request(outra, "GET", "/api/sources")).json()) as { id: string }[];
+      assert.ok(!visible.some((entry) => entry.id === out.dataset.id));
+      assert.equal((await send(outra, project.id, csv)).status, 404);
+
+      // formato inválido e arquivo ausente
+      assert.equal((await send(dona, project.id, new File(["x"], "foto.png"))).status, 415);
+      const noFile = await app.request(`/api/projects/${project.id}/dados`, {
+        method: "POST",
+        headers: { cookie: dona, origin: "http://localhost:3000" },
+        body: new FormData(),
+      });
+      assert.equal(noFile.status, 400);
+    });
   });
 });

@@ -8,7 +8,8 @@ import { db, schema } from "../db";
 import { handle, HttpError, notFound, parseBody } from "../http";
 import { ensureChat, getChat, listChats, toChat } from "../chats";
 import { getProject, toNotebook } from "../projects";
-import { getSourceRow } from "../sources/service";
+import { audit } from "../audit";
+import { createDataset, createFromUpload, getSourceRow } from "../sources/service";
 
 export const projectsRoutes = new Hono();
 
@@ -76,6 +77,46 @@ projectsRoutes.patch(
       .where(eq(schema.projects.id, project.id))
       .returning();
     return toNotebook(row);
+  }),
+);
+
+/**
+ * Dados enviados direto no projeto (qualquer perfil): o arquivo vira uma fonte da própria pessoa e a
+ * tabela principal vira um dataset particular (não publicado) usado pelo projeto. Nada é alterado
+ * nos bancos originais e outras pessoas não enxergam o arquivo.
+ */
+projectsRoutes.post(
+  "/:id/dados",
+  handle<{ id: string }>(async ({ req, user, params }) => {
+    const project = await getProject(user.id, params.id);
+    const file = (await req.formData()).get("file");
+    if (!(file instanceof File)) throw new HttpError(400, 'Envie um arquivo no campo "file".');
+
+    const baseName = file.name.replace(/\.[^.]+$/, "").trim() || "Dados enviados";
+    const upload = await createFromUpload(user.id, {
+      file,
+      name: baseName,
+      description: `Enviado pelo projeto “${project.title}”.`,
+    });
+    if (upload.status !== "pronta") throw new HttpError(422, upload.error ?? "Não foi possível ler o arquivo.");
+
+    // vários blocos (abas do Excel): a maior tabela é a que o assistente analisa
+    const [main] = [...upload.tables].sort((a, b) => (b.rowCount ?? 0) - (a.rowCount ?? 0));
+    if (!main) throw new HttpError(422, "O arquivo não tem nenhuma tabela com dados.");
+    const dataset = await createDataset(user.id, {
+      sourceId: upload.id,
+      sql: `SELECT * FROM "${main.name.replaceAll('"', '""')}"`,
+      name: baseName,
+      description: upload.description,
+    });
+
+    const [row] = await db
+      .update(schema.projects)
+      .set({ sourceId: dataset.id, updatedAt: new Date() })
+      .where(eq(schema.projects.id, project.id))
+      .returning();
+    await audit(user, "fonte.importada", baseName, `pelo projeto ${project.title}`);
+    return { dataset, notebook: toNotebook(row) };
   }),
 );
 
