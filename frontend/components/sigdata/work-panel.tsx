@@ -11,9 +11,7 @@ import {
   Code2,
   Database,
   Loader2,
-  Minus,
   Pencil,
-  Plus,
   Trash2,
   X,
 } from "lucide-react";
@@ -367,7 +365,6 @@ export const WorkPanel = ({ className }: { className?: string }) => {
     panelCollapsed,
     panelMobileOpen,
     setPanelView,
-    togglePanelCollapsed,
     setPanelMobileOpen,
     savePreferences,
   } = useSigdata();
@@ -484,17 +481,6 @@ export const WorkPanel = ({ className }: { className?: string }) => {
           <Button
             variant="ghost"
             size="icon-sm"
-            className="max-lg:hidden"
-            onClick={togglePanelCollapsed}
-            aria-label={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
-            title={panelCollapsed ? "Expandir visualizações" : "Recolher visualizações"}
-          >
-            {panelCollapsed ? <Plus className="size-4" aria-hidden /> : <Minus className="size-4" aria-hidden />}
-          </Button>
-
-          <Button
-            variant="ghost"
-            size="icon-sm"
             className="lg:hidden"
             onClick={() => setPanelMobileOpen(false)}
             aria-label="Fechar visualizações"
@@ -508,13 +494,13 @@ export const WorkPanel = ({ className }: { className?: string }) => {
 
       <div className="flex min-h-0 flex-1 flex-col overflow-y-auto">
         {panelVisible ? (
-          <div className="flex shrink-0 flex-col gap-3 px-3 pt-3">
+          <div className="flex shrink-0 flex-col gap-6 px-3 pt-3">
           <StudioTools source={activeSource} widgetCount={widgets.length} onCreateDashboard={handleSaveAsDashboard} />
 
           <div
             role="tablist"
             aria-label="Conteúdo do estúdio"
-            className="flex gap-1 rounded-lg border border-border bg-muted/40 p-1"
+            className="flex gap-2 rounded-lg border border-border bg-muted/40 p-2"
           >
             {STUDIO_TABS.map((tab) => (
               <button

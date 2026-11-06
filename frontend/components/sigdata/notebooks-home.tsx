@@ -31,7 +31,6 @@ export const NotebooksHome = () => {
   const { data: session } = useSession();
   const firstName = session?.user.name.trim().split(/\s+/)[0] ?? "";
 
-  const [query, setQuery] = useState("");
   const [view, setView] = useState<"grid" | "list">("grid");
   const [createOpen, setCreateOpen] = useState(false);
   const [draftTitle, setDraftTitle] = useState("");
@@ -41,13 +40,10 @@ export const NotebooksHome = () => {
   }, [hydrate]);
 
   const items = useMemo(() => {
-    const term = query.trim().toLowerCase();
-    return notebooks
-      .filter((notebook) => !term || notebook.title.toLowerCase().includes(term))
-      .sort((a, b) => b.updatedAt - a.updatedAt);
-  }, [notebooks, query]);
+    return [...notebooks].sort((a, b) => b.updatedAt - a.updatedAt);
+  }, [notebooks]);
 
-  const showHeaderCreate = hydrated && items.length > 0 && (view === "list" || query.trim() !== "");
+  const showHeaderCreate = hydrated && items.length > 0 && view === "list";
 
   const openCreate = () => {
     setDraftTitle("");
@@ -61,7 +57,7 @@ export const NotebooksHome = () => {
 
   return (
     <div className="min-h-dvh bg-background">
-      <NotebooksHeader query={query} onQueryChange={setQuery} view={view} onViewChange={setView} />
+      <NotebooksHeader view={view} onViewChange={setView} />
 
       <main className="px-4 py-8 sm:px-10 sm:py-10 lg:px-30">
         <div className="flex items-end justify-between gap-5 pb-8">
@@ -80,7 +76,7 @@ export const NotebooksHome = () => {
           ) : null}
         </div>
 
-        {hydrated && !loadError && !query.trim() ? <QuickActions /> : null}
+        {hydrated && !loadError ? <QuickActions /> : null}
 
         <GettingStarted />
 
@@ -95,24 +91,18 @@ export const NotebooksHome = () => {
         ) : items.length === 0 ? (
           <EmptyState
             icon={BookOpen}
-            title={query.trim() ? "Nenhum projeto encontrado" : "Nenhum projeto ainda"}
-            description={
-              query.trim()
-                ? "Tente buscar por outro título."
-                : "Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."
-            }
+            title="Nenhum projeto ainda"
+            description="Crie um projeto para começar a conversar com seus dados e transformar perguntas em análises."
             action={
-              query.trim() ? undefined : (
-                <Button onClick={openCreate}>
-                  <Plus aria-hidden />
-                  Novo projeto
-                </Button>
-              )
+              <Button onClick={openCreate}>
+                <Plus aria-hidden />
+                Novo projeto
+              </Button>
             }
           />
         ) : view === "grid" ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-            {!query.trim() ? <NewProjectTile onClick={openCreate} /> : null}
+            <NewProjectTile onClick={openCreate} />
             {items.map((notebook, index) => (
               <NotebookCard
                 key={notebook.id}
