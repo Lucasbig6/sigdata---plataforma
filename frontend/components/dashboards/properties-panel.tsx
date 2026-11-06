@@ -13,8 +13,11 @@ import {
 import { useTheme } from "next-themes";
 import { useState, type ReactNode } from "react";
 import { useDashboardsStore } from "@/lib/dashboards/store";
+import { columnWidth, isGrid } from "@/lib/dashboards/grid";
 import {
   ELEMENT_MIN,
+  GRID_COLUMNS,
+  GRID_ROW,
   type ChartColor,
   type ChartProps,
   type DashboardElement,
@@ -61,9 +64,41 @@ const GeometryFields = ({
   patchElement,
 }: {
   element: DashboardElement;
-  canvas: { width: number; height: number };
+  canvas: { width: number; height: number; layout?: "grid" };
   patchElement: ReturnType<typeof useDashboardsStore.getState>["patchElement"];
 }) => {
+  if (isGrid(canvas)) {
+    // grade: posição e tamanho em colunas e linhas (o motor encaixa o resto)
+    const col = columnWidth(canvas);
+    const cols = Math.round(element.w / col);
+    const cells = [
+      { key: "x" as const, label: "Coluna", unit: col, value: Math.round(element.x / col) + 1, min: 1, max: Math.max(1, GRID_COLUMNS - cols + 1), offset: 1 },
+      { key: "y" as const, label: "Linha", unit: GRID_ROW, value: Math.round(element.y / GRID_ROW) + 1, min: 1, max: 999, offset: 1 },
+      { key: "w" as const, label: "Largura (colunas)", unit: col, value: cols, min: 1, max: GRID_COLUMNS, offset: 0 },
+      { key: "h" as const, label: "Altura (linhas)", unit: GRID_ROW, value: Math.round(element.h / GRID_ROW), min: 1, max: 999, offset: 0 },
+    ];
+    return (
+      <Section title="Posição e tamanho">
+        <Grid2>
+          {cells.map((entry) => (
+            <Field key={entry.key} label={entry.label}>
+              <NumberField
+                value={entry.value}
+                min={entry.min}
+                max={entry.max}
+                onCommit={(next) =>
+                  patchElement(element.id, { [entry.key]: (next - entry.offset) * entry.unit } as Partial<DashboardElement>, {
+                    transaction: `geom:${element.id}:${entry.key}`,
+                  })
+                }
+              />
+            </Field>
+          ))}
+        </Grid2>
+        <p className="text-[10px] text-muted-foreground">A página tem {GRID_COLUMNS} colunas e cresce sozinha para baixo.</p>
+      </Section>
+    );
+  }
   const geometry = [
     { key: "x" as const, label: "X", min: 0, max: Math.max(0, canvas.width - element.w) },
     { key: "y" as const, label: "Y", min: 0, max: Math.max(0, canvas.height - element.h) },
@@ -645,14 +680,18 @@ export const PropertiesPanel = () => {
             Excluir seleção
           </button>
         </Section>
-        <Section title="Alinhar e distribuir">
-          <p className="text-[11px] leading-relaxed text-muted-foreground">
-            Use a barra no topo da página para alinhar, distribuir e igualar tamanhos.
-          </p>
-        </Section>
-        <Section title="Camadas">
-          <LayersPanel />
-        </Section>
+        {isGrid(doc.canvas) ? null : (
+          <>
+            <Section title="Alinhar e distribuir">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Use a barra no topo da página para alinhar, distribuir e igualar tamanhos.
+              </p>
+            </Section>
+            <Section title="Camadas">
+              <LayersPanel />
+            </Section>
+          </>
+        )}
       </aside>
     );
   }

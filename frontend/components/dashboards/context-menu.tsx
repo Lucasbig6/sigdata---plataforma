@@ -15,6 +15,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
+import { isGrid } from "@/lib/dashboards/grid";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 
 export type MenuState = { x: number; y: number; onElement: boolean };
@@ -61,6 +62,8 @@ export const CanvasContextMenu = ({ menu, onClose }: { menu: MenuState; onClose:
     return Boolean(doc?.elements.some((el) => state.selectedIds.includes(el.id) && el.groupId));
   });
   const count = selectedIds.length;
+  // na grade os elementos não se sobrepõem: camadas não se aplicam
+  const grid = useDashboardsStore((state) => isGrid(state.currentId ? state.dashboards[state.currentId]?.canvas : undefined));
 
   useEffect(() => {
     const onDown = (event: PointerEvent) => {
@@ -102,17 +105,21 @@ export const CanvasContextMenu = ({ menu, onClose }: { menu: MenuState; onClose:
           <Item icon={ClipboardPaste} label="Colar" shortcut="Ctrl+V" onSelect={run(() => store().paste())} />
           <Item icon={CopyPlus} label="Duplicar" shortcut="Ctrl+D" onSelect={run(() => store().duplicateSelected())} />
           <Separator />
-          <Item
-            icon={BringToFront}
-            label="Trazer para frente"
-            onSelect={run(() => selectedIds.forEach((id) => store().moveLayer(id, "front")))}
-          />
-          <Item
-            icon={SendToBack}
-            label="Enviar para trás"
-            onSelect={run(() => [...selectedIds].reverse().forEach((id) => store().moveLayer(id, "back")))}
-          />
-          <Separator />
+          {grid ? null : (
+            <>
+              <Item
+                icon={BringToFront}
+                label="Trazer para frente"
+                onSelect={run(() => selectedIds.forEach((id) => store().moveLayer(id, "front")))}
+              />
+              <Item
+                icon={SendToBack}
+                label="Enviar para trás"
+                onSelect={run(() => [...selectedIds].reverse().forEach((id) => store().moveLayer(id, "back")))}
+              />
+              <Separator />
+            </>
+          )}
           <Item
             icon={Group}
             label="Agrupar"

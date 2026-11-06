@@ -16,6 +16,7 @@ import {
   Ungroup,
   type LucideIcon,
 } from "lucide-react";
+import { isGrid } from "@/lib/dashboards/grid";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 
 const Btn = ({
@@ -63,6 +64,7 @@ export const ArrangeToolbar = () => {
   const ungroup = useDashboardsStore((state) => state.ungroupSelected);
   const arrange = useDashboardsStore((state) => state.arrange);
 
+  const grid = useDashboardsStore((state) => isGrid(state.currentId ? state.dashboards[state.currentId]?.canvas : undefined));
   const target = count > 1 ? "entre si" : "à página";
   const any = count > 0;
 
@@ -72,6 +74,8 @@ export const ArrangeToolbar = () => {
       aria-label="Organizar elementos"
       className="flex items-center gap-0.5 rounded-lg border border-border/70 bg-popover/90 p-1 shadow-sm backdrop-blur"
     >
+      {grid ? null : (
+      <>
       <Btn icon={AlignStartVertical} label={`Alinhar à esquerda (${target})`} disabled={!any} onClick={() => align("left")} />
       <Btn icon={AlignCenterVertical} label={`Centralizar na horizontal (${target})`} disabled={!any} onClick={() => align("center")} />
       <Btn icon={AlignEndVertical} label={`Alinhar à direita (${target})`} disabled={!any} onClick={() => align("right")} />
@@ -82,6 +86,8 @@ export const ArrangeToolbar = () => {
       <Sep />
       <Btn icon={AlignHorizontalDistributeCenter} label="Distribuir na horizontal (3 ou mais)" disabled={count < 3} onClick={() => distribute("horizontal")} />
       <Btn icon={AlignVerticalDistributeCenter} label="Distribuir na vertical (3 ou mais)" disabled={count < 3} onClick={() => distribute("vertical")} />
+      </>
+      )}
       <Btn icon={ArrowLeftRight} label="Igualar largura" disabled={count < 2} onClick={() => matchSize("w")} />
       <Btn icon={ArrowUpDown} label="Igualar altura" disabled={count < 2} onClick={() => matchSize("h")} />
       <Sep />
