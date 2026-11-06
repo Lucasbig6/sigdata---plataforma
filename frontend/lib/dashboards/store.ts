@@ -408,7 +408,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
     setPreview: (preview) =>
       set(preview ? { preview: true, selectedId: null } : { preview: false }),
 
-    openDashboard: (id) =>
+    openDashboard: (id) => {
       set({
         baseline: id && get().dashboards[id] ? clone(get().dashboards[id]) : null,
         activePageId: id ? firstPageId(get().dashboards[id]) : null,
@@ -420,7 +420,11 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         past: [],
         future: [],
         historyKey: null,
-      }),
+      });
+      // páginas que ainda estão em grade passam para o modo livre (posições e tamanhos são mantidos)
+      const opened = id ? get().dashboards[id] : null;
+      if (opened && isGrid(opened.canvas)) get().setLayoutMode("free");
+    },
 
     createDashboard: (projectId) => {
       const { order, dashboards } = get();
@@ -433,7 +437,7 @@ export const useDashboardsStore = create<SigdataDashboardsStore>((rawSet, get) =
         origin: "user",
         createdAt: now,
         updatedAt: now,
-        canvas: { width: 1600, height: 1000, layout: "grid" },
+        canvas: { width: 1600, height: 1000 },
         elements: [],
       };
       const next = {

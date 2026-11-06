@@ -3,7 +3,6 @@
 import { Check, Eye, LayoutGrid, Loader2, Pencil, Plus, Trash2, TriangleAlert, type LucideIcon } from "lucide-react";
 import { useAssistantTool, type AssistantToolProps, type ToolCallMessagePartProps } from "@assistant-ui/react";
 import { arrangeElements } from "@/lib/dashboards/auto-layout";
-import { isGrid } from "@/lib/dashboards/grid";
 import { findLibraryItem } from "@/lib/dashboards/presets";
 import { useDashboardsStore } from "@/lib/dashboards/store";
 import {
@@ -32,7 +31,7 @@ let turnKey = "agente:0";
 let addedInTurn = false;
 
 /**
- * Fim do pedido: em página de grade, arruma tudo no código (títulos, filtros, indicadores,
+ * Fim do pedido: arruma tudo no código (títulos, filtros, indicadores,
  * gráficos), sem depender de o modelo chamar `organizar_layout`. Entra no mesmo passo de desfazer.
  */
 export const finishAgentTurn = () => {
@@ -40,7 +39,7 @@ export const finishAgentTurn = () => {
   addedInTurn = false;
   const state = useDashboardsStore.getState();
   const doc = state.current();
-  if (!doc || state.preview || !isGrid(doc.canvas)) return;
+  if (!doc || state.preview) return;
   state.runAsOneStep(turnKey, () => state.arrange());
 };
 
